@@ -32,6 +32,25 @@ export function AppProvider({ children }) {
         if (Array.isArray(parsed)) setCart(parsed);
       }
     } catch {}
+
+    // Verify active JWT token with backend session API
+    fetch("/api/auth/student/me")
+      .then((res) => {
+        if (!res.ok) return null;
+        return res.json();
+      })
+      .then((data) => {
+        if (data && data.authenticated && data.student) {
+          setStudentProfile((prev) => ({
+            ...prev,
+            ...data.student
+          }));
+          try {
+            localStorage.setItem("canteenGo_studentProfile", JSON.stringify(data.student));
+          } catch {}
+        }
+      })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -46,11 +65,28 @@ export function AppProvider({ children }) {
   const handleSaveStudentProfile = (profile) => {
     setStudentProfile(profile);
     setIsProfileModalOpen(false);
+    if (pathname === "/") {
+      router.push("/order");
+    }
   };
 
-  const handleLogout = () => {
+  const handleCloseProfileModal = () => {
+    setIsProfileModalOpen(false);
+    if (!studentProfile?.phone) {
+      router.push("/");
+    }
+  };
+
+  const handleBackToHome = () => {
+    setIsProfileModalOpen(false);
+    router.push("/");
+  };
+
+  const handleLogout = async () => {
     try {
+      await fetch("/api/auth/student/logout", { method: "POST" }).catch(() => {});
       localStorage.removeItem("canteenGo_studentProfile");
+      localStorage.removeItem("canteenGo_studentToken");
       localStorage.removeItem("canteenGo_userRole");
       localStorage.removeItem("canteenGo_studentTab");
       localStorage.removeItem("canteenGo_studentCart");
@@ -110,59 +146,64 @@ export function AppProvider({ children }) {
       }}
     >
       <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
-        <Navbar
-          userRole={userRole}
-          setUserRole={handleSetUserRole}
-          studentTab={studentTab}
-          setStudentTab={handleSetStudentTab}
-          cartCount={totalCartCount}
-          studentProfile={studentProfile}
-          onOpenProfile={() => setIsProfileModalOpen(true)}
-          onLogout={handleLogout}
-        />
+        {pathname !== "/" && (
+          <Navbar
+            userRole={userRole}
+            setUserRole={handleSetUserRole}
+            studentTab={studentTab}
+            setStudentTab={handleSetStudentTab}
+            cartCount={totalCartCount}
+            studentProfile={studentProfile}
+            onOpenProfile={() => setIsProfileModalOpen(true)}
+            onLogout={handleLogout}
+          />
+        )}
 
-        <main className="container" style={{ flex: 1 }}>
+        <main className={pathname === "/" ? "home-main-container" : "container"} style={{ flex: 1, padding: pathname === "/" ? 0 : undefined }}>
           {children}
         </main>
 
-        <footer
-          style={{
-            textAlign: "center",
-            padding: "28px 20px",
-            color: "#64748b",
-            fontSize: "0.85rem",
-            background: "#ffffff",
-            borderTop: "1px solid #e2e8f0",
-            marginTop: "auto"
-          }}
-        >
-          <p
+        {pathname !== "/" && (
+          <footer
             style={{
-              fontWeight: "700",
-              color: "#0f172a",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "8px"
+              textAlign: "center",
+              padding: "28px 20px",
+              color: "#64748b",
+              fontSize: "0.85rem",
+              background: "#ffffff",
+              borderTop: "1px solid #e2e8f0",
+              marginTop: "auto"
             }}
           >
-            <img
-              src="/images/canteengo-logo.png"
-              alt="canteenGo"
-              style={{ width: "22px", height: "22px", borderRadius: "5px" }}
-            />
-            canteenGo — Smart College Canteen Ordering & Live Queue
-          </p>
-          <p style={{ marginTop: "6px", color: "#94a3b8" }}>
-            B.Tech CSE Capstone Project • Next.js App Router + MongoDB & Mongoose
-          </p>
-        </footer>
+            <p
+              style={{
+                fontWeight: "700",
+                color: "#0f172a",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "8px"
+              }}
+            >
+              <img
+                src="/images/canteengo-logo.png"
+                alt="canteenGo"
+                style={{ width: "22px", height: "22px", borderRadius: "5px" }}
+              />
+              canteenGo — Smart College Canteen Ordering & Live Queue
+            </p>
+            <p style={{ marginTop: "6px", color: "#94a3b8" }}>
+              B.Tech CSE Capstone Project • Next.js App Router + MongoDB & Mongoose
+            </p>
+          </footer>
+        )}
 
         <StudentProfileModal
           isOpen={isProfileModalOpen}
           initialProfile={studentProfile}
           onSave={handleSaveStudentProfile}
-          onClose={studentProfile?.phone ? () => setIsProfileModalOpen(false) : null}
+          onClose={handleCloseProfileModal}
+          onBackToHome={handleBackToHome}
           onLogout={handleLogout}
         />
       </div>

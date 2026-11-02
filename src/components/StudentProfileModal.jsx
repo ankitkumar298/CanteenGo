@@ -23,6 +23,7 @@ export default function StudentProfileModal({
   initialProfile,
   onSave,
   onClose,
+  onBackToHome,
   onLogout
 }) {
   // Mode: "login", "signup", or "view" (if already logged in)
@@ -50,6 +51,42 @@ export default function StudentProfileModal({
   const [successMsg, setSuccessMsg] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const handleGoHome = () => {
+    if (onBackToHome) {
+      onBackToHome();
+    } else if (onClose) {
+      onClose();
+    }
+  };
+
+  // Browser Back Button & Escape key support to return to Home
+  useEffect(() => {
+    if (!isOpen) return;
+
+    // Push a history state so pressing browser 'Back' button returns to Home
+    try {
+      window.history.pushState({ studentAuthOpen: true }, "");
+    } catch {}
+
+    const handlePopState = () => {
+      handleGoHome();
+    };
+
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        handleGoHome();
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen]);
+
   useEffect(() => {
     if (isOpen) {
       setError("");
@@ -58,16 +95,8 @@ export default function StudentProfileModal({
         setAuthMode("view");
       } else {
         setAuthMode("login");
-        try {
-          const isRemembered = localStorage.getItem("canteenGo_rememberMe") !== "false";
-          setRememberMe(isRemembered);
-          if (isRemembered) {
-            const savedIdentifier = localStorage.getItem("canteenGo_savedIdentifier");
-            if (savedIdentifier) {
-              setLoginIdentifier(savedIdentifier);
-            }
-          }
-        } catch {}
+        setLoginIdentifier("");
+        setLoginPassword("");
       }
     }
   }, [isOpen, initialProfile]);
@@ -107,12 +136,20 @@ export default function StudentProfileModal({
         throw new Error(data.error || "Login failed. Please verify your credentials.");
       }
 
+      // Persist JWT token
+      if (data.token) {
+        try {
+          localStorage.setItem("canteenGo_studentToken", data.token);
+        } catch {}
+      }
+
       const profileData = {
         _id: data.student._id,
         name: data.student.name,
         phone: data.student.phone,
         email: data.student.email || "",
-        studentId: data.student.studentId || ""
+        studentId: data.student.studentId || "",
+        token: data.token || ""
       };
 
       try {
@@ -184,12 +221,20 @@ export default function StudentProfileModal({
         throw new Error(data.error || "Registration failed.");
       }
 
+      // Persist JWT token
+      if (data.token) {
+        try {
+          localStorage.setItem("canteenGo_studentToken", data.token);
+        } catch {}
+      }
+
       const profileData = {
         _id: data.student._id,
         name: data.student.name,
         phone: data.student.phone,
         email: data.student.email || "",
-        studentId: data.student.studentId || ""
+        studentId: data.student.studentId || "",
+        token: data.token || ""
       };
 
       try {
@@ -210,15 +255,36 @@ export default function StudentProfileModal({
   };
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <div className="modal-backdrop" onClick={handleGoHome}>
       <div
         className="modal-card student-profile-card student-auth-modal"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Modal Top Header */}
+        {/* Top Navigation & Exit Bar */}
+        <div className="modal-top-nav-bar">
+          <button
+            type="button"
+            className="btn-modal-back-home"
+            onClick={handleGoHome}
+            title="Return to CanteenGo Home"
+          >
+            ← Back to Home
+          </button>
+          <button
+            type="button"
+            className="modal-close-btn"
+            onClick={handleGoHome}
+            title="Close and return to Home"
+            aria-label="Close"
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* Modal Header */}
         <div className="modal-header profile-modal-header">
           <div className="profile-badge-icon">
-            <GraduationCapIcon size={24} />
+            <GraduationCapIcon size={22} />
           </div>
           <div style={{ flex: 1 }}>
             <h3 className="modal-title">
@@ -232,21 +298,13 @@ export default function StudentProfileModal({
               {authMode === "view"
                 ? "Your active canteenGo account details & tokens."
                 : authMode === "signup"
-                ? "Register to place snack orders and track live token queue."
+                ? "Register to order meals and track live kitchen tokens."
                 : "Log in with your registered mobile number & password."}
             </p>
+            <span className="auth-jwt-chip">
+              <ShieldCheckIcon size={12} /> Secure JWT Session
+            </span>
           </div>
-          {onClose && (
-            <button
-              type="button"
-              className="modal-close-btn"
-              onClick={onClose}
-              title="Close modal"
-              aria-label="Close"
-            >
-              ✕
-            </button>
-          )}
         </div>
 
         {/* Segmented Tab Switcher (Visible in Login & Signup modes) */}
@@ -299,7 +357,7 @@ export default function StudentProfileModal({
                 <input
                   type="text"
                   className="form-input auth-form-input"
-                  placeholder="e.g. 9876543210 or student@college.edu"
+                  placeholder="Enter mobile number or college email"
                   value={loginIdentifier}
                   onChange={(e) => {
                     setError("");
@@ -362,7 +420,7 @@ export default function StudentProfileModal({
                 <ShieldCheckIcon size={17} />
               </div>
               <small>
-                Aapke orders strictly aapke registered mobile number se link honge.
+                Session is securely authenticated with JSON Web Token (JWT) linked to your student credentials.
               </small>
             </div>
 
@@ -542,7 +600,7 @@ export default function StudentProfileModal({
                 <GraduationCapIcon size={17} />
               </div>
               <small>
-                Sign up karte hi aap canteen food order kar sakte hain aur live token track kar sakte hain.
+                Your account is encrypted and assigned an authenticated JWT session for campus dining and token tracking.
               </small>
             </div>
 

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/mongodb";
 import Student from "@/models/Student";
-import { verifyPassword } from "@/lib/auth";
+import { verifyPassword, generateToken } from "@/lib/auth";
 
 export async function POST(request) {
   try {
@@ -56,9 +56,20 @@ export async function POST(request) {
       );
     }
 
-    return NextResponse.json({
+    // Generate JWT token
+    const token = generateToken({
+      id: student._id.toString(),
+      name: student.name,
+      phone: student.phone,
+      email: student.email || "",
+      studentId: student.studentId || "",
+      role: "student"
+    });
+
+    const response = NextResponse.json({
       success: true,
       message: "Login successful!",
+      token,
       student: {
         _id: student._id,
         name: student.name,
@@ -67,6 +78,17 @@ export async function POST(request) {
         studentId: student.studentId
       }
     });
+
+    // Set secure HTTP-only cookie
+    response.cookies.set("canteenGo_studentToken", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60, // 7 days
+      path: "/"
+    });
+
+    return response;
   } catch (error) {
     console.error("Student Login Error:", error);
     return NextResponse.json(

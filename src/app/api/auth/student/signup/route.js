@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/mongodb";
 import Student from "@/models/Student";
-import { hashPassword } from "@/lib/auth";
+import { hashPassword, generateToken } from "@/lib/auth";
 
 export async function POST(request) {
   try {
@@ -55,10 +55,21 @@ export async function POST(request) {
       passwordHash
     });
 
-    return NextResponse.json(
+    // Generate JWT token
+    const token = generateToken({
+      id: newStudent._id.toString(),
+      name: newStudent.name,
+      phone: newStudent.phone,
+      email: newStudent.email || "",
+      studentId: newStudent.studentId || "",
+      role: "student"
+    });
+
+    const response = NextResponse.json(
       {
         success: true,
         message: "Student account created successfully!",
+        token,
         student: {
           _id: newStudent._id,
           name: newStudent.name,
@@ -69,6 +80,17 @@ export async function POST(request) {
       },
       { status: 201 }
     );
+
+    // Set secure HTTP-only cookie
+    response.cookies.set("canteenGo_studentToken", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60, // 7 days
+      path: "/"
+    });
+
+    return response;
   } catch (error) {
     console.error("Student Sign Up Error:", error);
     return NextResponse.json(

@@ -111,10 +111,24 @@ export default function App() {
     setIsProfileModalOpen(false);
   };
 
+  const handleCloseProfileModal = () => {
+    setIsProfileModalOpen(false);
+    if (!studentProfile?.phone) {
+      handleSetUserRole(null);
+    }
+  };
+
+  const handleBackToHome = () => {
+    setIsProfileModalOpen(false);
+    handleSetUserRole(null);
+  };
+
   // Student Logout: Clears profile from localStorage & memory, resets role to Home
-  const handleLogout = () => {
+  const handleLogout = async () => {
     try {
+      await fetch("/api/auth/student/logout", { method: "POST" }).catch(() => {});
       localStorage.removeItem("canteenGo_studentProfile");
+      localStorage.removeItem("canteenGo_studentToken");
       localStorage.removeItem("canteenGo_userRole");
       localStorage.removeItem("canteenGo_studentTab");
       localStorage.removeItem("canteenGo_studentCart");
@@ -126,21 +140,32 @@ export default function App() {
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
-      <Navbar
-        userRole={userRole}
-        setUserRole={handleSetUserRole}
-        studentTab={studentTab}
-        setStudentTab={handleSetStudentTab}
-        cartCount={totalCartCount}
-        studentProfile={studentProfile}
-        onOpenProfile={() => setIsProfileModalOpen(true)}
-        onLogout={handleLogout}
-      />
+      {userRole && (
+        <Navbar
+          userRole={userRole}
+          setUserRole={handleSetUserRole}
+          studentTab={studentTab}
+          setStudentTab={handleSetStudentTab}
+          cartCount={totalCartCount}
+          studentProfile={studentProfile}
+          onOpenProfile={() => setIsProfileModalOpen(true)}
+          onLogout={handleLogout}
+        />
+      )}
 
-      <main className="container" style={{ flex: 1 }}>
+      <main className={!userRole ? "home-main-container" : "container"} style={{ flex: 1, display: "flex", flexDirection: "column" }}>
         {/* VIEW 1: Home Page (Role Selection: Student or Vendor) */}
         {!userRole && (
-          <HomePage onSelectRole={handleSelectRoleFromHome} />
+          <HomePage
+            onSelectRole={handleSelectRoleFromHome}
+            onStudentLoginSuccess={(profile) => {
+              handleSaveStudentProfile(profile);
+              handleSetUserRole("student");
+              handleSetStudentTab("order");
+            }}
+            studentProfile={studentProfile}
+            onLogout={handleLogout}
+          />
         )}
 
         {/* VIEW 2: Student Mode (Order Food, Live Queue, and Personal Orders) */}
@@ -192,7 +217,8 @@ export default function App() {
         isOpen={isProfileModalOpen}
         initialProfile={studentProfile}
         onSave={handleSaveStudentProfile}
-        onClose={studentProfile?.phone ? () => setIsProfileModalOpen(false) : null}
+        onClose={handleCloseProfileModal}
+        onBackToHome={handleBackToHome}
         onLogout={handleLogout}
       />
 

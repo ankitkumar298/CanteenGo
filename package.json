@@ -9,10 +9,10 @@
     "start": "next start -p 5000"
   },
   "dependencies": {
+    "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.11.4",
     "next": "^16.4.3",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
   }
 }
-

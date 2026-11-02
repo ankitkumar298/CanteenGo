@@ -31,7 +31,7 @@ export default function Navbar({
             canteen<span className="brand-highlight">Go</span>
           </span>
           <span className="brand-badge">
-            {userRole === "vendor" ? "Vendor Console" : "College Canteen Express"}
+            {userRole === "vendor" ? "Vendor Terminal" : "Campus Canteen"}
           </span>
         </div>
       </div>
@@ -71,15 +71,6 @@ export default function Navbar({
         </div>
       )}
 
-      {/* Middle Center when on Home (Role Selection) */}
-      {!userRole && (
-        <div className="nav-center-container">
-          <span className="nav-home-portal-chip">
-            Choose Role: Student or Canteen Vendor
-          </span>
-        </div>
-      )}
-
       {/* Middle Center when in Vendor Mode */}
       {userRole === "vendor" && (
         <div className="nav-center-container">
@@ -100,7 +91,7 @@ export default function Navbar({
             className="btn btn-primary btn-sm btn-nav-login"
             onClick={onOpenProfile}
             title="Log In or Sign Up as Student"
-            style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "6px 14px", borderRadius: "9999px" }}
+            style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "6px 14px", borderRadius: "var(--radius-sm)" }}
           >
             <span>🔑 Login / Sign Up</span>
           </button>
@@ -152,10 +143,6 @@ export default function Navbar({
             <LogOutIcon size={14} />
             <span>Exit Console</span>
           </button>
-        )}
-
-        {!userRole && (
-          <span className="nav-guest-hint">Select a portal below</span>
         )}
       </div>
     </header>

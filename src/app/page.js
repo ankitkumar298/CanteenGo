@@ -5,14 +5,11 @@ import { useApp } from "@/context/AppContext";
 import { useRouter } from "next/navigation";
 
 export default function HomeRoute() {
-  const { setIsProfileModalOpen, studentProfile } = useApp();
+  const { studentProfile, handleSaveStudentProfile, handleLogout } = useApp();
   const router = useRouter();
 
   const handleSelectRole = (role) => {
     if (role === "student") {
-      if (!studentProfile?.name || !studentProfile?.phone) {
-        setIsProfileModalOpen(true);
-      }
       router.push("/order");
     } else if (role === "vendor") {
       router.push("/vendor");
@@ -21,5 +18,17 @@ export default function HomeRoute() {
     }
   };
 
-  return <HomePage onSelectRole={handleSelectRole} />;
+  const handleStudentLoginSuccess = (profile) => {
+    handleSaveStudentProfile(profile);
+    router.push("/order");
+  };
+
+  return (
+    <HomePage
+      onSelectRole={handleSelectRole}
+      onStudentLoginSuccess={handleStudentLoginSuccess}
+      studentProfile={studentProfile}
+      onLogout={handleLogout}
+    />
+  );
 }

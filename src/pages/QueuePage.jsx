@@ -347,20 +347,19 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
           <div className="now-calling-banner">
             <div className="calling-banner-left">
               <div className="calling-badge-pulse">
-                <span className="pulse-ring"></span>
-                <BellIcon size={18} />
+                <BellIcon size={16} />
                 <span>NOW CALLING • COUNTER 1</span>
               </div>
               <div className="calling-title-wrap">
                 <h3 className="calling-title">
                   {readyOrders.length > 0
-                    ? `${readyOrders.length} Order${readyOrders.length > 1 ? "s" : ""} Ready for Pickup!`
-                    : "Kitchen Actively Preparing Orders"}
+                    ? `${readyOrders.length} Order${readyOrders.length > 1 ? "s" : ""} Ready for Pickup`
+                    : "Kitchen Preparing Orders"}
                 </h3>
                 <p className="calling-sub">
                   {readyOrders.length > 0
-                    ? "Tokens below are packed and waiting at Delivery Counter 1. Head to counter to collect!"
-                    : "Fresh orders are cooking on the stove. Tokens will flash here in vibrant green the second they are ready."}
+                    ? "Tokens below are packed and ready at Counter 1. Please present your token number for pickup."
+                    : "Orders are currently being prepared in the kitchen. Tokens will appear here once ready."}
                 </p>
               </div>
             </div>

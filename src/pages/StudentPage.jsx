@@ -550,10 +550,10 @@ export default function StudentPage({
         <section className="combos-section">
           <div className="combos-header">
             <div className="combos-title-wrap">
-              <SparklesIcon size={20} className="combos-sparkle" />
-              <h3 className="combos-title">Student Fast-Break Combos</h3>
+              <SparklesIcon size={18} className="combos-sparkle" />
+              <h3 className="combos-title">Recommended Combos</h3>
             </div>
-            <span className="combos-badge">1-CLICK INSTANT PAIRINGS</span>
+            <span className="combos-badge">POPULAR PAIRING</span>
           </div>
 
           <div className="combos-grid">
@@ -564,7 +564,7 @@ export default function StudentPage({
                   <img src={comboPair1[1].item.image || "/images/chai.jpg"} alt={comboPair1[1].item.name} className="combo-img img-front" />
                 </div>
                 <div className="combo-info">
-                  <h4 className="combo-name">Recess Classic Pairing</h4>
+                  <h4 className="combo-name">Snack & Chai Combo</h4>
                   <p className="combo-desc">
                     {comboPair1[0].item._id === comboPair1[1].item._id
                       ? `${comboPair1[0].qty + comboPair1[1].qty}× ${comboPair1[0].item.name}`
@@ -591,7 +591,7 @@ export default function StudentPage({
                   <img src={comboPair2[1].item.image || "/images/coffee.jpg"} alt={comboPair2[1].item.name} className="combo-img img-front" />
                 </div>
                 <div className="combo-info">
-                  <h4 className="combo-name">Study Fuel Express</h4>
+                  <h4 className="combo-name">Patty & Coffee Combo</h4>
                   <p className="combo-desc">
                     {comboPair2[0].item._id === comboPair2[1].item._id
                       ? `${comboPair2[0].qty + comboPair2[1].qty}× ${comboPair2[0].item.name}`
