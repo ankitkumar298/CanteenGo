@@ -1,0 +1,538 @@
+import { useEffect, useState, useMemo, useRef } from "react";
+import { CAMPUS_CANTEENS, isCanteenOpenNow } from "../data/canteens";
+import { ClockIcon, CheckCircleIcon, SortIcon, CartIcon } from "./Icons";
+
+const SORT_OPTIONS = [
+  { id: "recommended", label: "Recommended", icon: "⭐" },
+  { id: "lowest_price", label: "Lowest Price", icon: "💰" },
+  { id: "nearest", label: "Nearest", icon: "📍" }
+];
+
+export default function ChooseCanteenModal({
+  isOpen,
+  onClose,
+  selectedCanteen,
+  onSelectCanteen,
+  targetItem = null,
+  cartItems = []
+}) {
+  const [imgError, setImgError] = useState(false);
+  const [activeItem, setActiveItem] = useState(targetItem);
+  const [sortBy, setSortBy] = useState("recommended");
+  const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
+  const sortDropdownRef = useRef(null);
+  const [liveStats, setLiveStats] = useState({});
+  const [loadingStats, setLoadingStats] = useState(false);
+
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (sortDropdownRef.current && !sortDropdownRef.current.contains(e.target)) {
+        setIsSortDropdownOpen(false);
+      }
+    };
+    if (isSortDropdownOpen) {
+      document.addEventListener("mousedown", handleOutsideClick);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+    };
+  }, [isSortDropdownOpen]);
+
+  useEffect(() => {
+    setImgError(false);
+    setActiveItem(targetItem);
+  }, [targetItem]);
+
+  // Fetch real-time live kitchen stats from backend API
+  useEffect(() => {
+    if (isOpen) {
+      fetchLiveStats();
+    }
+  }, [isOpen]);
+
+  const fetchLiveStats = async () => {
+    try {
+      setLoadingStats(true);
+      const res = await fetch("/api/canteens/stats");
+      if (res.ok) {
+        const data = await res.json();
+        const map = {};
+        data.forEach((item) => {
+          map[item.canteenName] = item;
+        });
+        setLiveStats(map);
+      }
+    } catch {
+      // Fallback to static values if network is unavailable
+    } finally {
+      setLoadingStats(false);
+    }
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") onClose();
+    };
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+      window.addEventListener("keydown", handleKeyDown);
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen, onClose]);
+
+  const isItemMode = Boolean(activeItem && activeItem.name);
+  const displayItemImage =
+    !imgError && activeItem?.image ? activeItem.image : "/images/samosa.jpg";
+  const basePrice = activeItem?.basePrice ?? activeItem?.price ?? 0;
+
+  // Compute live data and dynamic sorting for canteens
+  const sortedCanteens = useMemo(() => {
+    let candidateCanteens = CAMPUS_CANTEENS;
+
+    // Filter canteens strictly to those where this item is offered
+    if (isItemMode && activeItem) {
+      const avail = activeItem.availableCanteens;
+      if (Array.isArray(avail) && avail.length > 0 && !avail.includes("all")) {
+        candidateCanteens = CAMPUS_CANTEENS.filter((c) => avail.includes(c.id));
+      } else if (activeItem.canteenId && activeItem.canteenId !== "all") {
+        candidateCanteens = CAMPUS_CANTEENS.filter((c) => c.id === activeItem.canteenId);
+      }
+    }
+
+    const list = candidateCanteens.map((canteen) => {
+      const stats = liveStats[canteen.name] || {};
+      const ordersAhead =
+        typeof stats.ordersAhead === "number" ? stats.ordersAhead : 0;
+      const calculatedWait =
+        typeof stats.waitMinutes === "number"
+          ? stats.waitMinutes
+          : canteen.prepMinutes;
+      const rushStatus = stats.rushStatus || canteen.rushStatus;
+      const price = Math.max(5, basePrice + (canteen.priceOffset || 0));
+
+      // Calculate approximate ready-by time
+      const readyDate = new Date(Date.now() + calculatedWait * 60000);
+      const readyByTime = readyDate.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+
+      return {
+        ...canteen,
+        ordersAhead,
+        waitMinutes: calculatedWait,
+        rushStatus,
+        price,
+        readyByTime
+      };
+    });
+
+    if (sortBy === "lowest_price") {
+      return [...list].sort((a, b) => a.price - b.price);
+    }
+    if (sortBy === "nearest") {
+      return [...list].sort((a, b) => a.distanceMeters - b.distanceMeters);
+    }
+
+    // Default: "recommended" (Balanced algorithm: low wait time + near location + high stock)
+    return [...list].sort((a, b) => {
+      const scoreA =
+        a.waitMinutes * 1.5 + a.walkingMinutes * 2 - (a.stockCount || 0) * 0.1;
+      const scoreB =
+        b.waitMinutes * 1.5 + b.walkingMinutes * 2 - (b.stockCount || 0) * 0.1;
+      return scoreA - scoreB;
+    });
+  }, [sortBy, liveStats, basePrice]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="choose-canteen-overlay" onClick={onClose}>
+      <div
+        className="choose-canteen-modal light-theme-modal"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+      >
+        {/* Pinned Top Container: Header, Cart switcher, Preview, and Sort */}
+        <div className="choose-canteen-top-bar">
+          {/* Modal Header */}
+          <div className="choose-canteen-header">
+            <div>
+              <div className="canteen-modal-tag-pill">
+                {isItemMode ? "FOOD AVAILABILITY COMPARISON" : "CAMPUS PICKUP HUBS"}
+              </div>
+              <h3 className="choose-canteen-title">
+                {isItemMode
+                  ? `Available at ${sortedCanteens.length} Canteen${sortedCanteens.length > 1 ? "s" : ""}`
+                  : "Choose Campus Canteen"}
+              </h3>
+              <p className="choose-canteen-subtitle">
+                {isItemMode
+                  ? activeItem?.isFromCart
+                    ? `Showing live availability for your cart item: ${activeItem?.name}`
+                    : `Compare kitchen prep speed and distance for ${activeItem?.name}`
+                  : "Select where you want to order and pick up your hot food"}
+              </p>
+            </div>
+
+            <button
+              type="button"
+              className="choose-canteen-close-btn"
+              onClick={onClose}
+              aria-label="Close"
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* Switch Between Products in Cart */}
+          {cartItems && cartItems.length > 1 && (
+            <div className="cart-item-switcher-box">
+              <div className="switcher-title-row">
+                <span className="switcher-icon-wrap">
+                  <CartIcon size={14} className="switcher-cart-icon" />
+                </span>
+                <span className="switcher-title">Check other products in your cart:</span>
+              </div>
+              <div className="switcher-chips-list">
+                {cartItems.map((ci) => {
+                  const isSelected = (activeItem?.menuItemId || activeItem?.name) === (ci.menuItemId || ci.name);
+                  return (
+                    <button
+                      key={ci.menuItemId || ci.name}
+                      type="button"
+                      className={`cart-switcher-pill ${isSelected ? "active" : ""}`}
+                      onClick={() => {
+                        setImgError(false);
+                        setActiveItem({
+                          menuItemId: ci.menuItemId,
+                          name: ci.name,
+                          basePrice: ci.basePrice || ci.price,
+                          price: ci.price,
+                          image: ci.image,
+                          quantity: ci.quantity,
+                          canteen: ci.canteen || selectedCanteen,
+                          isFromCart: true
+                        });
+                      }}
+                    >
+                      <img
+                        src={ci.image || "/images/samosa.jpg"}
+                        alt={ci.name}
+                        className="pill-thumb"
+                        onError={(e) => {
+                          e.target.src = "/images/samosa.jpg";
+                        }}
+                      />
+                      <span className="pill-name">{ci.name}</span>
+                      <span className="pill-price">₹{ci.price}</span>
+                      <span className="pill-canteen-hint">
+                        ({ci.canteen?.tag || ci.canteen?.shortName || ci.canteen?.name?.split(" ")[0] || "34 Block"})
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Dynamic Item Banner (ONLY when an item was selected) */}
+          {isItemMode && (
+            <div className="selected-item-preview-bar">
+              <img
+                src={displayItemImage}
+                alt={activeItem?.name}
+                className="preview-item-thumb"
+                onError={() => setImgError(true)}
+              />
+              <div className="preview-item-info">
+                <span className="preview-item-label">
+                  {activeItem?.isFromCart ? "CART ITEM CANTEEN SELECTION" : "CANTEEN COMPARISON"}
+                </span>
+                <strong className="preview-item-name">{activeItem?.name}</strong>
+                <div className="preview-item-meta">
+                  <span>Base Price: ₹{basePrice}</span>
+                  {activeItem?.quantity && <span> • Qty in Cart: {activeItem?.quantity}</span>}
+                  {activeItem?.canteen && (
+                    <span> • Currently: <strong>{activeItem.canteen.name}</strong></span>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* COMPACT SORT TOOLBAR WITH FLOATING DROPDOWN CARD */}
+          <div className="canteen-sort-toolbar" ref={sortDropdownRef}>
+            <div className="sort-toolbar-label-row">
+              <span className="sort-section-title">Available Canteens</span>
+
+              <div className="sort-dropdown-container">
+                <button
+                  type="button"
+                  className="sort-dropdown-trigger"
+                  onClick={() => setIsSortDropdownOpen((prev) => !prev)}
+                  title="Change sort order"
+                >
+                  <span className="sort-trigger-text">
+                    <strong className="sort-label-prefix">Sort: </strong>
+                    <span className="sort-by-text-faded">
+                      {SORT_OPTIONS.find((o) => o.id === sortBy)?.label || "Recommended"}
+                    </span>
+                  </span>
+                  <span className="sort-icon-box">
+                    <SortIcon size={16} />
+                  </span>
+                </button>
+
+                {isSortDropdownOpen && (
+                  <div className="sort-dropdown-card">
+                    <div className="sort-card-header">SORT CANTEENS BY</div>
+                    {SORT_OPTIONS.map((opt) => {
+                      const isSelected = sortBy === opt.id;
+                      return (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          className={`sort-dropdown-item ${isSelected ? "selected" : ""}`}
+                          onClick={() => {
+                            setSortBy(opt.id);
+                            setIsSortDropdownOpen(false);
+                          }}
+                        >
+                          <span className="sort-item-left">
+                            <span className="sort-item-emoji">{opt.icon}</span>
+                            <span className="sort-item-label">{opt.label}</span>
+                          </span>
+                          {isSelected && <span className="sort-item-check">✓</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Scrollable List of Canteens */}
+        <div className="choose-canteen-list">
+          {sortedCanteens.map((canteen) => {
+            const currentItemCanteen = activeItem?.canteen || selectedCanteen;
+            const isCurrent =
+              currentItemCanteen?.id === canteen.id ||
+              currentItemCanteen?.name === canteen.name;
+
+            const canteenOpenState = isCanteenOpenNow(canteen);
+            const isClosed = !canteenOpenState.isOpen;
+
+            // Genuine price difference savings calculation
+            const currentItemPrice = Number(activeItem?.price || basePrice);
+            const priceDiff = currentItemPrice - canteen.price;
+            const hasSavings = isItemMode && !isCurrent && priceDiff > 0;
+            const cartQty = Number(activeItem?.quantity) || 1;
+            const savingsText =
+              cartQty > 1
+                ? `Save ₹${priceDiff * cartQty} on ${cartQty} items`
+                : `Save ₹${priceDiff} per item`;
+
+            // Whole-cart savings if opened for cart without specific active item
+            const currentCartTotal = cartItems.reduce((sum, ci) => sum + (Number(ci.price) * (Number(ci.quantity) || 1)), 0);
+            const canteenCartTotal = cartItems.reduce((sum, ci) => {
+              const base = Number(ci.basePrice || ci.price);
+              const cp = Math.max(5, base + (canteen.priceOffset || 0));
+              return sum + (cp * (Number(ci.quantity) || 1));
+            }, 0);
+            const totalCartQty = cartItems.reduce((sum, ci) => sum + (Number(ci.quantity) || 1), 0);
+            const cartSavings = currentCartTotal - canteenCartTotal;
+            const hasWholeCartSavings = !isItemMode && !isCurrent && cartSavings > 0;
+            const cartSavingsText = totalCartQty > 1
+              ? `Save ₹${cartSavings} on ${totalCartQty} items`
+              : `Save ₹${cartSavings} on cart`;
+
+            return (
+              <div
+                key={canteen.id}
+                className={`choose-canteen-card ${
+                  isCurrent ? "is-active-canteen" : ""
+                } ${isClosed ? "is-closed-card" : ""}`}
+              >
+                {/* Active Canteen Badge */}
+                {isCurrent && (
+                  <div className="current-canteen-ribbon">
+                    <CheckCircleIcon size={14} />
+                    <span>{isItemMode ? "SELECTED FOR THIS ITEM" : "CURRENT PICKUP CANTEEN"}</span>
+                  </div>
+                )}
+
+                <div className="choose-canteen-body">
+                  {/* Left Avatar / Image */}
+                  <div className="choose-canteen-thumb-wrap">
+                    {isItemMode ? (
+                      <img
+                        src={displayItemImage}
+                        alt={targetItem?.name || "Item"}
+                        className="choose-canteen-thumb"
+                        onError={() => setImgError(true)}
+                      />
+                    ) : (
+                      <div
+                        className="canteen-hub-avatar"
+                        style={{
+                          background: `linear-gradient(135deg, ${canteen.themeBg || "#ea580c"}22, ${canteen.themeBg || "#ea580c"}44)`,
+                          borderColor: canteen.themeBg || "#ea580c"
+                        }}
+                      >
+                        <span className="hub-emoji">{canteen.icon || "🏢"}</span>
+                        <span
+                          className="hub-tag"
+                          style={{ color: canteen.themeBg || "#ea580c" }}
+                        >
+                          {canteen.tag}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="choose-canteen-info">
+                    {/* Top Row: Canteen Name + Status/Closed Badge */}
+                    <div className="canteen-name-row">
+                      <h4 className="canteen-name">{canteen.name}</h4>
+                      <div className="canteen-status-pills-wrap">
+                        {isClosed ? (
+                          <span className="canteen-closed-pill">
+                            🔴 Closed • {canteenOpenState.nextOpenText || canteen.openingHours || "Closed"}
+                          </span>
+                        ) : (
+                          <span
+                            className={`canteen-rush-pill ${
+                              canteen.rushStatus === "Less busy"
+                                ? "rush-less"
+                                : canteen.rushStatus === "Moderate"
+                                ? "rush-moderate"
+                                : "rush-busy"
+                            }`}
+                          >
+                            {canteen.rushStatus}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Location & Directions */}
+                    <div className="canteen-meta-location">
+                      📍 <strong>{canteen.location}</strong> • {canteen.directions}
+                    </div>
+
+                    {/* Walking distance & Operating hours */}
+                    <div className="canteen-meta-row-sub">
+                      <span className="canteen-walking-pill">
+                        {canteen.walkingText}
+                      </span>
+                      {canteen.openingHours && (
+                        <span className="canteen-hours-sub">
+                          ⏰ {canteen.openingHours}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Live Kitchen Preparation Details */}
+                    {!isClosed && (
+                      <div className="canteen-live-eta-box">
+                        <div className="eta-badge-row">
+                          <ClockIcon size={14} />
+                          <strong>
+                            Est. Ready in ~{canteen.waitMinutes} mins
+                          </strong>
+                          <span className="eta-ready-by">
+                            (Approx. {canteen.readyByTime})
+                          </span>
+                        </div>
+                        <div className="eta-breakdown-sub">
+                          <span>{canteen.ordersAhead} orders ahead in queue</span>
+                          <span>•</span>
+                          <span>{canteen.counterDetails}</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Row: Price (if item mode) with genuine Price Difference Savings & Stock Availability */}
+                    {isItemMode ? (
+                      <div className="canteen-item-stats-row">
+                        <div className="canteen-price-group">
+                          <div className="canteen-price-val">
+                            ₹{canteen.price}
+                          </div>
+                          {hasSavings && (
+                            <span className="canteen-saving-pill" title="Genuine savings over current selection">
+                              🏷️ {savingsText}
+                            </span>
+                          )}
+                        </div>
+                        <div className="canteen-stock-row">
+                          {isClosed ? (
+                            <span className="stock-closed">Closed for ordering</span>
+                          ) : canteen.isAvailable ? (
+                            <span className="stock-green">
+                              ✓ {canteen.stockCount} in stock
+                            </span>
+                          ) : (
+                            <span className="stock-red">✕ Out of stock</span>
+                          )}
+                        </div>
+                      </div>
+                    ) : hasWholeCartSavings ? (
+                      <div className="canteen-item-stats-row">
+                        <div className="canteen-price-group">
+                          <span className="canteen-saving-pill" title="Genuine savings for your cart items">
+                            🏷️ {cartSavingsText}
+                          </span>
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+
+                {/* Footer Action Button */}
+                <div className="choose-canteen-footer">
+                  <button
+                    type="button"
+                    className={`btn-choose-this-canteen ${
+                      isCurrent
+                        ? "selected"
+                        : isClosed
+                        ? "btn-canteen-closed"
+                        : ""
+                    }`}
+                    onClick={() => {
+                      if (!isCurrent && !isClosed) {
+                        onSelectCanteen(canteen, activeItem, canteen.price);
+                      }
+                    }}
+                    disabled={isCurrent || isClosed || (isItemMode && !canteen.isAvailable)}
+                  >
+                    {isCurrent
+                      ? "✓ Currently Selected"
+                      : isClosed
+                      ? `✕ Closed (${canteenOpenState.nextOpenText || "Outside Hours"})`
+                      : isItemMode
+                      ? `Choose this canteen (₹${canteen.price})${hasSavings ? ` • ${savingsText}` : ""}`
+                      : `Choose this canteen${hasWholeCartSavings ? ` • ${cartSavingsText}` : ""}`}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Bottom spacer so the last card & action button are 100% visible and accessible */}
+          <div className="choose-canteen-bottom-spacer" />
+        </div>
+      </div>
+    </div>
+  );
+}

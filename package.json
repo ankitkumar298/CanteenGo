@@ -1,0 +1,18 @@
+{
+  "name": "canteengo",
+  "version": "1.0.0",
+  "description": "Smart College Canteen Ordering & Live Queue Management",
+  "type": "module",
+  "scripts": {
+    "dev": "next dev -p 5000",
+    "build": "next build",
+    "start": "next start -p 5000"
+  },
+  "dependencies": {
+    "mongoose": "^9.11.4",
+    "next": "^16.4.3",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  }
+}
+
