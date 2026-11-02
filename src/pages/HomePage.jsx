@@ -857,21 +857,6 @@ export default function HomePage({
           )}
         </div>
       </div>
-
-      {/* Subtle quick access to Live Queue board */}
-      <div className="auth-footer-quick-access">
-        <button
-          type="button"
-          className="auth-quick-queue-btn"
-          onClick={() => {
-            if (onSelectRole) onSelectRole("queue");
-            else if (setActiveTab) setActiveTab("queue");
-          }}
-        >
-          <QueueIcon size={14} />
-          <span>Check Live Campus Queue Board</span>
-        </button>
-      </div>
     </div>
   );
 }
