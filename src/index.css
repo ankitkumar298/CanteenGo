@@ -700,6 +700,11 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
   letter-spacing: -0.3px;
 }
 
+.auth-brand-orange-go {
+  color: #ea580c;
+  font-weight: 800;
+}
+
 .auth-headings {
   margin-bottom: 18px;
 }

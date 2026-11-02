@@ -372,12 +372,16 @@ export default function HomePage({
                 <path d="M2 20h20" />
               </svg>
             </div>
-            <span className="auth-header-title">CanteenGo</span>
+            <span className="auth-header-title">
+              Canteen<span className="auth-brand-orange-go">Go</span>
+            </span>
           </div>
 
           {/* Welcome Titles */}
           <div className="auth-headings">
-            <h1 className="auth-main-title">Welcome to CanteenGo</h1>
+            <h1 className="auth-main-title">
+              Welcome to Canteen<span className="auth-brand-orange-go">Go</span>
+            </h1>
             <p className="auth-main-subtitle">
               {selectedRole === "student"
                 ? studentAuthMode === "signup"
