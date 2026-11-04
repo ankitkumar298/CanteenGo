@@ -417,10 +417,15 @@ export default function StudentPage({
     }
   };
 
-  // DYNAMIC CATEGORIES: Extracted directly from menu items in MongoDB
+  // DYNAMIC CATEGORIES: Extracted directly from menu items in MongoDB + Combos option
   const dynamicCategories = [
     "All",
-    ...new Set(menu.map((i) => i.category || "Snacks").filter(Boolean))
+    "Combos",
+    ...new Set(
+      menu
+        .map((i) => i.category || "Snacks")
+        .filter((cat) => Boolean(cat) && cat.toLowerCase() !== "combos" && cat.toLowerCase() !== "all")
+    )
   ];
 
   // Dynamic filter by canteen, category & search query
@@ -483,6 +488,62 @@ export default function StudentPage({
           { item: drink2, qty: 1 }
         ]
       : null;
+
+  // Combo 3: Third snack + drink (if available)
+  const snack3 = snacksList[2] || (snacksList.length > 2 ? snacksList[2] : null);
+  const drink3 = drinksList[0] || drinksList[1];
+  const comboPair3 =
+    snack3 && drink3 && snack3._id !== drink3._id && snack3._id !== snack2?._id
+      ? [
+          { item: snack3, qty: 1 },
+          { item: drink3, qty: 1 }
+        ]
+      : null;
+
+  const dynamicCombos = [
+    comboPair1 && {
+      id: "combo-1",
+      name: "Snack & Chai Combo",
+      badge: "POPULAR PAIRING",
+      desc:
+        comboPair1[0].item._id === comboPair1[1].item._id
+          ? `${comboPair1[0].qty + comboPair1[1].qty}× ${comboPair1[0].item.name}`
+          : `${comboPair1[0].qty}× ${comboPair1[0].item.name} + ${comboPair1[1].qty}× ${comboPair1[1].item.name}`,
+      price: comboPair1[0].item.price * comboPair1[0].qty + comboPair1[1].item.price * comboPair1[1].qty,
+      image1: comboPair1[0].item.image || "/images/samosa.jpg",
+      image2: comboPair1[1].item.image || "/images/chai.jpg",
+      pair: comboPair1
+    },
+    comboPair2 && {
+      id: "combo-2",
+      name: "Patty & Coffee Combo",
+      badge: "POPULAR PAIRING",
+      desc:
+        comboPair2[0].item._id === comboPair2[1].item._id
+          ? `${comboPair2[0].qty + comboPair2[1].qty}× ${comboPair2[0].item.name}`
+          : `${comboPair2[0].qty}× ${comboPair2[0].item.name} + ${comboPair2[1].qty}× ${comboPair2[1].item.name}`,
+      price: comboPair2[0].item.price * comboPair2[0].qty + comboPair2[1].item.price * comboPair2[1].qty,
+      image1: comboPair2[0].item.image || "/images/patty.jpg",
+      image2: comboPair2[1].item.image || "/images/coffee.jpg",
+      pair: comboPair2
+    },
+    comboPair3 && {
+      id: "combo-3",
+      name: "Roll & Beverage Combo",
+      badge: "VALUE MEAL",
+      desc: `${comboPair3[0].qty}× ${comboPair3[0].item.name} + ${comboPair3[1].qty}× ${comboPair3[1].item.name}`,
+      price: comboPair3[0].item.price * comboPair3[0].qty + comboPair3[1].item.price * comboPair3[1].qty,
+      image1: comboPair3[0].item.image || "/images/roll.jpg",
+      image2: comboPair3[1].item.image || "/images/chai.jpg",
+      pair: comboPair3
+    }
+  ].filter(Boolean);
+
+  const filteredCombos = dynamicCombos.filter((c) => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return c.name.toLowerCase().includes(q) || c.desc.toLowerCase().includes(q);
+  });
 
   return (
     <div>
@@ -557,75 +618,6 @@ export default function StudentPage({
         onPaymentSuccess={() => submitOrderToServer(true)}
       />
 
-      {/* DYNAMIC QUICK-BREAK COMBOS (Constructed from active DB items) */}
-      {(comboPair1 || comboPair2) && (
-        <section className="combos-section">
-          <div className="combos-header">
-            <div className="combos-title-wrap">
-              <SparklesIcon size={18} className="combos-sparkle" />
-              <h3 className="combos-title">Recommended Combos</h3>
-            </div>
-            <span className="combos-badge">POPULAR PAIRING</span>
-          </div>
-
-          <div className="combos-grid">
-            {comboPair1 && (
-              <div className="combo-card-modern">
-                <div className="combo-images-overlap">
-                  <img src={comboPair1[0].item.image || "/images/samosa.jpg"} alt={comboPair1[0].item.name} className="combo-img img-back" />
-                  <img src={comboPair1[1].item.image || "/images/chai.jpg"} alt={comboPair1[1].item.name} className="combo-img img-front" />
-                </div>
-                <div className="combo-info">
-                  <h4 className="combo-name">Snack & Chai Combo</h4>
-                  <p className="combo-desc">
-                    {comboPair1[0].item._id === comboPair1[1].item._id
-                      ? `${comboPair1[0].qty + comboPair1[1].qty}× ${comboPair1[0].item.name}`
-                      : `${comboPair1[0].qty}× ${comboPair1[0].item.name} + ${comboPair1[1].qty}× ${comboPair1[1].item.name}`}
-                  </p>
-                  <div className="combo-price-tag">
-                    ₹{comboPair1[0].item.price * comboPair1[0].qty + comboPair1[1].item.price * comboPair1[1].qty}
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  className="btn btn-primary btn-sm btn-add-combo"
-                  onClick={() => handleAddDynamicCombo(comboPair1)}
-                >
-                  <PlusIcon size={14} /> Add Combo
-                </button>
-              </div>
-            )}
-
-            {comboPair2 && (
-              <div className="combo-card-modern">
-                <div className="combo-images-overlap">
-                  <img src={comboPair2[0].item.image || "/images/patty.jpg"} alt={comboPair2[0].item.name} className="combo-img img-back" />
-                  <img src={comboPair2[1].item.image || "/images/coffee.jpg"} alt={comboPair2[1].item.name} className="combo-img img-front" />
-                </div>
-                <div className="combo-info">
-                  <h4 className="combo-name">Patty & Coffee Combo</h4>
-                  <p className="combo-desc">
-                    {comboPair2[0].item._id === comboPair2[1].item._id
-                      ? `${comboPair2[0].qty + comboPair2[1].qty}× ${comboPair2[0].item.name}`
-                      : `${comboPair2[0].qty}× ${comboPair2[0].item.name} + ${comboPair2[1].qty}× ${comboPair2[1].item.name}`}
-                  </p>
-                  <div className="combo-price-tag">
-                    ₹{comboPair2[0].item.price * comboPair2[0].qty + comboPair2[1].item.price * comboPair2[1].qty}
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  className="btn btn-primary btn-sm btn-add-combo"
-                  onClick={() => handleAddDynamicCombo(comboPair2)}
-                >
-                  <PlusIcon size={14} /> Add Combo
-                </button>
-              </div>
-            )}
-          </div>
-        </section>
-      )}
-
       {/* Main Grid: Menu on Left, Cart on Right */}
       <div className="grid-2">
         {/* Left Column: Menu Items */}
@@ -652,7 +644,7 @@ export default function StudentPage({
                 )}
               </div>
 
-              {/* Dynamic Filter Chips extracted from Database */}
+              {/* Dynamic Filter Chips with Combos Option */}
               <div className="category-scroll-chips">
                 {dynamicCategories.map((cat) => (
                   <button
@@ -672,6 +664,104 @@ export default function StudentPage({
                 <div className="loading-spinner"></div>
                 <p>Loading fresh canteen items from MongoDB...</p>
               </div>
+            ) : selectedCategory === "Combos" ? (
+              filteredCombos.length === 0 && filteredMenu.length === 0 ? (
+                <div className="empty-menu-state">
+                  <p>No combos found matching "{searchQuery}".</p>
+                  <button
+                    className="btn btn-secondary btn-sm"
+                    style={{ marginTop: "10px" }}
+                    onClick={() => {
+                      setSearchQuery("");
+                      setSelectedCategory("All");
+                    }}
+                  >
+                    View All Items
+                  </button>
+                </div>
+              ) : (
+                <div className="menu-grid">
+                  {filteredCombos.map((combo) => (
+                    <div key={combo.id} className="menu-card combo-menu-card">
+                      <div className="menu-card-img-wrap combo-card-img-wrap">
+                        <div className="combo-dual-images">
+                          <img
+                            src={combo.image1}
+                            alt={combo.name}
+                            className="combo-dual-img img-left"
+                            loading="lazy"
+                          />
+                          <div className="combo-dual-divider"></div>
+                          <img
+                            src={combo.image2}
+                            alt={combo.name}
+                            className="combo-dual-img img-right"
+                            loading="lazy"
+                          />
+                        </div>
+
+                        <div className="menu-card-badge-pos">
+                          <span className="combo-card-pill">{combo.badge}</span>
+                        </div>
+
+                        <span className="menu-card-category-tag">Combos</span>
+                      </div>
+
+                      <div className="menu-card-content">
+                        <div className="menu-card-header">
+                          <h4 className="menu-card-title">{combo.name}</h4>
+                          <span className="veg-indicator" title="Pure Veg Combo">
+                            <span className="veg-dot"></span>
+                          </span>
+                        </div>
+
+                        <p className="menu-card-desc">{combo.desc}</p>
+
+                        <div className="combo-card-highlight-note">
+                          ✨ Best matched student combo
+                        </div>
+
+                        <div className="menu-card-footer">
+                          <div className="menu-card-price">
+                            <span className="currency-symbol">₹</span>
+                            <span className="price-number">{combo.price}</span>
+                            <span className="price-unit">/ combo</span>
+                          </div>
+
+                          <button
+                            type="button"
+                            className="btn btn-primary btn-sm btn-add-combo"
+                            onClick={() => handleAddDynamicCombo(combo.pair)}
+                          >
+                            <PlusIcon size={14} /> Add Combo
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Also render any database items explicitly categorized as 'Combos' */}
+                  {filteredMenu.map((item) => {
+                    const cartItem = cart.find((ci) => ci.menuItemId === item._id);
+                    const quantityInCart = cartItem ? cartItem.quantity : 0;
+
+                    return (
+                      <MenuCard
+                        key={item._id}
+                        item={item}
+                        cartQuantity={quantityInCart}
+                        onAddToCart={handleAddToCart}
+                        onIncrease={handleIncreaseQuantity}
+                        onDecrease={handleDecreaseQuantity}
+                        onOpenCanteenModal={(clickedItem) => {
+                          setCanteenModalItem(clickedItem);
+                          setIsCanteenModalOpen(true);
+                        }}
+                      />
+                    );
+                  })}
+                </div>
+              )
             ) : filteredMenu.length === 0 ? (
               <div className="empty-menu-state">
                 <p>No food items found matching "{searchQuery}".</p>
