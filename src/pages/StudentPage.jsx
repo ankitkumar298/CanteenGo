@@ -486,19 +486,31 @@ export default function StudentPage({
 
   return (
     <div>
-      {/* Page Header */}
-      <div className="page-header">
-        <div className="page-header-text">
-          <span className="section-pill">
-            <FlameIcon size={14} /> Contactless Canteen Hub
-          </span>
-          <h2 className="page-title">
-            Student Canteen Ordering
-          </h2>
-          <p className="page-description">
-            Pre-order your recess snacks, skip the crowded counter, and collect your hot food with your live digital token.
-          </p>
-        </div>
+      {/* Student Hero Banner */}
+      <div className="student-hero-banner">
+        <img
+          src="/images/Fast%20Food%20Ordering%20Banner.png"
+          alt="Be The Fastest In Ordering Your Food - CanteenGo"
+          className="student-hero-banner-img"
+        />
+        {/* Interactive hotspots aligned with the banner's Order Now & Choose Canteen buttons */}
+        <button
+          type="button"
+          className="banner-hotspot-btn banner-hotspot-order"
+          onClick={() => {
+            const el = document.querySelector(".menu-toolbar") || document.querySelector(".grid-2");
+            if (el) el.scrollIntoView({ behavior: "smooth" });
+          }}
+          title="Browse & Order Food"
+          aria-label="Order Now"
+        />
+        <button
+          type="button"
+          className="banner-hotspot-btn banner-hotspot-canteen"
+          onClick={() => setIsCanteenModalOpen(true)}
+          title="Change Selected Canteen Hub"
+          aria-label="Choose Canteen"
+        />
       </div>
 
 
