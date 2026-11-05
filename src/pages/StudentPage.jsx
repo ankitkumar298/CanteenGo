@@ -436,17 +436,21 @@ export default function StudentPage({
   // Dynamic filter by canteen, category & search query
   const filteredMenu = menu.filter((item) => {
     // Multi-canteen availability check
-    const currentCanteenId = selectedCanteen?.id || "foodcourt-34";
-    const itemAvailableCanteens = Array.isArray(item.availableCanteens) && item.availableCanteens.length > 0
-      ? item.availableCanteens
-      : (item.canteenId ? [item.canteenId] : ["all"]);
+    const currentCanteenId = selectedCanteen?.id || selectedCanteen?.canteenId || "foodcourt-34";
+    const currentCanteenName = (selectedCanteen?.name || "").toLowerCase();
 
-    const matchesCanteen =
-      !currentCanteenId ||
-      item.canteenId === "all" ||
-      item.canteenId === currentCanteenId ||
-      itemAvailableCanteens.includes("all") ||
-      itemAvailableCanteens.includes(currentCanteenId);
+    let matchesCanteen = true;
+    if (Array.isArray(item.availableCanteens) && item.availableCanteens.length > 0) {
+      matchesCanteen =
+        item.availableCanteens.includes("all") ||
+        item.availableCanteens.includes(currentCanteenId) ||
+        item.availableCanteens.some((c) => c && currentCanteenName.includes(c.toLowerCase()));
+    } else if (item.canteenId) {
+      matchesCanteen =
+        item.canteenId === "all" ||
+        item.canteenId === currentCanteenId ||
+        (item.canteenName && item.canteenName.toLowerCase().includes(currentCanteenName));
+    }
 
     if (!matchesCanteen) return false;
 
@@ -579,9 +583,27 @@ export default function StudentPage({
         />
       </div>
 
-
-
-      {/* Alerts */}
+      {/* Campus Canteens Filter Row (Right under the poster) */}
+      <div className="campus-canteens-filter-bar">
+        <span className="campus-canteens-filter-label">Campus Canteens:</span>
+        <div className="campus-canteens-filter-chips">
+          {canteensList.map((canteen) => {
+            const cId = canteen.id || canteen.canteenId;
+            const isSelected = (currentCanteen.id || currentCanteen.canteenId) === cId;
+            return (
+              <button
+                key={cId}
+                type="button"
+                className={`campus-canteen-chip-btn ${isSelected ? "active" : ""}`}
+                onClick={() => handleSelectCanteen(canteen)}
+              >
+                <span className="chip-icon">{canteen.icon || "🏢"}</span>
+                <span>{canteen.shortName || canteen.name}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
       {errorMessage && <div className="alert alert-error">{errorMessage}</div>}
       {successMessage && <div className="alert alert-success">{successMessage}</div>}
 

@@ -50,9 +50,10 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
 
 /* Page Layout */
 .container {
-  max-width: 1180px;
+  max-width: 1440px;
+  width: 95%;
   margin: 0 auto;
-  padding: 24px 20px 60px;
+  padding: 20px 24px 60px;
 }
 
 /* ==========================================================================
@@ -364,8 +365,70 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
 @media (max-width: 768px) {
   .student-hero-banner {
     border-radius: 12px;
-    margin-bottom: 18px;
+    margin-bottom: 14px;
   }
+}
+
+/* ==========================================================================
+   Campus Canteens Filter Row (Under Hero Poster)
+   ========================================================================== */
+.campus-canteens-filter-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin: 16px 0 24px;
+  padding: 4px 2px;
+}
+
+.campus-canteens-filter-label {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.campus-canteens-filter-chips {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.campus-canteen-chip-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 22px;
+  border-radius: 9999px;
+  background: #f1f5f9;
+  border: 1.5px solid #e2e8f0;
+  font-size: 0.94rem;
+  font-weight: 700;
+  color: #1e293b;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.campus-canteen-chip-btn:hover {
+  background: #fff7ed;
+  border-color: #fdba74;
+  color: #ea580c;
+  transform: translateY(-1px);
+}
+
+.campus-canteen-chip-btn.active {
+  background: #ea580c;
+  border-color: #ea580c;
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.28);
+}
+
+.campus-canteen-chip-btn .chip-icon {
+  font-size: 1.1rem;
+  line-height: 1;
 }
 
 .page-header {
@@ -434,8 +497,8 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
 
 .grid-2 {
   display: grid;
-  grid-template-columns: 1.65fr 1fr;
-  gap: 20px;
+  grid-template-columns: 1.75fr 1fr;
+  gap: 24px;
   align-items: start;
 }
 
