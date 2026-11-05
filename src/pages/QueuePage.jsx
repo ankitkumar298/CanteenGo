@@ -1228,8 +1228,7 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
   }
 
   // =========================================================================
-  // REDESIGNED STUDENT LIVE QUEUE (ONLY Shows Student's Order + Time + Ahead)
-  // No Chronological Order Registry & No Other Students' Orders!
+  // CAMPUS LIVE QUEUE (STUDENT VIEW) - Matching Exact Design
   // =========================================================================
   const studentMatchedOrders = orders.filter((o) => {
     if (!o) return false;
@@ -1277,15 +1276,13 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
 
   const currentOrdersAhead = currentStudentOrder ? getOrdersAhead(currentStudentOrder) : 0;
   const currentWaitTime = currentStudentOrder ? getEstimatedWaitTime(currentStudentOrder) : "";
-  const currentProgressStep = currentStudentOrder ? getProgressStep(currentStudentOrder.orderStatus) : 0;
 
-  // Selected Canteen for the Canteen-Wide Public Live Activity Display
+  // Selected Canteen for the Live Queue Display
   const [selectedBoardCanteenId, setSelectedBoardCanteenId] = useState(() => {
     if (selectedCanteen?.id) return selectedCanteen.id;
     return canteensList[0]?.id || canteensList[0]?.canteenId || "foodcourt-34";
   });
 
-  // Find the selected canteen object
   const selectedBoardCanteen = useMemo(() => {
     return (
       canteensList.find((c) => (c.id || c.canteenId) === selectedBoardCanteenId) ||
@@ -1294,7 +1291,7 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
     );
   }, [canteensList, selectedBoardCanteenId]);
 
-  // When student selects or switches their personal order, auto-focus public board to that canteen
+  // When student switches their personal order, auto-focus public board to that canteen
   useEffect(() => {
     if (currentStudentOrder) {
       const match = canteensList.find((c) => matchesCanteen(currentStudentOrder, c));
@@ -1304,7 +1301,7 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
     }
   }, [currentStudentOrder?._id]);
 
-  // Filter orders for the public live activity board
+  // Filter orders for the selected canteen
   const boardOrders = useMemo(() => {
     return orders.filter((o) => matchesCanteen(o, selectedBoardCanteen));
   }, [orders, selectedBoardCanteen]);
@@ -1318,7 +1315,6 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
   }, [boardOrders]);
 
   const boardPendingOrders = useMemo(() => {
-    // Chronological order: oldest waiting orders first
     return boardOrders
       .filter((o) => o.orderStatus === "Pending")
       .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
@@ -1333,743 +1329,353 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
     return Math.max(3, Math.round(boardWaitingCount * 2.5 + (boardPreparingCount > 0 ? 3 : 0)));
   }, [boardWaitingCount, boardPreparingCount]);
 
-  const boardCanteenStatus = useMemo(() => {
-    if (selectedBoardCanteen && selectedBoardCanteen.isOpen === false) {
-      return { label: "Closed / Paused", code: "closed" };
-    }
-    if (boardWaitingCount > 5) {
-      return { label: "Busy (High Demand)", code: "busy" };
-    }
-    if (boardWaitingCount >= 3) {
-      return { label: "Moderate Rush", code: "moderate" };
-    }
-    return { label: "Open & Operating Smoothly", code: "open" };
-  }, [selectedBoardCanteen, boardWaitingCount]);
-
   return (
-    <div className="student-queue-page">
-      {/* 1. Header with Clock & Live Sync */}
-      <div className="student-queue-header">
-        <div>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", marginBottom: "6px" }}>
-            <span className="section-pill">
-              <QueueIcon size={14} /> LIVE ORDER TRACKER
-            </span>
-            <span className="live-clock-pill">
-              <ClockIcon size={13} /> {currentTime}
-            </span>
+    <div className="campus-queue-page">
+      {/* 1. TOP HEADER */}
+      <div className="cq-header">
+        <div className="cq-header-left">
+          <div className="cq-header-icon-box">
+            🛎️
           </div>
-          <h2 className="page-title" style={{ fontSize: "1.75rem", margin: "2px 0 6px" }}>
-            My Live Queue Tracker
-          </h2>
-          <p className="page-description" style={{ margin: 0, fontSize: "0.9rem" }}>
-            Live status of your campus order. Watch your meal advance from kitchen stove to pickup counter.
-          </p>
-        </div>
-
-        {/* Live Sync Controls */}
-        <div className="live-sync-badge">
-          <label className="sync-toggle-label" title="Live syncing with cafeteria kitchen every 4 seconds">
-            <input
-              type="checkbox"
-              className="sync-checkbox"
-              checked={autoRefresh}
-              onChange={(e) => setAutoRefresh(e.target.checked)}
-            />
-            <span className="sync-dot"></span>
-            <span>Live Kitchen Feed</span>
-          </label>
-          <span className="sync-divider">|</span>
-          <button
-            className={`btn btn-secondary btn-sm btn-sync-refresh ${loading ? "is-syncing" : ""}`}
-            onClick={() => fetchQueueOrders(true)}
-            disabled={loading}
-            title="Refresh order status now"
-          >
-            <RefreshIcon size={13} className={loading ? "spin-refresh" : ""} />
-            <span className="sync-btn-label">{loading ? "Syncing..." : "Sync"}</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Real-time Status Alert Banner */}
-      {liveNotification && (
-        <div className={`queue-live-alert alert-${liveNotification.type}`}>
-          <div className="alert-content-left">
-            <span className="alert-bell-icon">🔔</span>
-            <div>
-              <strong>{liveNotification.title}</strong>
-              <p>{liveNotification.text}</p>
-            </div>
-          </div>
-          <button
-            type="button"
-            className="alert-dismiss-btn"
-            onClick={() => setLiveNotification(null)}
-          >
-            ✕
-          </button>
-        </div>
-      )}
-
-      {/* 2. MAIN STUDENT QUEUE TRACKER LAYOUT */}
-      <div className={`student-queue-layout ${activeStudentOrders.length > 1 ? "has-sidebar" : ""}`}>
-        {/* Left Vertical Column: Active Orders Selector (When student has multiple orders) */}
-        {activeStudentOrders.length > 1 && (
-          <aside className="student-orders-vertical-sidebar">
-            <div className="sidebar-header">
-              <div className="sidebar-title-row">
-                <span className="sidebar-title">Your Active Orders</span>
-                <span className="sidebar-count-badge">{activeStudentOrders.length}</span>
-              </div>
-              <p className="sidebar-subtitle">Tap token to track live status</p>
-            </div>
-
-            <div className="student-orders-vertical-list">
-              {activeStudentOrders.map((ord) => {
-                const isSelected = currentStudentOrder?._id === ord._id;
-                const ahead = getOrdersAhead(ord);
-                const totalItems = ord.items?.reduce((s, it) => s + it.quantity, 0) || 0;
-
-                return (
-                  <button
-                    key={ord._id}
-                    type="button"
-                    className={`student-order-vertical-card ${isSelected ? "active" : ""}`}
-                    onClick={() => setSelectedStudentOrderId(ord._id)}
-                  >
-                    <div className="vertical-card-top">
-                      <span className="vertical-card-token">{ord.tokenNumber}</span>
-                      <span className={`vertical-status-chip status-${ord.orderStatus?.toLowerCase().replace(/\s+/g, '-')}`}>
-                        {ord.orderStatus}
-                      </span>
-                    </div>
-
-                    <div className="vertical-card-items" title={ord.items?.map((i) => `${i.name} (×${i.quantity})`).join(", ")}>
-                      {ord.items?.map((i) => `${i.name} ×${i.quantity}`).join(", ") || `${totalItems} items`}
-                    </div>
-
-                    <div className="vertical-card-canteen">
-                      📍 {ord.canteenName || "Food Court near 34 Block"}
-                    </div>
-
-                    <div className="vertical-card-meta">
-                      <span className="vertical-meta-wait">
-                        {ord.orderStatus === "Ready"
-                          ? "🎉 Ready"
-                          : ord.orderStatus === "Preparing"
-                          ? "🔥 Cooking"
-                          : ahead === 0
-                          ? "⭐ Next up"
-                          : `${ahead} ahead`}
-                      </span>
-                      <span className="vertical-meta-amount">₹{ord.totalAmount}</span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </aside>
-        )}
-
-        {/* Right / Main Column: Active Order Details or Empty State */}
-        <div className="student-tracker-main-col">
-          {currentStudentOrder ? (
-            <div className="student-tracker-hero">
-          {/* Top Identity Row */}
-          <div className="student-tracker-top">
-            <div className="student-token-display">
-              <div className="student-token-large">
-                {currentStudentOrder.tokenNumber}
-              </div>
-              <div className="student-token-meta">
-                <span className="student-token-label">DIGITAL TOKEN</span>
-                <strong style={{ fontSize: "1rem", color: "#0f172a" }}>
-                  {currentStudentOrder.studentName || studentProfile?.name || "Student Order"}
-                </strong>
-                <span className="student-token-time">
-                  Placed at {new Date(currentStudentOrder.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                </span>
-              </div>
-            </div>
-
-            {/* Live Status Pill */}
-            <div style={{ alignSelf: "center" }}>
-              <StatusBadge status={currentStudentOrder.orderStatus} type="order" />
-            </div>
-          </div>
-
-          {/* Dynamic Status Callout Banner */}
-          <div style={{ marginBottom: "24px" }}>
-            {currentStudentOrder.orderStatus === "Ready" && (
-              <div className="status-notice notice-ready">
-                <span className="notice-icon">🎉</span>
-                <div>
-                  <strong className="notice-title">READY FOR PICKUP AT COUNTER 1!</strong>
-                  <p className="notice-hindi">
-                    Aapka khana ready hai! Please head to Counter 1 and present your token number to collect.
-                  </p>
-                </div>
-              </div>
-            )}
-            {currentStudentOrder.orderStatus === "Preparing" && (
-              <div className="status-notice notice-preparing">
-                <span className="notice-icon">👨‍🍳</span>
-                <div>
-                  <strong className="notice-title">CHEF IS COOKING YOUR ORDER NOW!</strong>
-                  <p className="notice-hindi">
-                    Aapka khana stove par prepare ho raha hai. Fresh and hot, ready in just a few minutes!
-                  </p>
-                </div>
-              </div>
-            )}
-            {currentStudentOrder.orderStatus === "Pending" && (
-              <div className="status-notice notice-pending">
-                <span className="notice-icon">⏳</span>
-                <div>
-                  <strong className="notice-title">ORDER REGISTERED IN KITCHEN QUEUE</strong>
-                  <p className="notice-hindi">
-                    Aapka order line me hai. Jaise hi chef cooking start karenge, status update ho jayega.
-                  </p>
-                </div>
-              </div>
-            )}
-            {currentStudentOrder.orderStatus === "Completed" && (
-              <div className="status-notice notice-completed">
-                <span className="notice-icon">✅</span>
-                <div>
-                  <strong className="notice-title">ORDER DELIVERED & COLLECTED</strong>
-                  <p className="notice-hindi">
-                    Order safely verified and handed over. Enjoy your meal!
-                  </p>
-                </div>
-              </div>
-            )}
-            {currentStudentOrder.orderStatus === "Missed Pickup" && (
-              <div className="status-notice notice-missed">
-                <span className="notice-icon">⚠️</span>
-                <div>
-                  <strong className="notice-title">MISSED PICKUP DETECTED</strong>
-                  <p className="notice-hindi">
-                    Aapka token call hua tha lekin counter se collect nahi ho paya. Visit "Your Orders" to reschedule.
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* 3. CORE HIGHLIGHT METRICS GRID ("time dikhe and kitane order ke baad aayega") */}
-          <div className="queue-features-grid" style={{ marginBottom: "26px" }}>
-            {/* METRIC 1: ESTIMATED TIME ("time dikhe") */}
-            <div className="feature-stat-card card-eta">
-              <div className="stat-card-header">
-                <ClockIcon size={16} />
-                <span>ESTIMATED TIME</span>
-              </div>
-              <div className="stat-card-value value-eta">
-                {currentWaitTime}
-              </div>
-              <small className="stat-card-sub">
-                {currentStudentOrder.orderStatus === "Ready"
-                  ? "At pickup counter right now"
-                  : currentStudentOrder.orderStatus === "Preparing"
-                  ? "Actively on stove with chef"
-                  : `Live estimate based on kitchen load`}
-              </small>
-            </div>
-
-            {/* METRIC 2: ORDERS AHEAD ("kitane order ke baad aayega") */}
-            <div className="feature-stat-card card-ahead">
-              <div className="stat-card-header">
-                <QueueIcon size={16} />
-                <span>ORDERS AHEAD IN LINE</span>
-              </div>
-              <div className="stat-card-value value-ahead">
-                {currentStudentOrder.orderStatus === "Preparing"
-                  ? "0 (Cooking Now!)"
-                  : currentStudentOrder.orderStatus === "Ready"
-                  ? "0 (At Counter)"
-                  : currentOrdersAhead === 0
-                  ? "You're Next! (0 ahead)"
-                  : `${currentOrdersAhead} Order${currentOrdersAhead > 1 ? "s" : ""} Ahead`}
-              </div>
-              <small className="stat-card-sub">
-                {currentStudentOrder.orderStatus === "Ready"
-                  ? "Your order is ready at the counter"
-                  : currentStudentOrder.orderStatus === "Preparing"
-                  ? "Your meal is actively on the stove"
-                  : currentOrdersAhead === 0
-                  ? "⭐ Chef starts cooking your meal next!"
-                  : `Position #${currentOrdersAhead + 1} in kitchen queue`}
-              </small>
-            </div>
-
-            {/* METRIC 3: PICKUP LOCATION & COUNTER */}
-            <div className="feature-stat-card card-location">
-              <div className="stat-card-header">
-                <span>📍</span>
-                <span>PICKUP LOCATION & COUNTER</span>
-              </div>
-              <div className="stat-card-value value-location">
-                {currentStudentOrder.counterName || "Counter 1"}
-              </div>
-              <small className="stat-card-sub">
-                {currentStudentOrder.canteenName || "Food Court near 34 Block"}
-              </small>
-            </div>
-          </div>
-
-          {/* 4. 4-STAGE ANIMATED VISUAL PROGRESS STEPPER */}
-          <div className="order-stepper-container" style={{ margin: "0 0 24px" }}>
-            {/* Step 1: Placed */}
-            <div className={`stepper-node ${currentProgressStep >= 1 ? "completed" : ""}`}>
-              <div className="node-icon-circle">
-                {currentProgressStep > 1 ? <CheckCircleIcon size={18} /> : "1"}
-              </div>
-              <div className="node-content">
-                <span className="node-title">Order Received</span>
-                <span className="node-sub">In queue</span>
-              </div>
-            </div>
-
-            <div className={`stepper-connector ${currentProgressStep >= 2 ? "active" : ""}`}></div>
-
-            {/* Step 2: Preparing */}
-            <div className={`stepper-node ${currentProgressStep === 2 ? "current" : currentProgressStep > 2 ? "completed" : ""}`}>
-              <div className="node-icon-circle">
-                {currentProgressStep === 2 ? <FlameIcon size={18} /> : currentProgressStep > 2 ? <CheckCircleIcon size={18} /> : "2"}
-              </div>
-              <div className="node-content">
-                <span className="node-title">Cooking in Kitchen</span>
-                <span className="node-sub">On stove</span>
-              </div>
-            </div>
-
-            <div className={`stepper-connector ${currentProgressStep >= 3 ? "active" : ""}`}></div>
-
-            {/* Step 3: Ready */}
-            <div className={`stepper-node ${currentProgressStep === 3 ? "current pulse-glow" : currentProgressStep > 3 ? "completed" : ""}`}>
-              <div className="node-icon-circle">
-                {currentProgressStep === 3 ? <BellIcon size={18} /> : currentProgressStep > 3 ? <CheckCircleIcon size={18} /> : "3"}
-              </div>
-              <div className="node-content">
-                <span className="node-title">Ready for Pickup</span>
-                <span className="node-sub">At Counter 1</span>
-              </div>
-            </div>
-
-            <div className={`stepper-connector ${currentProgressStep >= 4 ? "active" : ""}`}></div>
-
-            {/* Step 4: Handed Over */}
-            <div className={`stepper-node ${currentProgressStep >= 4 ? "completed" : ""}`}>
-              <div className="node-icon-circle">
-                {currentProgressStep >= 4 ? <CheckCircleIcon size={18} /> : "4"}
-              </div>
-              <div className="node-content">
-                <span className="node-title">Order Picked Up</span>
-                <span className="node-sub">Handover done</span>
-              </div>
-            </div>
-          </div>
-
-          {/* 6. ORDERED ITEMS SUMMARY STRIP */}
-          <div className="tracked-footer" style={{ borderTop: "1px solid #e2e8f0", paddingTop: "18px" }}>
-            <div className="tracked-items-list">
-              <span className="items-label">Ordered Items ({currentStudentOrder.items.length}):</span>
-              {currentStudentOrder.items.map((item, idx) => (
-                <span key={idx} className="tracked-item-chip">
-                  <img
-                    src={item.image || "/images/samosa.jpg"}
-                    alt={item.name}
-                    className="tracked-item-thumb"
-                    onError={(e) => {
-                      e.target.src = "/images/samosa.jpg";
-                    }}
-                  />
-                  <span>{item.name} × <strong>{item.quantity}</strong></span>
-                </span>
-              ))}
-            </div>
-
-            <div className="tracked-meta-right">
-              <div className="tracked-total">
-                Total: ₹{currentStudentOrder.totalAmount}
-                <span style={{ fontSize: "0.8rem", fontWeight: "600", color: "#64748b", marginLeft: "6px" }}>
-                  ({currentStudentOrder.paymentStatus === "Paid" ? "✓ Paid" : "Cash at Counter"})
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* 7. QUICK ACTION BUTTONS */}
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "flex-end",
-              gap: "10px",
-              marginTop: "20px",
-              paddingTop: "16px",
-              borderTop: "1px dashed #e2e8f0",
-              flexWrap: "wrap"
-            }}
-          >
-            <button
-              type="button"
-              className="btn btn-secondary btn-sm"
-              onClick={() => setActiveTab && setActiveTab("order")}
-            >
-              <CartIcon size={14} /> + Order More Food
-            </button>
-            <button
-              type="button"
-              className="btn btn-primary btn-sm"
-              onClick={() => setActiveTab && setActiveTab("my-orders")}
-            >
-              View in Your Orders →
-            </button>
-          </div>
-        </div>
-      ) : (
-        /* =========================================================================
-           EMPTY STATE: When the student has NO active order in queue
-           ========================================================================= */
-        <div className="student-empty-state-card">
-          <div className="student-empty-icon-wrap">
-            🍽️
-          </div>
-          <h3 className="student-empty-title">
-            No Active Orders in Queue
-          </h3>
-          <p className="student-empty-desc">
-            You don't have any active food orders waiting in the kitchen queue right now. Choose delicious snacks, meals, or beverages from the menu to get your digital queue token!
-          </p>
-          <button
-            type="button"
-            className="btn btn-primary"
-            style={{ padding: "12px 28px", fontSize: "1rem" }}
-            onClick={() => setActiveTab && setActiveTab("order")}
-          >
-            <CartIcon size={18} /> Browse Menu & Order Food →
-          </button>
-
-          {/* Optional Paper Token Lookup */}
-          <div className="student-empty-search-box">
-            <span className="student-search-label">
-              Have an offline token from the counter or another device?
-            </span>
-            <div className="student-search-row">
-              <input
-                type="text"
-                className="form-input"
-                placeholder="Enter Token No (e.g. T-121)..."
-                value={paperTokenInput}
-                onChange={(e) => setPaperTokenInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && paperTokenInput.trim()) {
-                    setSearchToken(paperTokenInput.trim());
-                  }
-                }}
-              />
-              <button
-                type="button"
-                className="btn btn-secondary"
-                style={{ flexShrink: 0 }}
-                onClick={() => {
-                  if (paperTokenInput.trim()) {
-                    setSearchToken(paperTokenInput.trim());
-                  }
-                }}
-              >
-                Track Token
-              </button>
-            </div>
-            {searchToken && (
-              <button
-                type="button"
-                style={{
-                  background: "none",
-                  border: "none",
-                  color: "#ea580c",
-                  fontSize: "0.8rem",
-                  marginTop: "8px",
-                  cursor: "pointer",
-                  textDecoration: "underline"
-                }}
-                onClick={() => {
-                  setSearchToken("");
-                  setPaperTokenInput("");
-                }}
-              >
-                Clear Token Filter
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-        </div>
-      </div>
-
-      {/* =========================================================================
-          3. CANTEEN-WIDE PUBLIC LIVE ACTIVITY DISPLAY (Public Counter Monitor)
-          ========================================================================= */}
-      <section className="canteen-public-board-card">
-        {/* Board Top Header */}
-        <div className="public-board-header">
-          <div className="public-board-title-group">
-            <div className="public-board-pill">
-              <span className="pulse-live-dot"></span>
-              <span>CANTEEN-WIDE LIVE ACTIVITY</span>
-            </div>
-            <h3 className="public-board-title">
-              {selectedBoardCanteen.name}
-            </h3>
-            <p className="public-board-sub">
+          <div>
+            <h2 className="cq-header-title">Campus Live Queue</h2>
+            <p className="cq-header-sub">
               Public live counter monitor • Orders update in real-time as kitchen advances tokens
             </p>
           </div>
+        </div>
 
-          <div className="public-board-status-group">
-            <div className={`canteen-status-badge status-${boardCanteenStatus.code}`}>
-              <span className="status-indicator-dot"></span>
-              <span>{boardCanteenStatus.label}</span>
-            </div>
-            <div className="public-sync-meta">
-              <span className="sync-status-indicator">● Live Feed Connected</span>
-              <span className="sync-timestamp">Synced at {lastRefreshed}</span>
-            </div>
+        <div className="cq-sync-pill">
+          <button
+            type="button"
+            className="cq-sync-time"
+            onClick={() => fetchQueueOrders(true)}
+            title="Click to refresh live queue"
+          >
+            <RefreshIcon size={14} className={loading ? "spin-refresh" : ""} />
+            <span>Last Updated: {lastRefreshed}</span>
+          </button>
+          <div className="cq-sync-dot-badge">
+            <span className="cq-pulse-green"></span>
+            <span>Live Sync</span>
+          </div>
+        </div>
+      </div>
+
+      {/* 2. SELECT CANTEEN BAR */}
+      <div className="cq-canteen-bar">
+        <span className="cq-canteen-label">Select Canteen:</span>
+        <div className="cq-canteen-chips">
+          {canteensList.map((canteen) => {
+            const cId = canteen.id || canteen.canteenId;
+            const isSelected = cId === selectedBoardCanteenId;
+            return (
+              <button
+                key={cId}
+                type="button"
+                className={`cq-canteen-chip ${isSelected ? "active" : ""}`}
+                onClick={() => setSelectedBoardCanteenId(cId)}
+              >
+                <span>{canteen.icon || "🏢"}</span>
+                <span>{canteen.shortName || canteen.name}</span>
+                {isSelected && <span className="chip-check">✓</span>}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 3. METRICS STRIP (4 METRICS IN A ROW) */}
+      <div className="cq-metrics-card">
+        {/* Waiting in Queue */}
+        <div className="cq-metric-item">
+          <span className="cq-metric-icon">👥</span>
+          <div className="cq-metric-content">
+            <span className="cq-metric-title">Waiting in Queue</span>
+            <span className="cq-metric-num">{boardWaitingCount}</span>
+            <span className="cq-metric-sub">Orders in line</span>
           </div>
         </div>
 
-        {/* Canteen Switcher Tabs (Supports students with orders in multiple canteens) */}
-        <div className="canteen-board-switcher-bar">
-          <span className="canteen-switcher-label">Campus Canteens:</span>
-          <div className="canteen-switcher-chips">
-            {canteensList.map((canteen) => {
-              const cId = canteen.id || canteen.canteenId;
-              const isSelected = cId === selectedBoardCanteenId;
-              const myOrdersInCanteen = activeStudentOrders.filter((ord) => matchesCanteen(ord, canteen));
-
-              return (
-                <button
-                  key={cId}
-                  type="button"
-                  className={`canteen-switcher-chip ${isSelected ? "active" : ""}`}
-                  onClick={() => setSelectedBoardCanteenId(cId)}
-                >
-                  <span className="canteen-chip-icon">{canteen.icon || "🏢"}</span>
-                  <span className="canteen-chip-name">{canteen.shortName || canteen.name}</span>
-                  {myOrdersInCanteen.length > 0 && (
-                    <span className="canteen-chip-my-badge" title="You have an active order in this canteen">
-                      ⭐ {myOrdersInCanteen.length} Your Order{myOrdersInCanteen.length > 1 ? "s" : ""}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
+        {/* Now Cooking */}
+        <div className="cq-metric-item">
+          <span className="cq-metric-icon">👨‍🍳</span>
+          <div className="cq-metric-content">
+            <span className="cq-metric-title">Now Cooking</span>
+            <span className="cq-metric-num">{boardPreparingCount}</span>
+            <span className="cq-metric-sub">Active on stove</span>
           </div>
         </div>
 
-        {/* 4. CANTEEN LOAD & WAIT TIME METRICS STRIP */}
-        <div className="canteen-load-strip">
-          <div className="canteen-load-item">
-            <span className="canteen-load-label">WAITING IN QUEUE</span>
-            <div className="canteen-load-value value-waiting">
-              {boardWaitingCount}
-            </div>
-            <span className="canteen-load-sub">Orders in line</span>
-          </div>
-
-          <div className="canteen-load-item">
-            <span className="canteen-load-label">NOW COOKING</span>
-            <div className="canteen-load-value value-cooking">
-              {boardPreparingCount}
-            </div>
-            <span className="canteen-load-sub">Active on stove</span>
-          </div>
-
-          <div className="canteen-load-item">
-            <span className="canteen-load-label">READY AT COUNTER</span>
-            <div className="canteen-load-value value-ready">
-              {boardReadyCount}
-            </div>
-            <span className="canteen-load-sub">Waiting for pickup</span>
-          </div>
-
-          <div className="canteen-load-item">
-            <span className="canteen-load-label">EST. QUEUE WAIT</span>
-            <div className="canteen-load-value value-wait">
-              {boardEstWaitMinutes === 0 ? "0m" : `~${boardEstWaitMinutes}m`}
-            </div>
-            <span className="canteen-load-sub">
-              {boardEstWaitMinutes === 0 ? "Zero wait (Instant)" : "From queue load"}
-            </span>
+        {/* Ready at Counter */}
+        <div className="cq-metric-item">
+          <span className="cq-metric-icon">✅</span>
+          <div className="cq-metric-content">
+            <span className="cq-metric-title title-green">Ready at Counter</span>
+            <span className="cq-metric-num num-green">{boardReadyCount}</span>
+            <span className="cq-metric-sub">Waiting for pickup</span>
           </div>
         </div>
 
-        {/* 3 Core Public Activity Columns: NOW PREPARING | READY FOR PICKUP | NEXT IN QUEUE */}
-        <div className="public-board-grid">
-          {/* 1. NOW PREPARING */}
-          <div className="public-col col-preparing">
-            <div className="public-col-header header-preparing">
-              <div className="public-col-title-wrap">
-                <FlameIcon size={16} />
-                <span>NOW PREPARING</span>
+        {/* Estimated Queue Wait */}
+        <div className="cq-metric-item">
+          <span className="cq-metric-icon">🕒</span>
+          <div className="cq-metric-content">
+            <span className="cq-metric-title">Estimated Queue Wait</span>
+            <span className="cq-metric-num">~{boardEstWaitMinutes} min</span>
+            <span className="cq-metric-sub">From current kitchen load</span>
+          </div>
+        </div>
+      </div>
+
+      {/* 4. THREE MAIN COLUMNS */}
+      <div className="cq-board-grid">
+        {/* Column 1: Now Preparing */}
+        <div className="cq-col col-prep">
+          <div className="cq-col-header">
+            <div className="cq-col-title-wrap">
+              <FlameIcon size={18} />
+              <span>Now Preparing</span>
+            </div>
+            <span className="cq-col-badge badge-orange">{boardPreparingOrders.length}</span>
+          </div>
+
+          <div className="cq-col-body">
+            {boardPreparingOrders.length === 0 ? (
+              <div className="cq-empty-state">
+                <span className="empty-icon">👨‍🍳</span>
+                <p>No orders cooking on stove</p>
+                <small>Kitchen is ready for next orders</small>
               </div>
-              <span className="public-col-badge badge-preparing">
-                {boardPreparingOrders.length}
-              </span>
-            </div>
-
-            <div className="public-col-body">
-              {boardPreparingOrders.length === 0 ? (
-                <div className="public-col-empty">
-                  <span className="empty-icon">👨‍🍳</span>
-                  <p>No orders actively cooking</p>
-                  <small>Kitchen stove ready for incoming orders</small>
-                </div>
-              ) : (
-                boardPreparingOrders.map((ord) => {
-                  const isMine = isMyOrder(ord);
-                  return (
-                    <div
-                      key={ord._id}
-                      className={`public-order-card card-preparing ${isMine ? "card-my-highlight" : ""}`}
-                    >
-                      {isMine && (
-                        <div className="public-my-order-pill">
-                          ⭐ AAPKA ORDER (Cooking!)
-                        </div>
-                      )}
-                      <div className="public-card-top">
-                        <span className="public-token-num token-preparing">{ord.tokenNumber}</span>
-                        <span className="public-counter-tag">
-                          📍 {ord.counterName || selectedBoardCanteen.counter || "Counter 1"}
-                        </span>
+            ) : (
+              boardPreparingOrders.map((ord) => (
+                <div key={ord._id} className="cq-prep-card">
+                  <div className="cq-prep-left">
+                    <span className="cq-token-large-orange">{ord.tokenNumber}</span>
+                    <div className="cq-prep-details">
+                      <div className="cq-prep-food">
+                        {ord.items?.map((i) => `${i.name} × ${i.quantity}`).join(", ") || "Snacks"}
                       </div>
-                      <div className="public-card-items" title={ord.items?.map((i) => `${i.name} (×${i.quantity})`).join(", ")}>
-                        {ord.items?.map((i) => `${i.name} ×${i.quantity}`).join(", ")}
-                      </div>
-                      <div className="public-card-status-sub text-preparing">
+                      <div className="cq-prep-sub">
                         🔥 On stove with chef • Fresh cooking
                       </div>
                     </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
-
-          {/* 2. READY FOR PICKUP (Visually Prominent) */}
-          <div className="public-col col-ready">
-            <div className="public-col-header header-ready">
-              <div className="public-col-title-wrap">
-                <BellIcon size={16} />
-                <span>READY FOR PICKUP</span>
-              </div>
-              <span className="public-col-badge badge-ready">
-                {boardReadyOrders.length}
-              </span>
-            </div>
-
-            <div className="public-col-body">
-              {boardReadyOrders.length === 0 ? (
-                <div className="public-col-empty">
-                  <span className="empty-icon">🔔</span>
-                  <p>All ready orders collected</p>
-                  <small>New ready tokens will appear here</small>
+                  </div>
+                  <span className="cq-counter-chip">
+                    📍 {ord.counterName || selectedBoardCanteen.counter || "Counter 1"}
+                  </span>
                 </div>
-              ) : (
-                boardReadyOrders.map((ord) => {
-                  const isMine = isMyOrder(ord);
-                  return (
-                    <div
-                      key={ord._id}
-                      className={`public-order-card card-ready ${isMine ? "card-my-highlight-ready" : ""}`}
-                    >
-                      {isMine && (
-                        <div className="public-my-order-pill pill-ready">
-                          🎉 AAPKA ORDER READY HAI!
-                        </div>
-                      )}
-                      <div className="public-card-top">
-                        <span className="public-token-num token-ready">{ord.tokenNumber}</span>
-                        <span className="public-calling-pill">
-                          📢 NOW CALLING
-                        </span>
-                      </div>
-                      <div className="public-counter-callout">
-                        Please collect at <strong>{ord.counterName || selectedBoardCanteen.counter || "Counter 1"}</strong>
-                      </div>
-                      <div className="public-ready-timestamp">
-                        Ready since {new Date(ord.updatedAt || ord.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
-
-          {/* 3. NEXT IN QUEUE (Privacy Protected: No names, No phones, No PINs) */}
-          <div className="public-col col-pending">
-            <div className="public-col-header header-pending">
-              <div className="public-col-title-wrap">
-                <ClockIcon size={16} />
-                <span>NEXT IN QUEUE</span>
-              </div>
-              <span className="public-col-badge badge-pending">
-                {boardPendingOrders.length}
-              </span>
-            </div>
-
-            <div className="public-col-body">
-              {boardPendingOrders.length === 0 ? (
-                <div className="public-col-empty">
-                  <span className="empty-icon">⏳</span>
-                  <p>No waiting tokens in line</p>
-                  <small>Zero queue delay right now</small>
-                </div>
-              ) : (
-                boardPendingOrders.slice(0, 5).map((ord, idx) => {
-                  const isMine = isMyOrder(ord);
-                  const itemCount = ord.items?.reduce((s, it) => s + it.quantity, 0) || 0;
-                  return (
-                    <div
-                      key={ord._id}
-                      className={`public-order-card card-pending ${isMine ? "card-my-highlight" : ""}`}
-                    >
-                      {isMine && (
-                        <div className="public-my-order-pill">
-                          ⭐ AAPKA ORDER (In Line)
-                        </div>
-                      )}
-                      <div className="public-card-top">
-                        <div className="public-pos-and-token">
-                          <span className="public-line-pos">#{idx + 1}</span>
-                          <span className="public-token-num token-pending">{ord.tokenNumber}</span>
-                        </div>
-                        <span className="public-queue-wait-chip">
-                          ~{(idx + 1) * 3}m wait
-                        </span>
-                      </div>
-                      {/* Privacy Protected: Only item count, no private customer data */}
-                      <div className="public-card-privacy-info">
-                        <span>📦 {itemCount} item{itemCount > 1 ? "s" : ""} in order</span>
-                        <span className="public-secure-privacy-tag">🔒 Private</span>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-              {boardPendingOrders.length > 5 && (
-                <div className="public-more-tokens-note">
-                  + {boardPendingOrders.length - 5} more orders waiting in line
-                </div>
-              )}
-            </div>
+              ))
+            )}
           </div>
         </div>
-      </section>
+
+        {/* Column 2: Ready for Pickup */}
+        <div className="cq-col col-ready">
+          <div className="cq-col-header">
+            <div className="cq-col-title-wrap">
+              <BellIcon size={18} />
+              <span>Ready for Pickup</span>
+            </div>
+            <span className="cq-col-badge badge-green">{boardReadyOrders.length}</span>
+          </div>
+
+          <div className="cq-col-body">
+            {boardReadyOrders.length === 0 ? (
+              <div className="cq-empty-state">
+                <span className="empty-icon">🔔</span>
+                <p>All ready orders collected</p>
+                <small>Tokens ready for pickup appear here</small>
+              </div>
+            ) : (
+              boardReadyOrders.map((ord) => (
+                <div key={ord._id} className="cq-ready-card">
+                  <div className="cq-ready-top">
+                    <span className="cq-token-large-green">{ord.tokenNumber}</span>
+                    <span className="cq-ready-pill">✓ READY</span>
+                  </div>
+                  <div className="cq-ready-collect">
+                    Please collect at <strong>{ord.counterName || selectedBoardCanteen.counter || "Counter 1 (Express Delivery)"}</strong>
+                  </div>
+                  <div className="cq-ready-time">
+                    Ready since {new Date(ord.updatedAt || ord.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Column 3: Next in Queue */}
+        <div className="cq-col col-queue">
+          <div className="cq-col-header">
+            <div className="cq-col-title-wrap">
+              <ClockIcon size={18} />
+              <span>Next in Queue</span>
+            </div>
+            <span className="cq-col-badge badge-gray">{boardPendingOrders.length}</span>
+          </div>
+
+          <div className="cq-col-body">
+            {boardPendingOrders.length === 0 ? (
+              <div className="cq-empty-state">
+                <span className="empty-icon">⏳</span>
+                <p>No waiting tokens in line</p>
+                <small>Order now for instant preparation</small>
+              </div>
+            ) : (
+              boardPendingOrders.slice(0, 5).map((ord, idx) => {
+                const isMine = isMyOrder(ord);
+                const itemCount = ord.items?.reduce((s, it) => s + it.quantity, 0) || 1;
+                return (
+                  <div
+                    key={ord._id}
+                    className={`cq-queue-row ${isMine ? "is-my-order" : ""}`}
+                  >
+                    <span className="cq-q-pos">#{idx + 1}</span>
+                    <span className="cq-q-token">
+                      {isMine && "⭐ "}
+                      {ord.tokenNumber}
+                      {isMine && <span className="cq-you-pill">YOU</span>}
+                    </span>
+                    <span className="cq-q-items">📦 {itemCount} item{itemCount > 1 ? "s" : ""}</span>
+                    <span className="cq-q-wait">~{(idx + 1) * 3} min wait</span>
+                    <span className="cq-q-private">🔒 Private</span>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* 5. MULTIPLE ACTIVE ORDERS SWITCHER (if student has more than 1 active order) */}
+      {activeStudentOrders.length > 1 && (
+        <div className="cq-multi-order-chips">
+          <span style={{ fontSize: "0.82rem", fontWeight: "800", color: "#64748b" }}>
+            Switch Your Active Tokens:
+          </span>
+          {activeStudentOrders.map((ord) => {
+            const isSel = currentStudentOrder?._id === ord._id;
+            return (
+              <button
+                key={ord._id}
+                type="button"
+                className={`cq-multi-chip ${isSel ? "active" : ""}`}
+                onClick={() => setSelectedStudentOrderId(ord._id)}
+              >
+                Token {ord.tokenNumber} ({ord.orderStatus})
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* 6. BOTTOM HIGHLIGHT STRIP: YOUR ORDER */}
+      {currentStudentOrder ? (
+        <div className="cq-your-order-bar">
+          {/* Left Block */}
+          <div className="cq-yo-left">
+            <span className="cq-yo-bag-icon">🛍️</span>
+            <div>
+              <h4 className="cq-yo-title">YOUR ORDER</h4>
+              <p className="cq-yo-desc">
+                Track your order in real-time with live queue updates.
+              </p>
+            </div>
+          </div>
+
+          {/* Token Block */}
+          <div className="cq-yo-token-block">
+            <span className="cq-yo-token-pill">★ YOUR TOKEN</span>
+            <span className="cq-yo-token-num">{currentStudentOrder.tokenNumber}</span>
+          </div>
+
+          {/* Items & Status */}
+          <div className="cq-yo-food-block">
+            <div className="cq-yo-food-name">
+              {currentStudentOrder.items?.[0]
+                ? `${currentStudentOrder.items[0].name} × ${currentStudentOrder.items[0].quantity}${currentStudentOrder.items.length > 1 ? ` +${currentStudentOrder.items.length - 1} more` : ""}`
+                : "Your Meal"}
+            </div>
+            <span className={`cq-yo-status-pill status-${currentStudentOrder.orderStatus?.toLowerCase()}`}>
+              ● {currentStudentOrder.orderStatus?.toUpperCase()}
+            </span>
+          </div>
+
+          {/* Stats Group */}
+          <div className="cq-yo-stats-group">
+            {/* Orders ahead */}
+            <div className="cq-yo-stat-item">
+              <span className="cq-yo-stat-icon">👥</span>
+              <div>
+                <div className="cq-yo-stat-val">
+                  {currentOrdersAhead === 0 ? "Next Up!" : `${currentOrdersAhead} orders`}
+                </div>
+                <div className="cq-yo-stat-lbl">before yours</div>
+              </div>
+            </div>
+
+            {/* Estimated wait */}
+            <div className="cq-yo-stat-item">
+              <span className="cq-yo-stat-icon">🕒</span>
+              <div>
+                <div className="cq-yo-stat-val">
+                  {currentWaitTime || "~8 min"}
+                </div>
+                <div className="cq-yo-stat-lbl">Estimated wait</div>
+              </div>
+            </div>
+
+            {/* Pickup counter */}
+            <div className="cq-yo-stat-item">
+              <span className="cq-yo-stat-icon">📍</span>
+              <div>
+                <div className="cq-yo-stat-val">
+                  {currentStudentOrder.counterName || selectedBoardCanteen.counter?.split(" ")[0] || "Counter 1"}
+                </div>
+                <div className="cq-yo-stat-lbl">Pickup counter</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Action button */}
+          <button
+            type="button"
+            className="cq-yo-btn"
+            onClick={() => setActiveTab && setActiveTab("my-orders")}
+          >
+            Track My Order →
+          </button>
+        </div>
+      ) : (
+        <div className="cq-your-order-bar">
+          <div className="cq-yo-left">
+            <span className="cq-yo-bag-icon">🛍️</span>
+            <div>
+              <h4 className="cq-yo-title">CAMPUS ORDERS</h4>
+              <p className="cq-yo-desc">
+                Order your favorite meal and skip the waiting line.
+              </p>
+            </div>
+          </div>
+          <div style={{ flex: 1, padding: "0 10px" }}>
+            <div style={{ fontWeight: 800, color: "#0f172a", fontSize: "0.96rem" }}>
+              No Active Orders in Queue
+            </div>
+            <div style={{ fontSize: "0.78rem", color: "#64748b" }}>
+              Select delicious snacks, meals, or beverages from the menu to get your digital queue token!
+            </div>
+          </div>
+          <button
+            type="button"
+            className="cq-yo-btn"
+            onClick={() => setActiveTab && setActiveTab("order")}
+          >
+            Browse Menu & Order Food →
+          </button>
+        </div>
+      )}
     </div>
   );
 }
