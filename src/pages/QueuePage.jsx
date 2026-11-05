@@ -1307,33 +1307,66 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
         </div>
       )}
 
-      {/* Multiple Active Orders Switcher Tabs (If student has placed multiple orders) */}
-      {activeStudentOrders.length > 1 && (
-        <div className="student-order-tabs-bar">
-          <span style={{ fontSize: "0.85rem", fontWeight: "700", color: "#64748b" }}>
-            Your Active Orders ({activeStudentOrders.length}):
-          </span>
-          {activeStudentOrders.map((ord) => {
-            const isSelected = currentStudentOrder?._id === ord._id;
-            return (
-              <button
-                key={ord._id}
-                type="button"
-                className={`student-order-tab-btn ${isSelected ? "active" : ""}`}
-                onClick={() => setSelectedStudentOrderId(ord._id)}
-              >
-                <span className="student-tab-dot"></span>
-                <span>Token {ord.tokenNumber}</span>
-                <span style={{ opacity: 0.85, fontSize: "0.78rem" }}>({ord.orderStatus})</span>
-              </button>
-            );
-          })}
-        </div>
-      )}
+      {/* 2. MAIN STUDENT QUEUE TRACKER LAYOUT */}
+      <div className={`student-queue-layout ${activeStudentOrders.length > 1 ? "has-sidebar" : ""}`}>
+        {/* Left Vertical Column: Active Orders Selector (When student has multiple orders) */}
+        {activeStudentOrders.length > 1 && (
+          <aside className="student-orders-vertical-sidebar">
+            <div className="sidebar-header">
+              <div className="sidebar-title-row">
+                <span className="sidebar-title">Your Active Orders</span>
+                <span className="sidebar-count-badge">{activeStudentOrders.length}</span>
+              </div>
+              <p className="sidebar-subtitle">Tap token to track live status</p>
+            </div>
 
-      {/* 2. MAIN ACTIVE ORDER TRACKER CARD */}
-      {currentStudentOrder ? (
-        <div className="student-tracker-hero">
+            <div className="student-orders-vertical-list">
+              {activeStudentOrders.map((ord) => {
+                const isSelected = currentStudentOrder?._id === ord._id;
+                const ahead = getOrdersAhead(ord);
+                const totalItems = ord.items?.reduce((s, it) => s + it.quantity, 0) || 0;
+
+                return (
+                  <button
+                    key={ord._id}
+                    type="button"
+                    className={`student-order-vertical-card ${isSelected ? "active" : ""}`}
+                    onClick={() => setSelectedStudentOrderId(ord._id)}
+                  >
+                    <div className="vertical-card-top">
+                      <span className="vertical-card-token">{ord.tokenNumber}</span>
+                      <span className={`vertical-status-chip status-${ord.orderStatus?.toLowerCase().replace(/\s+/g, '-')}`}>
+                        {ord.orderStatus}
+                      </span>
+                    </div>
+
+                    <div className="vertical-card-items" title={ord.items?.map((i) => `${i.name} (×${i.quantity})`).join(", ")}>
+                      {ord.items?.map((i) => `${i.name} ×${i.quantity}`).join(", ") || `${totalItems} items`}
+                    </div>
+
+                    <div className="vertical-card-meta">
+                      <span className="vertical-meta-wait">
+                        {ord.orderStatus === "Ready"
+                          ? "🎉 Ready"
+                          : ord.orderStatus === "Preparing"
+                          ? "🔥 Cooking"
+                          : ahead === 0
+                          ? "⭐ Next up"
+                          : `${ahead} ahead`}
+                      </span>
+                      <span className="vertical-meta-amount">₹{ord.totalAmount}</span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </aside>
+        )}
+
+        {/* Right / Main Column: Active Order Details or Empty State */}
+        <div className="student-tracker-main-col">
+          {currentStudentOrder ? (
+            <div className="student-tracker-hero">
           {/* Top Identity Row */}
           <div className="student-tracker-top">
             <div className="student-token-display">
@@ -1765,6 +1798,8 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
           </div>
         </div>
       )}
+        </div>
+      </div>
     </div>
   );
 }
