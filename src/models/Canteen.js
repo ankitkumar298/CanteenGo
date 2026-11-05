@@ -118,3 +118,4 @@ if (mongoose.models && mongoose.models.Canteen) {
 }
 
 export default mongoose.model("Canteen", canteenSchema);
+
