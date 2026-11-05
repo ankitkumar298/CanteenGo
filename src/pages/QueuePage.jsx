@@ -13,8 +13,6 @@ import {
   FlameIcon,
   ShieldCheckIcon,
   AlertTriangleIcon,
-  EyeIcon,
-  EyeOffIcon,
   CartIcon
 } from "../components/Icons";
 
@@ -52,7 +50,6 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
   });
 
   const [filterStage, setFilterStage] = useState("all"); // "all", "ready", "preparing", "pending"
-  const [showPickupPin, setShowPickupPin] = useState(true);
   const [paperTokenInput, setPaperTokenInput] = useState("");
 
   // Student profile token shortcut
@@ -1398,7 +1395,7 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
                 <div>
                   <strong className="notice-title">READY FOR PICKUP AT COUNTER 1!</strong>
                   <p className="notice-hindi">
-                    Aapka khana ready hai! Please head to Counter 1 and show your 4-digit PIN below to collect.
+                    Aapka khana ready hai! Please head to Counter 1 and present your token number to collect.
                   </p>
                 </div>
               </div>
@@ -1510,108 +1507,7 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
             </div>
           </div>
 
-          {/* 4. SECRET PICKUP PIN / OTP CODE */}
-          {currentStudentOrder.pickupCode && (
-            <div
-              style={{
-                background: "#f0fdf4",
-                border: "1.5px solid #86efac",
-                borderRadius: "14px",
-                padding: "16px 20px",
-                marginBottom: "26px",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                flexWrap: "wrap",
-                gap: "14px"
-              }}
-            >
-              <div>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
-                  <ShieldCheckIcon size={18} style={{ color: "#16a34a" }} />
-                  <span style={{ fontSize: "0.78rem", fontWeight: "800", color: "#15803d", letterSpacing: "0.05em" }}>
-                    SECRET PICKUP PIN (OTP)
-                  </span>
-                </div>
-                <p style={{ margin: 0, fontSize: "0.82rem", color: "#166534" }}>
-                  Show this 4-digit PIN to counter staff to verify and receive your food.
-                </p>
-              </div>
-
-              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <div style={{ display: "flex", gap: "6px" }}>
-                  {showPickupPin ? (
-                    String(currentStudentOrder.pickupCode).split("").map((digit, idx) => (
-                      <span
-                        key={idx}
-                        style={{
-                          width: "32px",
-                          height: "38px",
-                          background: "#ffffff",
-                          border: "2px solid #22c55e",
-                          borderRadius: "8px",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontSize: "1.3rem",
-                          fontWeight: "900",
-                          color: "#15803d",
-                          boxShadow: "0 2px 4px rgba(34, 197, 94, 0.15)"
-                        }}
-                      >
-                        {digit}
-                      </span>
-                    ))
-                  ) : (
-                    [0, 1, 2, 3].map((_, idx) => (
-                      <span
-                        key={idx}
-                        style={{
-                          width: "32px",
-                          height: "38px",
-                          background: "#e2e8f0",
-                          border: "2px solid #cbd5e1",
-                          borderRadius: "8px",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontSize: "1.3rem",
-                          fontWeight: "900",
-                          color: "#64748b"
-                        }}
-                      >
-                        •
-                      </span>
-                    ))
-                  )}
-                </div>
-
-                <button
-                  type="button"
-                  style={{
-                    background: "#ffffff",
-                    border: "1px solid #86efac",
-                    borderRadius: "8px",
-                    padding: "6px 10px",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "4px",
-                    fontSize: "0.8rem",
-                    fontWeight: "700",
-                    color: "#15803d"
-                  }}
-                  onClick={() => setShowPickupPin(!showPickupPin)}
-                  title={showPickupPin ? "Hide PIN" : "Show PIN"}
-                >
-                  {showPickupPin ? <EyeOffIcon size={14} /> : <EyeIcon size={14} />}
-                  <span>{showPickupPin ? "Hide" : "Show"}</span>
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* 5. 4-STAGE ANIMATED VISUAL PROGRESS STEPPER */}
+          {/* 4. 4-STAGE ANIMATED VISUAL PROGRESS STEPPER */}
           <div className="order-stepper-container" style={{ margin: "0 0 24px" }}>
             {/* Step 1: Placed */}
             <div className={`stepper-node ${currentProgressStep >= 1 ? "completed" : ""}`}>
