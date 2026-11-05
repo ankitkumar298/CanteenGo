@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import StatusBadge from "../components/StatusBadge";
 import { CAMPUS_CANTEENS } from "../data/canteens";
+import { useAppContext } from "@/context/AppContext";
 import {
   ChefIcon,
   RefreshIcon,
@@ -42,16 +43,19 @@ export default function VendorPage({ onExitToHome }) {
   const [selectedHandoverOrder, setSelectedHandoverOrder] = useState(null);
   const [isHandoverModalOpen, setIsHandoverModalOpen] = useState(false);
 
+  const { canteens: ctxCanteens } = useAppContext();
+  const canteensList = ctxCanteens && ctxCanteens.length > 0 ? ctxCanteens : CAMPUS_CANTEENS;
+
   const [selectedVendorCanteen, setSelectedVendorCanteen] = useState(() => {
     try {
       const saved = localStorage.getItem("canteenGo_vendorCanteen");
       if (saved) {
         const parsed = JSON.parse(saved);
-        const match = CAMPUS_CANTEENS.find((c) => c.id === parsed.id);
+        const match = canteensList.find((c) => (c.id || c.canteenId) === (parsed.id || parsed.canteenId));
         if (match) return match;
       }
     } catch {}
-    return CAMPUS_CANTEENS[0]; // Food Court near 34 Block
+    return canteensList[0]; // Primary Canteen Hub
   });
 
   // Add Item Form State

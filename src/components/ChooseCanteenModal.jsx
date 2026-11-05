@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo, useRef } from "react";
 import { CAMPUS_CANTEENS, isCanteenOpenNow } from "../data/canteens";
 import { ClockIcon, CheckCircleIcon, SortIcon, CartIcon } from "./Icons";
+import { useAppContext } from "@/context/AppContext";
 
 const SORT_OPTIONS = [
   { id: "recommended", label: "Recommended", icon: "⭐" },
@@ -14,8 +15,12 @@ export default function ChooseCanteenModal({
   selectedCanteen,
   onSelectCanteen,
   targetItem = null,
-  cartItems = []
+  cartItems = [],
+  canteens: propCanteens
 }) {
+  const { canteens: ctxCanteens } = useAppContext();
+  const canteensList = propCanteens || (ctxCanteens && ctxCanteens.length > 0 ? ctxCanteens : CAMPUS_CANTEENS);
+
   const [imgError, setImgError] = useState(false);
   const [activeItem, setActiveItem] = useState(targetItem);
   const [sortBy, setSortBy] = useState("recommended");
@@ -92,15 +97,15 @@ export default function ChooseCanteenModal({
 
   // Compute live data and dynamic sorting for canteens
   const sortedCanteens = useMemo(() => {
-    let candidateCanteens = CAMPUS_CANTEENS;
+    let candidateCanteens = canteensList;
 
     // Filter canteens strictly to those where this item is offered
     if (isItemMode && activeItem) {
       const avail = activeItem.availableCanteens;
       if (Array.isArray(avail) && avail.length > 0 && !avail.includes("all")) {
-        candidateCanteens = CAMPUS_CANTEENS.filter((c) => avail.includes(c.id));
+        candidateCanteens = canteensList.filter((c) => avail.includes(c.id || c.canteenId));
       } else if (activeItem.canteenId && activeItem.canteenId !== "all") {
-        candidateCanteens = CAMPUS_CANTEENS.filter((c) => c.id === activeItem.canteenId);
+        candidateCanteens = canteensList.filter((c) => (c.id || c.canteenId) === activeItem.canteenId);
       }
     }
 

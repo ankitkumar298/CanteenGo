@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { CAMPUS_CANTEENS } from "../data/canteens";
+import { useAppContext } from "@/context/AppContext";
 import {
   CartIcon,
   ChefIcon,
@@ -62,16 +63,19 @@ export default function HomePage({
   const [signupConfirmPassword, setSignupConfirmPassword] = useState("");
   const [showSignupPassword, setShowSignupPassword] = useState(false);
 
+  const { canteens: ctxCanteens } = useAppContext();
+  const canteensList = ctxCanteens && ctxCanteens.length > 0 ? ctxCanteens : CAMPUS_CANTEENS;
+
   // Vendor Fields
   const [selectedCanteenId, setSelectedCanteenId] = useState(() => {
     try {
       const saved = localStorage.getItem("canteenGo_vendorCanteen");
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed?.id) return parsed.id;
+        if (parsed?.id || parsed?.canteenId) return parsed.id || parsed.canteenId;
       }
     } catch {}
-    return CAMPUS_CANTEENS[0].id;
+    return canteensList[0]?.id || canteensList[0]?.canteenId || "foodcourt-34";
   });
   const [vendorPin, setVendorPin] = useState("");
   const [showVendorPin, setShowVendorPin] = useState(false);
@@ -83,7 +87,7 @@ export default function HomePage({
   const [successMsg, setSuccessMsg] = useState("");
 
   const currentCanteenObj =
-    CAMPUS_CANTEENS.find((c) => c.id === selectedCanteenId) || CAMPUS_CANTEENS[0];
+    canteensList.find((c) => (c.id || c.canteenId) === selectedCanteenId) || canteensList[0];
 
   // ==========================================
   // HANDLERS: STUDENT AUTH (JWT)
@@ -772,8 +776,8 @@ export default function HomePage({
                   onChange={(e) => setSelectedCanteenId(e.target.value)}
                   disabled={loading}
                 >
-                  {CAMPUS_CANTEENS.map((c) => (
-                    <option key={c.id} value={c.id}>
+                  {canteensList.map((c) => (
+                    <option key={c.id || c.canteenId} value={c.id || c.canteenId}>
                       {c.name} ({c.counter})
                     </option>
                   ))}

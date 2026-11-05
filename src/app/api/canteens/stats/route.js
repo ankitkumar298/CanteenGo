@@ -1,5 +1,6 @@
 import { connectToDatabase } from "@/lib/mongodb";
 import Order from "@/models/Order";
+import Canteen from "@/models/Canteen";
 
 export const dynamic = "force-dynamic";
 
@@ -7,12 +8,9 @@ export async function GET() {
   try {
     await connectToDatabase();
 
-    const canteens = [
-      "Food Court near 34 Block",
-      "NK Food Court Canteen",
-      "Main Canteen",
-      "Library Cafe"
-    ];
+    // Dynamically retrieve all registered canteens from MongoDB collection
+    const canteenDocs = await Canteen.find().sort({ createdAt: 1 });
+    const canteens = canteenDocs.map((c) => c.name);
 
     // Aggregate active orders grouped by canteen
     const activeOrders = await Order.aggregate([

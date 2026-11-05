@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import StatusBadge from "../components/StatusBadge";
 import { CAMPUS_CANTEENS } from "../data/canteens";
+import { useAppContext } from "@/context/AppContext";
 import {
   ChefIcon,
   BellIcon,
@@ -15,6 +16,9 @@ import {
 } from "../components/Icons";
 
 export default function QueuePage({ setActiveTab, isVendorView = false, onVendorAction, selectedCanteen = null }) {
+  const { canteens: ctxCanteens } = useAppContext();
+  const canteensList = ctxCanteens && ctxCanteens.length > 0 ? ctxCanteens : CAMPUS_CANTEENS;
+
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(true);
@@ -752,8 +756,8 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
                     value={activeCanteenFilter}
                     onChange={(e) => setActiveCanteenFilter(e.target.value)}
                   >
-                    {CAMPUS_CANTEENS.map((c) => (
-                      <option key={c.id} value={c.id}>
+                    {canteensList.map((c) => (
+                      <option key={c.id || c.canteenId} value={c.id || c.canteenId}>
                         {c.icon} {c.name}
                       </option>
                     ))}

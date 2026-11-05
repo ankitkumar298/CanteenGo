@@ -5,6 +5,7 @@ import UpiModal from "../components/UpiModal";
 import OrderSuccessOverlay from "../components/OrderSuccessOverlay";
 import ChooseCanteenModal from "../components/ChooseCanteenModal";
 import { CAMPUS_CANTEENS, DEFAULT_CANTEEN, getCanteenItemPrice, isCanteenOpenNow } from "../data/canteens";
+import { useAppContext } from "@/context/AppContext";
 import {
   SearchIcon,
   FlameIcon,
@@ -62,7 +63,11 @@ export default function StudentPage({
     } catch {}
   }, [remarks]);
 
-  // Selected Canteen State (Defaults to "Food Court near 34 Block")
+  const { canteens: ctxCanteens } = useAppContext();
+  const canteensList = ctxCanteens && ctxCanteens.length > 0 ? ctxCanteens : CAMPUS_CANTEENS;
+  const defaultCanteenObj = canteensList[0] || DEFAULT_CANTEEN;
+
+  // Selected Canteen State (Defaults to primary canteen from Atlas collection)
   const [selectedCanteen, setSelectedCanteen] = useState(() => {
     try {
       const saved = localStorage.getItem("canteenGo_selectedCanteen");
@@ -71,9 +76,9 @@ export default function StudentPage({
         if (parsed && parsed.name) return parsed;
       }
     } catch {}
-    return DEFAULT_CANTEEN;
+    return defaultCanteenObj;
   });
-  const currentCanteen = selectedCanteen?.name ? selectedCanteen : DEFAULT_CANTEEN;
+  const currentCanteen = selectedCanteen?.name ? selectedCanteen : defaultCanteenObj;
   const currentCanteenStatus = isCanteenOpenNow(currentCanteen);
 
   // Check if any item in cart is from a currently closed canteen
@@ -1152,6 +1157,7 @@ export default function StudentPage({
         onSelectCanteen={handleSelectCanteen}
         targetItem={canteenModalItem}
         cartItems={cart}
+        canteens={canteensList}
       />
     </div>
   );

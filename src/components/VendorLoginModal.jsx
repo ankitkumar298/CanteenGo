@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { CAMPUS_CANTEENS } from "../data/canteens";
+import { useAppContext } from "@/context/AppContext";
 import {
   ChefIcon,
   LockIcon,
@@ -11,15 +12,18 @@ import {
 } from "./Icons";
 
 export default function VendorLoginModal({ isOpen, onClose, onSuccess }) {
+  const { canteens: ctxCanteens } = useAppContext();
+  const canteensList = ctxCanteens && ctxCanteens.length > 0 ? ctxCanteens : CAMPUS_CANTEENS;
+
   const [selectedCanteenId, setSelectedCanteenId] = useState(() => {
     try {
       const saved = localStorage.getItem("canteenGo_vendorCanteen");
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed.id) return parsed.id;
+        if (parsed.id || parsed.canteenId) return parsed.id || parsed.canteenId;
       }
     } catch {}
-    return CAMPUS_CANTEENS[0].id;
+    return canteensList[0]?.id || canteensList[0]?.canteenId || "foodcourt-34";
   });
 
   const [pin, setPin] = useState("");
@@ -44,7 +48,7 @@ export default function VendorLoginModal({ isOpen, onClose, onSuccess }) {
   if (!isOpen) return null;
 
   const currentCanteenObj =
-    CAMPUS_CANTEENS.find((c) => c.id === selectedCanteenId) || CAMPUS_CANTEENS[0];
+    canteensList.find((c) => (c.id || c.canteenId) === selectedCanteenId) || canteensList[0];
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -137,8 +141,8 @@ export default function VendorLoginModal({ isOpen, onClose, onSuccess }) {
                   setError("");
                 }}
               >
-                {CAMPUS_CANTEENS.map((c) => (
-                  <option key={c.id} value={c.id}>
+                {canteensList.map((c) => (
+                  <option key={c.id || c.canteenId} value={c.id || c.canteenId}>
                     {c.icon} {c.name} — {c.counter}
                   </option>
                 ))}

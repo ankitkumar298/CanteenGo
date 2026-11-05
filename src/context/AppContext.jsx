@@ -4,12 +4,54 @@ import { createContext, useContext, useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import StudentProfileModal from "@/components/StudentProfileModal";
 import Navbar from "@/components/Navbar";
+import { CAMPUS_CANTEENS } from "@/data/canteens";
 
 const AppContext = createContext(null);
+
+export function useAppContext() {
+  const context = useContext(AppContext);
+  return context || {};
+}
 
 export function AppProvider({ children }) {
   const router = useRouter();
   const pathname = usePathname();
+
+  // Dynamic Canteens State (Loaded from MongoDB Atlas collection)
+  const [canteens, setCanteens] = useState(CAMPUS_CANTEENS);
+  const [loadingCanteens, setLoadingCanteens] = useState(true);
+
+  const refreshCanteens = async () => {
+    try {
+      const res = await fetch("/api/canteens");
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          setCanteens(data);
+          try {
+            localStorage.setItem("canteenGo_cachedCanteens", JSON.stringify(data));
+          } catch {}
+        }
+      }
+    } catch (e) {
+      console.warn("Failed to load dynamic canteens:", e);
+    } finally {
+      setLoadingCanteens(false);
+    }
+  };
+
+  useEffect(() => {
+    try {
+      const cached = localStorage.getItem("canteenGo_cachedCanteens");
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setCanteens(parsed);
+        }
+      }
+    } catch {}
+    refreshCanteens();
+  }, []);
 
   // Student Profile
   const [studentProfile, setStudentProfile] = useState(null);
@@ -129,6 +171,9 @@ export function AppProvider({ children }) {
   return (
     <AppContext.Provider
       value={{
+        canteens,
+        loadingCanteens,
+        refreshCanteens,
         userRole,
         studentTab,
         cart,

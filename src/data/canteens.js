@@ -104,6 +104,24 @@ export const CAMPUS_CANTEENS = [
 export const DEFAULT_CANTEEN = CAMPUS_CANTEENS[0]; // "Food Court near 34 Block"
 
 /**
+ * Dynamically fetch all active canteens from MongoDB collection via API
+ */
+export const fetchCanteens = async () => {
+  try {
+    const res = await fetch("/api/canteens");
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) {
+        return data;
+      }
+    }
+  } catch (err) {
+    console.warn("Failed to fetch canteens from API, using initial dataset:", err.message);
+  }
+  return CAMPUS_CANTEENS;
+};
+
+/**
  * Calculates dynamic price of an item for a given canteen based on price offset.
  * Minimum price is bounded to ₹5.
  */
