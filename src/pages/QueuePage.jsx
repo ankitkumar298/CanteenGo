@@ -72,8 +72,47 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
   const isMyOrder = (order) => {
     if (!order) return false;
     if (savedLastToken && (order.tokenNumber === savedLastToken || order._id === savedLastToken)) return true;
-    if (studentProfile?.phone && order.studentPhone && String(order.studentPhone) === String(studentProfile.phone)) return true;
+    if (studentProfile?.phone && order.studentPhone && String(order.studentPhone).trim() === String(studentProfile.phone).trim()) return true;
+    if (studentProfile?.email && order.studentEmail && order.studentEmail.toLowerCase() === studentProfile.email.toLowerCase()) return true;
+    if (studentProfile?.name && order.studentName && order.studentName.trim().toLowerCase() === studentProfile.name.trim().toLowerCase()) return true;
     if (searchToken && order.tokenNumber?.toUpperCase() === searchToken.trim().toUpperCase()) return true;
+    return false;
+  };
+
+  // Resilient multi-canteen order matcher
+  const matchesCanteen = (order, targetCanteen) => {
+    if (!order || !targetCanteen) return false;
+    const targetId = targetCanteen.id || targetCanteen.canteenId;
+    const targetName = (targetCanteen.name || "").toLowerCase().trim();
+    const targetShort = (targetCanteen.shortName || "").toLowerCase().trim();
+
+    if (targetId && order.canteenId && String(order.canteenId).toLowerCase() === String(targetId).toLowerCase()) {
+      return true;
+    }
+
+    if (order.canteenName) {
+      const oName = order.canteenName.toLowerCase().trim();
+      if (targetName && (oName === targetName || oName.includes(targetName) || targetName.includes(oName))) {
+        return true;
+      }
+      if (targetShort && (oName.includes(targetShort) || targetShort.includes(oName))) {
+        return true;
+      }
+    }
+
+    if (targetId === "foodcourt-34" && (order.canteenName?.match(/34\s*Block/i) || order.canteenId?.includes("34"))) return true;
+    if (targetId === "nk-foodcourt" && (order.canteenName?.match(/NK/i) || order.canteenId?.includes("nk"))) return true;
+    if (targetId === "main-canteen" && (order.canteenName?.match(/Main\s*Canteen/i) || order.canteenId?.includes("main"))) return true;
+    if (targetId === "library-cafe" && (order.canteenName?.match(/Library/i) || order.canteenId?.includes("library"))) return true;
+
+    if (order.items && Array.isArray(order.items)) {
+      return order.items.some((it) => {
+        if (targetId && it.canteenId && String(it.canteenId).toLowerCase() === String(targetId).toLowerCase()) return true;
+        if (it.canteenName && targetName && it.canteenName.toLowerCase().includes(targetName)) return true;
+        return false;
+      });
+    }
+
     return false;
   };
 
@@ -133,7 +172,9 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
   const fetchQueueOrders = async (isManual = false) => {
     try {
       if (isManual) setLoading(true);
-      const canteenParam = activeCanteenFilter && activeCanteenFilter !== "all"
+      // For vendor console, filter by selected canteen if set; for student portal, fetch all orders
+      // so student's personal tracker tracks all multi-canteen orders and the public board filters instantly!
+      const canteenParam = isVendorView && activeCanteenFilter && activeCanteenFilter !== "all"
         ? `?canteenId=${activeCanteenFilter}`
         : "";
       const res = await fetch(`/api/orders${canteenParam}`);
@@ -1238,6 +1279,73 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
   const currentWaitTime = currentStudentOrder ? getEstimatedWaitTime(currentStudentOrder) : "";
   const currentProgressStep = currentStudentOrder ? getProgressStep(currentStudentOrder.orderStatus) : 0;
 
+  // Selected Canteen for the Canteen-Wide Public Live Activity Display
+  const [selectedBoardCanteenId, setSelectedBoardCanteenId] = useState(() => {
+    if (selectedCanteen?.id) return selectedCanteen.id;
+    return canteensList[0]?.id || canteensList[0]?.canteenId || "foodcourt-34";
+  });
+
+  // Find the selected canteen object
+  const selectedBoardCanteen = useMemo(() => {
+    return (
+      canteensList.find((c) => (c.id || c.canteenId) === selectedBoardCanteenId) ||
+      canteensList[0] ||
+      CAMPUS_CANTEENS[0]
+    );
+  }, [canteensList, selectedBoardCanteenId]);
+
+  // When student selects or switches their personal order, auto-focus public board to that canteen
+  useEffect(() => {
+    if (currentStudentOrder) {
+      const match = canteensList.find((c) => matchesCanteen(currentStudentOrder, c));
+      if (match && (match.id || match.canteenId) !== selectedBoardCanteenId) {
+        setSelectedBoardCanteenId(match.id || match.canteenId);
+      }
+    }
+  }, [currentStudentOrder?._id]);
+
+  // Filter orders for the public live activity board
+  const boardOrders = useMemo(() => {
+    return orders.filter((o) => matchesCanteen(o, selectedBoardCanteen));
+  }, [orders, selectedBoardCanteen]);
+
+  const boardPreparingOrders = useMemo(() => {
+    return boardOrders.filter((o) => o.orderStatus === "Preparing");
+  }, [boardOrders]);
+
+  const boardReadyOrders = useMemo(() => {
+    return boardOrders.filter((o) => o.orderStatus === "Ready");
+  }, [boardOrders]);
+
+  const boardPendingOrders = useMemo(() => {
+    // Chronological order: oldest waiting orders first
+    return boardOrders
+      .filter((o) => o.orderStatus === "Pending")
+      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  }, [boardOrders]);
+
+  const boardWaitingCount = boardPendingOrders.length;
+  const boardPreparingCount = boardPreparingOrders.length;
+  const boardReadyCount = boardReadyOrders.length;
+
+  const boardEstWaitMinutes = useMemo(() => {
+    if (boardWaitingCount === 0 && boardPreparingCount === 0) return 0;
+    return Math.max(3, Math.round(boardWaitingCount * 2.5 + (boardPreparingCount > 0 ? 3 : 0)));
+  }, [boardWaitingCount, boardPreparingCount]);
+
+  const boardCanteenStatus = useMemo(() => {
+    if (selectedBoardCanteen && selectedBoardCanteen.isOpen === false) {
+      return { label: "Closed / Paused", code: "closed" };
+    }
+    if (boardWaitingCount > 5) {
+      return { label: "Busy (High Demand)", code: "busy" };
+    }
+    if (boardWaitingCount >= 3) {
+      return { label: "Moderate Rush", code: "moderate" };
+    }
+    return { label: "Open & Operating Smoothly", code: "open" };
+  }, [selectedBoardCanteen, boardWaitingCount]);
+
   return (
     <div className="student-queue-page">
       {/* 1. Header with Clock & Live Sync */}
@@ -1339,6 +1447,10 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
 
                     <div className="vertical-card-items" title={ord.items?.map((i) => `${i.name} (×${i.quantity})`).join(", ")}>
                       {ord.items?.map((i) => `${i.name} ×${i.quantity}`).join(", ") || `${totalItems} items`}
+                    </div>
+
+                    <div className="vertical-card-canteen">
+                      📍 {ord.canteenName || "Food Court near 34 Block"}
                     </div>
 
                     <div className="vertical-card-meta">
@@ -1696,6 +1808,268 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
       )}
         </div>
       </div>
+
+      {/* =========================================================================
+          3. CANTEEN-WIDE PUBLIC LIVE ACTIVITY DISPLAY (Public Counter Monitor)
+          ========================================================================= */}
+      <section className="canteen-public-board-card">
+        {/* Board Top Header */}
+        <div className="public-board-header">
+          <div className="public-board-title-group">
+            <div className="public-board-pill">
+              <span className="pulse-live-dot"></span>
+              <span>CANTEEN-WIDE LIVE ACTIVITY</span>
+            </div>
+            <h3 className="public-board-title">
+              {selectedBoardCanteen.name}
+            </h3>
+            <p className="public-board-sub">
+              Public live counter monitor • Orders update in real-time as kitchen advances tokens
+            </p>
+          </div>
+
+          <div className="public-board-status-group">
+            <div className={`canteen-status-badge status-${boardCanteenStatus.code}`}>
+              <span className="status-indicator-dot"></span>
+              <span>{boardCanteenStatus.label}</span>
+            </div>
+            <div className="public-sync-meta">
+              <span className="sync-status-indicator">● Live Feed Connected</span>
+              <span className="sync-timestamp">Synced at {lastRefreshed}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Canteen Switcher Tabs (Supports students with orders in multiple canteens) */}
+        <div className="canteen-board-switcher-bar">
+          <span className="canteen-switcher-label">Campus Canteens:</span>
+          <div className="canteen-switcher-chips">
+            {canteensList.map((canteen) => {
+              const cId = canteen.id || canteen.canteenId;
+              const isSelected = cId === selectedBoardCanteenId;
+              const myOrdersInCanteen = activeStudentOrders.filter((ord) => matchesCanteen(ord, canteen));
+
+              return (
+                <button
+                  key={cId}
+                  type="button"
+                  className={`canteen-switcher-chip ${isSelected ? "active" : ""}`}
+                  onClick={() => setSelectedBoardCanteenId(cId)}
+                >
+                  <span className="canteen-chip-icon">{canteen.icon || "🏢"}</span>
+                  <span className="canteen-chip-name">{canteen.shortName || canteen.name}</span>
+                  {myOrdersInCanteen.length > 0 && (
+                    <span className="canteen-chip-my-badge" title="You have an active order in this canteen">
+                      ⭐ {myOrdersInCanteen.length} Your Order{myOrdersInCanteen.length > 1 ? "s" : ""}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 4. CANTEEN LOAD & WAIT TIME METRICS STRIP */}
+        <div className="canteen-load-strip">
+          <div className="canteen-load-item">
+            <span className="canteen-load-label">WAITING IN QUEUE</span>
+            <div className="canteen-load-value value-waiting">
+              {boardWaitingCount}
+            </div>
+            <span className="canteen-load-sub">Orders in line</span>
+          </div>
+
+          <div className="canteen-load-item">
+            <span className="canteen-load-label">NOW COOKING</span>
+            <div className="canteen-load-value value-cooking">
+              {boardPreparingCount}
+            </div>
+            <span className="canteen-load-sub">Active on stove</span>
+          </div>
+
+          <div className="canteen-load-item">
+            <span className="canteen-load-label">READY AT COUNTER</span>
+            <div className="canteen-load-value value-ready">
+              {boardReadyCount}
+            </div>
+            <span className="canteen-load-sub">Waiting for pickup</span>
+          </div>
+
+          <div className="canteen-load-item">
+            <span className="canteen-load-label">EST. QUEUE WAIT</span>
+            <div className="canteen-load-value value-wait">
+              {boardEstWaitMinutes === 0 ? "0m" : `~${boardEstWaitMinutes}m`}
+            </div>
+            <span className="canteen-load-sub">
+              {boardEstWaitMinutes === 0 ? "Zero wait (Instant)" : "From queue load"}
+            </span>
+          </div>
+        </div>
+
+        {/* 3 Core Public Activity Columns: NOW PREPARING | READY FOR PICKUP | NEXT IN QUEUE */}
+        <div className="public-board-grid">
+          {/* 1. NOW PREPARING */}
+          <div className="public-col col-preparing">
+            <div className="public-col-header header-preparing">
+              <div className="public-col-title-wrap">
+                <FlameIcon size={16} />
+                <span>NOW PREPARING</span>
+              </div>
+              <span className="public-col-badge badge-preparing">
+                {boardPreparingOrders.length}
+              </span>
+            </div>
+
+            <div className="public-col-body">
+              {boardPreparingOrders.length === 0 ? (
+                <div className="public-col-empty">
+                  <span className="empty-icon">👨‍🍳</span>
+                  <p>No orders actively cooking</p>
+                  <small>Kitchen stove ready for incoming orders</small>
+                </div>
+              ) : (
+                boardPreparingOrders.map((ord) => {
+                  const isMine = isMyOrder(ord);
+                  return (
+                    <div
+                      key={ord._id}
+                      className={`public-order-card card-preparing ${isMine ? "card-my-highlight" : ""}`}
+                    >
+                      {isMine && (
+                        <div className="public-my-order-pill">
+                          ⭐ AAPKA ORDER (Cooking!)
+                        </div>
+                      )}
+                      <div className="public-card-top">
+                        <span className="public-token-num token-preparing">{ord.tokenNumber}</span>
+                        <span className="public-counter-tag">
+                          📍 {ord.counterName || selectedBoardCanteen.counter || "Counter 1"}
+                        </span>
+                      </div>
+                      <div className="public-card-items" title={ord.items?.map((i) => `${i.name} (×${i.quantity})`).join(", ")}>
+                        {ord.items?.map((i) => `${i.name} ×${i.quantity}`).join(", ")}
+                      </div>
+                      <div className="public-card-status-sub text-preparing">
+                        🔥 On stove with chef • Fresh cooking
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+
+          {/* 2. READY FOR PICKUP (Visually Prominent) */}
+          <div className="public-col col-ready">
+            <div className="public-col-header header-ready">
+              <div className="public-col-title-wrap">
+                <BellIcon size={16} />
+                <span>READY FOR PICKUP</span>
+              </div>
+              <span className="public-col-badge badge-ready">
+                {boardReadyOrders.length}
+              </span>
+            </div>
+
+            <div className="public-col-body">
+              {boardReadyOrders.length === 0 ? (
+                <div className="public-col-empty">
+                  <span className="empty-icon">🔔</span>
+                  <p>All ready orders collected</p>
+                  <small>New ready tokens will appear here</small>
+                </div>
+              ) : (
+                boardReadyOrders.map((ord) => {
+                  const isMine = isMyOrder(ord);
+                  return (
+                    <div
+                      key={ord._id}
+                      className={`public-order-card card-ready ${isMine ? "card-my-highlight-ready" : ""}`}
+                    >
+                      {isMine && (
+                        <div className="public-my-order-pill pill-ready">
+                          🎉 AAPKA ORDER READY HAI!
+                        </div>
+                      )}
+                      <div className="public-card-top">
+                        <span className="public-token-num token-ready">{ord.tokenNumber}</span>
+                        <span className="public-calling-pill">
+                          📢 NOW CALLING
+                        </span>
+                      </div>
+                      <div className="public-counter-callout">
+                        Please collect at <strong>{ord.counterName || selectedBoardCanteen.counter || "Counter 1"}</strong>
+                      </div>
+                      <div className="public-ready-timestamp">
+                        Ready since {new Date(ord.updatedAt || ord.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+
+          {/* 3. NEXT IN QUEUE (Privacy Protected: No names, No phones, No PINs) */}
+          <div className="public-col col-pending">
+            <div className="public-col-header header-pending">
+              <div className="public-col-title-wrap">
+                <ClockIcon size={16} />
+                <span>NEXT IN QUEUE</span>
+              </div>
+              <span className="public-col-badge badge-pending">
+                {boardPendingOrders.length}
+              </span>
+            </div>
+
+            <div className="public-col-body">
+              {boardPendingOrders.length === 0 ? (
+                <div className="public-col-empty">
+                  <span className="empty-icon">⏳</span>
+                  <p>No waiting tokens in line</p>
+                  <small>Zero queue delay right now</small>
+                </div>
+              ) : (
+                boardPendingOrders.slice(0, 5).map((ord, idx) => {
+                  const isMine = isMyOrder(ord);
+                  const itemCount = ord.items?.reduce((s, it) => s + it.quantity, 0) || 0;
+                  return (
+                    <div
+                      key={ord._id}
+                      className={`public-order-card card-pending ${isMine ? "card-my-highlight" : ""}`}
+                    >
+                      {isMine && (
+                        <div className="public-my-order-pill">
+                          ⭐ AAPKA ORDER (In Line)
+                        </div>
+                      )}
+                      <div className="public-card-top">
+                        <div className="public-pos-and-token">
+                          <span className="public-line-pos">#{idx + 1}</span>
+                          <span className="public-token-num token-pending">{ord.tokenNumber}</span>
+                        </div>
+                        <span className="public-queue-wait-chip">
+                          ~{(idx + 1) * 3}m wait
+                        </span>
+                      </div>
+                      {/* Privacy Protected: Only item count, no private customer data */}
+                      <div className="public-card-privacy-info">
+                        <span>📦 {itemCount} item{itemCount > 1 ? "s" : ""} in order</span>
+                        <span className="public-secure-privacy-tag">🔒 Private</span>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+              {boardPendingOrders.length > 5 && (
+                <div className="public-more-tokens-note">
+                  + {boardPendingOrders.length - 5} more orders waiting in line
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
