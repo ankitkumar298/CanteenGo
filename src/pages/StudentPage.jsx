@@ -85,16 +85,16 @@ export default function StudentPage({
   const cartClosedCanteens = useMemo(() => {
     const map = new Map();
     cart.forEach((item) => {
-      const itemCanteen = item.canteen || currentCanteen;
+      const itemCanteen = item.canteen && item.canteen.id !== "all" ? item.canteen : defaultCanteenObj;
       const status = isCanteenOpenNow(itemCanteen);
       if (!status.isOpen) {
         map.set(itemCanteen.name, { canteen: itemCanteen, status });
       }
     });
     return Array.from(map.values());
-  }, [cart, currentCanteen]);
+  }, [cart, defaultCanteenObj]);
 
-  const isCartCanteenClosed = !currentCanteenStatus.isOpen || cartClosedCanteens.length > 0;
+  const isCartCanteenClosed = cartClosedCanteens.length > 0;
   const [isCanteenModalOpen, setIsCanteenModalOpen] = useState(false);
   const [canteenModalItem, setCanteenModalItem] = useState(null);
 
@@ -1130,13 +1130,16 @@ export default function StudentPage({
                         {(() => {
                           const distinctCanteens = Array.from(
                             new Map(
-                              cart.map((ci) => {
-                                const c = ci.canteen || currentCanteen;
-                                return [c.id || c.name, c];
-                              })
+                              cart
+                                .map((ci) => ci.canteen)
+                                .filter((c) => c && c.id !== "all" && c.name !== "All Canteens")
+                                .map((c) => [c.id || c.name, c])
                             ).values()
                           );
                           const isMultiCanteen = distinctCanteens.length > 1;
+                          const singleCartCanteen = distinctCanteens[0] ||
+                            (selectedCanteen?.id !== "all" && selectedCanteen?.name !== "All Canteens" ? selectedCanteen : defaultCanteenObj);
+                          const singleCanteenStatus = isCanteenOpenNow(singleCartCanteen);
 
                           return (
                             <>
@@ -1153,7 +1156,7 @@ export default function StudentPage({
                                     </>
                                   ) : (
                                     <>
-                                      <span className="closed-dot"></span> Closed ({currentCanteenStatus.nextOpenText || currentCanteen.openingHours || "Unavailable"})
+                                      <span className="closed-dot"></span> Closed ({singleCanteenStatus.nextOpenText || singleCartCanteen.openingHours || "Unavailable"})
                                     </>
                                   )}
                                 </span>
@@ -1169,7 +1172,7 @@ export default function StudentPage({
                                 </div>
                               ) : (
                                 <strong className="cart-canteen-name">
-                                  {currentCanteen.name}
+                                  {singleCartCanteen.name}
                                 </strong>
                               )}
 
@@ -1178,10 +1181,10 @@ export default function StudentPage({
                                   <span>Collect items at each respective counter</span>
                                 ) : (
                                   <>
-                                    <span>{currentCanteen.counter}</span>
-                                    {currentCanteen.walkingMinutes && (
+                                    <span>{singleCartCanteen.counter || "Counter 1"}</span>
+                                    {singleCartCanteen.walkingMinutes && (
                                       <span className="canteen-walk-badge">
-                                        🚶 {currentCanteen.walkingMinutes} min walk
+                                        🚶 {singleCartCanteen.walkingMinutes} min walk
                                       </span>
                                     )}
                                   </>
