@@ -1549,131 +1549,141 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
         </div>
       </div>
 
-      {/* 5. MULTIPLE ACTIVE ORDERS SWITCHER (if student has more than 1 active order) */}
-      {activeStudentOrders.length > 1 && (
-        <div className="cq-multi-order-chips">
-          <span style={{ fontSize: "0.82rem", fontWeight: "800", color: "#64748b" }}>
-            Switch Your Active Tokens:
-          </span>
-          {activeStudentOrders.map((ord) => {
-            const isSel = currentStudentOrder?._id === ord._id;
-            return (
-              <button
-                key={ord._id}
-                type="button"
-                className={`cq-multi-chip ${isSel ? "active" : ""}`}
-                onClick={() => setSelectedStudentOrderId(ord._id)}
-              >
-                Token {ord.tokenNumber} ({ord.orderStatus})
-              </button>
-            );
-          })}
-        </div>
-      )}
-
-      {/* 6. BOTTOM HIGHLIGHT STRIP: YOUR ORDER */}
+      {/* 5. BOTTOM HIGHLIGHT STRIP: YOUR ORDER (with integrated active token switcher) */}
       {currentStudentOrder ? (
-        <div className="cq-your-order-bar">
-          {/* Left Block */}
-          <div className="cq-yo-left">
-            <span className="cq-yo-bag-icon">🛍️</span>
-            <div>
-              <h4 className="cq-yo-title">YOUR ORDER</h4>
-              <p className="cq-yo-desc">
-                Track your order in real-time with live queue updates.
-              </p>
+        <div className="cq-your-order-card">
+          {/* Integrated token switcher inside the card header (only if multiple active orders) */}
+          {activeStudentOrders.length > 1 && (
+            <div className="cq-yo-card-header">
+              <div className="cq-yo-header-label">
+                <span className="cq-yo-header-icon">🔄</span>
+                <span>Switch Active Order ({activeStudentOrders.length}):</span>
+              </div>
+              <div className="cq-yo-token-chips">
+                {activeStudentOrders.map((ord) => {
+                  const isSel = currentStudentOrder?._id === ord._id;
+                  return (
+                    <button
+                      key={ord._id}
+                      type="button"
+                      className={`cq-yo-tab-chip ${isSel ? "active" : ""}`}
+                      onClick={() => setSelectedStudentOrderId(ord._id)}
+                    >
+                      <span className="cq-tab-token-num">Token {ord.tokenNumber}</span>
+                      <span className={`cq-tab-badge status-${ord.orderStatus?.toLowerCase()}`}>
+                        {ord.orderStatus}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* Token Block */}
-          <div className="cq-yo-token-block">
-            <span className="cq-yo-token-pill">★ YOUR TOKEN</span>
-            <span className="cq-yo-token-num">{currentStudentOrder.tokenNumber}</span>
-          </div>
-
-          {/* Items & Status */}
-          <div className="cq-yo-food-block">
-            <div className="cq-yo-food-name">
-              {currentStudentOrder.items?.[0]
-                ? `${currentStudentOrder.items[0].name} × ${currentStudentOrder.items[0].quantity}${currentStudentOrder.items.length > 1 ? ` +${currentStudentOrder.items.length - 1} more` : ""}`
-                : "Your Meal"}
-            </div>
-            <span className={`cq-yo-status-pill status-${currentStudentOrder.orderStatus?.toLowerCase()}`}>
-              ● {currentStudentOrder.orderStatus?.toUpperCase()}
-            </span>
-          </div>
-
-          {/* Stats Group */}
-          <div className="cq-yo-stats-group">
-            {/* Orders ahead */}
-            <div className="cq-yo-stat-item">
-              <span className="cq-yo-stat-icon">👥</span>
+          <div className="cq-yo-card-body">
+            {/* Left Block */}
+            <div className="cq-yo-left">
+              <span className="cq-yo-bag-icon">🛍️</span>
               <div>
-                <div className="cq-yo-stat-val">
-                  {currentOrdersAhead === 0 ? "Next Up!" : `${currentOrdersAhead} orders`}
-                </div>
-                <div className="cq-yo-stat-lbl">before yours</div>
+                <h4 className="cq-yo-title">YOUR ORDER</h4>
+                <p className="cq-yo-desc">
+                  Track your order in real-time with live queue updates.
+                </p>
               </div>
             </div>
 
-            {/* Estimated wait */}
-            <div className="cq-yo-stat-item">
-              <span className="cq-yo-stat-icon">🕒</span>
-              <div>
-                <div className="cq-yo-stat-val">
-                  {currentWaitTime || "~8 min"}
+            {/* Token Block */}
+            <div className="cq-yo-token-block">
+              <span className="cq-yo-token-pill">★ YOUR TOKEN</span>
+              <span className="cq-yo-token-num">{currentStudentOrder.tokenNumber}</span>
+            </div>
+
+            {/* Items & Status */}
+            <div className="cq-yo-food-block">
+              <div className="cq-yo-food-name">
+                {currentStudentOrder.items?.[0]
+                  ? `${currentStudentOrder.items[0].name} × ${currentStudentOrder.items[0].quantity}${currentStudentOrder.items.length > 1 ? ` +${currentStudentOrder.items.length - 1} more` : ""}`
+                  : "Your Meal"}
+              </div>
+              <span className={`cq-yo-status-pill status-${currentStudentOrder.orderStatus?.toLowerCase()}`}>
+                ● {currentStudentOrder.orderStatus?.toUpperCase()}
+              </span>
+            </div>
+
+            {/* Stats Group */}
+            <div className="cq-yo-stats-group">
+              {/* Orders ahead */}
+              <div className="cq-yo-stat-item">
+                <span className="cq-yo-stat-icon">👥</span>
+                <div>
+                  <div className="cq-yo-stat-val">
+                    {currentOrdersAhead === 0 ? "Next Up!" : `${currentOrdersAhead} orders`}
+                  </div>
+                  <div className="cq-yo-stat-lbl">before yours</div>
                 </div>
-                <div className="cq-yo-stat-lbl">Estimated wait</div>
+              </div>
+
+              {/* Estimated wait */}
+              <div className="cq-yo-stat-item">
+                <span className="cq-yo-stat-icon">🕒</span>
+                <div>
+                  <div className="cq-yo-stat-val">
+                    {currentWaitTime || "~8 min"}
+                  </div>
+                  <div className="cq-yo-stat-lbl">Estimated wait</div>
+                </div>
+              </div>
+
+              {/* Pickup counter */}
+              <div className="cq-yo-stat-item">
+                <span className="cq-yo-stat-icon">📍</span>
+                <div>
+                  <div className="cq-yo-stat-val">
+                    {currentStudentOrder.counterName || selectedBoardCanteen.counter?.split(" ")[0] || "Counter 1"}
+                  </div>
+                  <div className="cq-yo-stat-lbl">Pickup counter</div>
+                </div>
               </div>
             </div>
 
-            {/* Pickup counter */}
-            <div className="cq-yo-stat-item">
-              <span className="cq-yo-stat-icon">📍</span>
-              <div>
-                <div className="cq-yo-stat-val">
-                  {currentStudentOrder.counterName || selectedBoardCanteen.counter?.split(" ")[0] || "Counter 1"}
-                </div>
-                <div className="cq-yo-stat-lbl">Pickup counter</div>
-              </div>
-            </div>
+            {/* Action button */}
+            <button
+              type="button"
+              className="cq-yo-btn"
+              onClick={() => setActiveTab && setActiveTab("my-orders")}
+            >
+              Track My Order →
+            </button>
           </div>
-
-          {/* Action button */}
-          <button
-            type="button"
-            className="cq-yo-btn"
-            onClick={() => setActiveTab && setActiveTab("my-orders")}
-          >
-            Track My Order →
-          </button>
         </div>
       ) : (
-        <div className="cq-your-order-bar">
-          <div className="cq-yo-left">
-            <span className="cq-yo-bag-icon">🛍️</span>
-            <div>
-              <h4 className="cq-yo-title">CAMPUS ORDERS</h4>
-              <p className="cq-yo-desc">
-                Order your favorite meal and skip the waiting line.
-              </p>
+        <div className="cq-your-order-card">
+          <div className="cq-yo-card-body">
+            <div className="cq-yo-left">
+              <span className="cq-yo-bag-icon">🛍️</span>
+              <div>
+                <h4 className="cq-yo-title">CAMPUS ORDERS</h4>
+                <p className="cq-yo-desc">
+                  Order your favorite meal and skip the waiting line.
+                </p>
+              </div>
             </div>
+            <div style={{ flex: 1, padding: "0 10px" }}>
+              <div style={{ fontWeight: 800, color: "#0f172a", fontSize: "0.96rem" }}>
+                No Active Orders in Queue
+              </div>
+              <div style={{ fontSize: "0.78rem", color: "#64748b" }}>
+                Select delicious snacks, meals, or beverages from the menu to get your digital queue token!
+              </div>
+            </div>
+            <button
+              type="button"
+              className="cq-yo-btn"
+              onClick={() => setActiveTab && setActiveTab("order")}
+            >
+              Browse Menu & Order Food →
+            </button>
           </div>
-          <div style={{ flex: 1, padding: "0 10px" }}>
-            <div style={{ fontWeight: 800, color: "#0f172a", fontSize: "0.96rem" }}>
-              No Active Orders in Queue
-            </div>
-            <div style={{ fontSize: "0.78rem", color: "#64748b" }}>
-              Select delicious snacks, meals, or beverages from the menu to get your digital queue token!
-            </div>
-          </div>
-          <button
-            type="button"
-            className="cq-yo-btn"
-            onClick={() => setActiveTab && setActiveTab("order")}
-          >
-            Browse Menu & Order Food →
-          </button>
         </div>
       )}
     </div>

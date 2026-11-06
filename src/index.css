@@ -10978,35 +10978,148 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
   gap: 2px;
 }
 
-/* Bottom Highlight Strip: YOUR ORDER */
-.cq-your-order-bar {
+/* Bottom Highlight Strip / Card: YOUR ORDER */
+.cq-your-order-card {
   background: #ffffff;
   border: 2px solid #fdba74;
   border-radius: 20px;
-  padding: 14px 18px;
+  box-shadow: 0 8px 30px rgba(234, 88, 12, 0.12);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  margin-top: 6px;
+}
+
+/* Integrated Header inside the Card for multiple tokens */
+.cq-yo-card-header {
+  background: #fff7ed;
+  border-bottom: 1.5px solid #fed7aa;
+  padding: 8px 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.cq-yo-header-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #c2410c;
+  white-space: nowrap;
+}
+
+.cq-yo-header-icon {
+  font-size: 0.95rem;
+}
+
+.cq-yo-token-chips {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 2px 0;
+  flex: 1;
+}
+
+.cq-yo-tab-chip {
+  background: #ffffff;
+  border: 1.5px solid #fed7aa;
+  border-radius: 9999px;
+  padding: 4px 12px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #c2410c;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.cq-yo-tab-chip:hover {
+  background: #ffedd5;
+  border-color: #fb923c;
+}
+
+.cq-yo-tab-chip.active {
+  background: #ea580c;
+  color: #ffffff;
+  border-color: #ea580c;
+  box-shadow: 0 2px 8px rgba(234, 88, 12, 0.28);
+}
+
+.cq-tab-token-num {
+  font-weight: 800;
+}
+
+.cq-tab-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 9999px;
+  text-transform: capitalize;
+}
+
+.cq-yo-tab-chip.active .cq-tab-badge {
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+}
+
+.cq-yo-tab-chip:not(.active) .cq-tab-badge.status-pending {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.cq-yo-tab-chip:not(.active) .cq-tab-badge.status-preparing {
+  background: #ffedd5;
+  color: #c2410c;
+}
+
+.cq-yo-tab-chip:not(.active) .cq-tab-badge.status-ready {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+/* Card Body */
+.cq-yo-card-body {
+  padding: 14px 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  box-shadow: 0 8px 30px rgba(234, 88, 12, 0.12);
+  width: 100%;
 }
 
-@media (max-width: 1024px) {
-  .cq-your-order-bar {
+@media (max-width: 1100px) {
+  .cq-yo-card-body {
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .cq-yo-card-body {
     flex-direction: column;
     align-items: stretch;
+  }
+  .cq-yo-stats-group {
+    justify-content: space-between;
   }
 }
 
 .cq-yo-left {
   background: linear-gradient(135deg, #ea580c, #f97316);
   border-radius: 14px;
-  padding: 14px 18px;
+  padding: 12px 16px;
   color: #ffffff;
   display: flex;
   align-items: center;
   gap: 12px;
-  min-width: 200px;
+  min-width: 170px;
   flex-shrink: 0;
 }
 
@@ -11032,26 +11145,34 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
 .cq-yo-token-block {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  flex-shrink: 0;
+  white-space: nowrap;
+  min-width: fit-content;
 }
 
 .cq-yo-token-pill {
   background: #ea580c;
   color: #ffffff;
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 800;
   padding: 2px 8px;
   border-radius: 9999px;
-  width: fit-content;
-  letter-spacing: 0.02em;
+  white-space: nowrap;
+  letter-spacing: 0.03em;
+  line-height: 1.2;
 }
 
 .cq-yo-token-num {
-  font-size: 2.3rem;
+  font-size: 2.2rem;
   font-weight: 900;
   color: #ea580c;
   line-height: 1;
   letter-spacing: -0.02em;
+  white-space: nowrap;
+  word-break: keep-all;
 }
 
 .cq-yo-food-block {
@@ -11059,12 +11180,17 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
   flex-direction: column;
   gap: 4px;
   min-width: 130px;
+  flex-shrink: 0;
 }
 
 .cq-yo-food-name {
-  font-size: 0.96rem;
+  font-size: 0.95rem;
   font-weight: 800;
   color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
 }
 
 .cq-yo-status-pill {
@@ -11076,6 +11202,7 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  white-space: nowrap;
 }
 
 .cq-yo-status-pill.status-pending {
@@ -11096,7 +11223,9 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
 .cq-yo-stats-group {
   display: flex;
   align-items: center;
-  gap: 24px;
+  gap: 20px;
+  flex: 1;
+  justify-content: space-around;
   flex-wrap: wrap;
 }
 
@@ -11104,24 +11233,27 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
   display: flex;
   align-items: center;
   gap: 8px;
+  white-space: nowrap;
 }
 
 .cq-yo-stat-icon {
-  font-size: 1.3rem;
+  font-size: 1.25rem;
   line-height: 1;
 }
 
 .cq-yo-stat-val {
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   font-weight: 800;
   color: #0f172a;
   line-height: 1.2;
+  white-space: nowrap;
 }
 
 .cq-yo-stat-lbl {
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   color: #64748b;
   font-weight: 500;
+  white-space: nowrap;
 }
 
 .cq-yo-btn {
@@ -11129,12 +11261,12 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
   color: #ffffff;
   border: none;
   border-radius: 12px;
-  padding: 13px 22px;
-  font-size: 0.94rem;
+  padding: 12px 20px;
+  font-size: 0.92rem;
   font-weight: 800;
   cursor: pointer;
   white-space: nowrap;
-  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.32);
+  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.3);
   transition: all 0.2s ease;
   flex-shrink: 0;
 }
@@ -11142,31 +11274,5 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
 .cq-yo-btn:hover {
   background: #c2410c;
   transform: translateY(-1px);
-}
-
-.cq-multi-order-chips {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
-  overflow-x: auto;
-  padding-bottom: 4px;
-}
-
-.cq-multi-chip {
-  background: #ffffff;
-  border: 1.5px solid #fed7aa;
-  border-radius: 9999px;
-  padding: 5px 14px;
-  font-size: 0.8rem;
-  font-weight: 800;
-  color: #ea580c;
-  cursor: pointer;
-}
-
-.cq-multi-chip.active {
-  background: #ea580c;
-  color: #ffffff;
-  border-color: #ea580c;
 }
 
