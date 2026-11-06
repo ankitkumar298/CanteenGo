@@ -50,10 +50,10 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
 
 /* Page Layout */
 .container {
-  max-width: 1440px;
-  width: 95%;
+  max-width: 100%;
+  width: 100%;
   margin: 0 auto;
-  padding: 20px 24px 60px;
+  padding: 16px clamp(16px, 2vw, 32px) 60px;
 }
 
 /* ==========================================================================
@@ -309,63 +309,175 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
    Page Headers & Pills
    ========================================================================== */
 /* ==========================================================================
-   Student Hero Banner Header
+   Student Hero Banner Header (Full width & compact height)
    ========================================================================== */
 .student-hero-banner {
   position: relative;
   width: 100%;
-  border-radius: 16px;
+  min-height: 190px;
+  max-height: 230px;
+  border-radius: 18px;
   overflow: hidden;
-  box-shadow: 0 4px 20px -2px rgba(234, 88, 12, 0.14), 0 2px 6px rgba(0, 0, 0, 0.04);
-  border: 1px solid rgba(234, 88, 12, 0.16);
-  margin-bottom: 24px;
-  background: #fbf7f2;
+  background: linear-gradient(135deg, #fff8f0 0%, #fef3e9 55%, #fed7aa 100%);
+  border: 1.5px solid #fed7aa;
+  box-shadow: 0 4px 20px -2px rgba(234, 88, 12, 0.12), 0 2px 6px rgba(0, 0, 0, 0.04);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
 }
 
-.student-hero-banner-img {
+.student-hero-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   width: 100%;
-  height: auto;
-  display: block;
-  aspect-ratio: 2172 / 724;
-  object-fit: cover;
+  height: 100%;
+  padding: 14px 32px;
+  gap: 20px;
+  box-sizing: border-box;
 }
 
-.banner-hotspot-btn {
-  position: absolute;
-  background: transparent;
-  border: none;
-  cursor: pointer;
+.student-hero-text {
+  flex: 1;
+  max-width: 650px;
   z-index: 2;
-  border-radius: 24px;
-  transition: background 0.15s ease, transform 0.1s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
-.banner-hotspot-btn:hover {
-  background: rgba(255, 255, 255, 0.18);
+.student-hero-title {
+  font-size: 1.7rem;
+  font-weight: 900;
+  color: #0f172a;
+  line-height: 1.15;
+  margin: 0 0 6px;
+  letter-spacing: -0.02em;
 }
 
-.banner-hotspot-btn:active {
-  transform: scale(0.98);
+.student-hero-title .highlight-orange {
+  color: #ea580c;
 }
 
-.banner-hotspot-order {
-  left: 24.5%;
-  top: 70%;
-  width: 12.5%;
-  height: 16%;
+.student-hero-subtitle {
+  font-size: 0.84rem;
+  color: #475569;
+  margin: 0 0 10px;
+  line-height: 1.35;
+  max-width: 520px;
 }
 
-.banner-hotspot-canteen {
-  left: 38.5%;
-  top: 70%;
-  width: 13.5%;
-  height: 16%;
+.student-hero-badges {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.student-hero-badges .hero-pill {
+  background: rgba(254, 215, 170, 0.55);
+  border: 1px solid #fed7aa;
+  color: #9a3412;
+  font-size: 0.74rem;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.student-hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.hero-btn-order {
+  background: #ea580c;
+  color: #ffffff;
+  border: none;
+  padding: 9px 20px;
+  border-radius: 9999px;
+  font-weight: 800;
+  font-size: 0.88rem;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.32);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.hero-btn-order:hover {
+  background: #c2410c;
+  transform: translateY(-1px);
+}
+
+.hero-btn-canteen {
+  background: #ffffff;
+  color: #ea580c;
+  border: 1.5px solid #ea580c;
+  padding: 9px 18px;
+  border-radius: 9999px;
+  font-weight: 800;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.hero-btn-canteen:hover {
+  background: #fff7ed;
+  transform: translateY(-1px);
+}
+
+.student-hero-media {
+  flex: 1;
+  max-width: 580px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  position: relative;
+  overflow: hidden;
+}
+
+.student-hero-food-img {
+  max-height: 205px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+  filter: drop-shadow(0 6px 16px rgba(234, 88, 12, 0.15));
+}
+
+@media (max-width: 1024px) {
+  .student-hero-banner {
+    max-height: none;
+    min-height: auto;
+  }
+  .student-hero-title {
+    font-size: 1.4rem;
+  }
+  .student-hero-food-img {
+    max-height: 160px;
+  }
 }
 
 @media (max-width: 768px) {
-  .student-hero-banner {
-    border-radius: 12px;
-    margin-bottom: 14px;
+  .student-hero-content {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 16px 18px;
+  }
+  .student-hero-media {
+    width: 100%;
+    justify-content: center;
+    margin-top: 10px;
+  }
+  .student-hero-food-img {
+    max-height: 140px;
   }
 }
 

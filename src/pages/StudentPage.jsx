@@ -556,31 +556,49 @@ export default function StudentPage({
 
   return (
     <div>
-      {/* Student Hero Banner */}
+      {/* Student Hero Banner (Full width & compact height) */}
       <div className="student-hero-banner">
-        <img
-          src="/images/Fast%20Food%20Ordering%20Banner.png"
-          alt="Be The Fastest In Ordering Your Food - CanteenGo"
-          className="student-hero-banner-img"
-        />
-        {/* Interactive hotspots aligned with the banner's Order Now & Choose Canteen buttons */}
-        <button
-          type="button"
-          className="banner-hotspot-btn banner-hotspot-order"
-          onClick={() => {
-            const el = document.querySelector(".menu-toolbar") || document.querySelector(".grid-2");
-            if (el) el.scrollIntoView({ behavior: "smooth" });
-          }}
-          title="Browse & Order Food"
-          aria-label="Order Now"
-        />
-        <button
-          type="button"
-          className="banner-hotspot-btn banner-hotspot-canteen"
-          onClick={() => setIsCanteenModalOpen(true)}
-          title="Change Selected Canteen Hub"
-          aria-label="Choose Canteen"
-        />
+        <div className="student-hero-content">
+          <div className="student-hero-text">
+            <h1 className="student-hero-title">
+              Be The Fastest In <span className="highlight-orange">Ordering Your Food</span>
+            </h1>
+            <p className="student-hero-subtitle">
+              Pre-order your favourite meals, skip the long queue, and pick up fresh food from your campus canteen.
+            </p>
+            <div className="student-hero-badges">
+              <span className="hero-pill">⚡ Order in Seconds</span>
+              <span className="hero-pill">👥 Live Queue</span>
+              <span className="hero-pill">📱 Digital Token</span>
+            </div>
+            <div className="student-hero-actions">
+              <button
+                type="button"
+                className="hero-btn-order"
+                onClick={() => {
+                  const el = document.querySelector(".menu-toolbar") || document.querySelector(".grid-2");
+                  if (el) el.scrollIntoView({ behavior: "smooth" });
+                }}
+              >
+                🛒 Order Now →
+              </button>
+              <button
+                type="button"
+                className="hero-btn-canteen"
+                onClick={() => setIsCanteenModalOpen(true)}
+              >
+                📍 Choose Canteen
+              </button>
+            </div>
+          </div>
+          <div className="student-hero-media">
+            <img
+              src="/images/hero-food-artwork.png"
+              alt="Campus Canteen Food - Pizza, Burger, Noodles, Sandwich"
+              className="student-hero-food-img"
+            />
+          </div>
+        </div>
       </div>
 
       {/* Campus Canteens Filter Row (Right under the poster) */}
