@@ -105,6 +105,16 @@ const orderSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  rating: {
+    type: Number,
+    default: null,
+    min: 1,
+    max: 5
+  },
+  ratedAt: {
+    type: Date,
+    default: null
+  },
   paymentMethod: {
     type: String,
     enum: ["Cash", "UPI"],

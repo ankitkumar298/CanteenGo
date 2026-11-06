@@ -45,6 +45,46 @@ export default function YourOrdersPage({
   // Hidden pickup PIN by default for active orders
   const [visiblePins, setVisiblePins] = useState({});
 
+  // Star ratings for completed/handed over orders
+  const [hoverRating, setHoverRating] = useState({});
+  const [submittingRating, setSubmittingRating] = useState({});
+
+  const handleRateOrder = async (orderId, stars) => {
+    try {
+      setSubmittingRating((prev) => ({ ...prev, [orderId]: true }));
+      // Optimistic update
+      setOrders((prev) =>
+        prev.map((o) => (o._id === orderId ? { ...o, rating: stars, ratedAt: new Date().toISOString() } : o))
+      );
+
+      const res = await fetch(`/api/orders/${orderId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rating: stars })
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to save rating");
+      }
+
+      const updated = await res.json();
+      setOrders((prev) =>
+        prev.map((o) => (o._id === orderId ? { ...o, rating: updated.rating, ratedAt: updated.ratedAt } : o))
+      );
+
+      try {
+        window.dispatchEvent(new CustomEvent("menu-rating-updated", { detail: { orderId, stars } }));
+      } catch {}
+
+      setMessage({ text: `Thank you! Rated ${stars}/5 stars ⭐`, type: "success" });
+      setTimeout(() => setMessage({ text: "", type: "" }), 3500);
+    } catch (err) {
+      setMessage({ text: err.message || "Failed to submit rating", type: "error" });
+    } finally {
+      setSubmittingRating((prev) => ({ ...prev, [orderId]: false }));
+    }
+  };
+
   const togglePinVisibility = (orderId) => {
     setVisiblePins((prev) => ({
       ...prev,
@@ -377,10 +417,49 @@ export default function YourOrdersPage({
 
         {/* 2. Modern Horizontal Connected Timeline Stepper */}
         {isCompleted ? (
-          <div className="order-compact-timeline-bar completed">
-            <CheckCircleIcon size={16} />
-            <span>Order Completed & Handed Over • Collected at {order.counterName || "Counter 1"}</span>
-          </div>
+          <>
+            <div className="order-compact-timeline-bar completed">
+              <CheckCircleIcon size={16} />
+              <span>Order Completed & Handed Over • Collected at {order.counterName || "Counter 1"}</span>
+            </div>
+
+            <div className="detail-rating-card" onClick={(e) => e.stopPropagation()}>
+              <div className="detail-rating-header">
+                <span className="detail-rating-title">
+                  {order.rating ? "Your Rating for this Order" : "Rate Food & Service (out of 5):"}
+                </span>
+                <span className="detail-rating-hint">
+                  {order.rating
+                    ? "Tap any star to change your rating. Helps other students know dish quality!"
+                    : "Tap a star to rate your food from 1 to 5 stars."}
+                </span>
+              </div>
+              <div className="detail-rating-stars-row">
+                {[1, 2, 3, 4, 5].map((s) => {
+                  const isFilled = (hoverRating[order._id] || order.rating || 0) >= s;
+                  return (
+                    <button
+                      key={s}
+                      type="button"
+                      className={`detail-star-btn ${isFilled ? "filled" : ""}`}
+                      onMouseEnter={() => setHoverRating((prev) => ({ ...prev, [order._id]: s }))}
+                      onMouseLeave={() => setHoverRating((prev) => ({ ...prev, [order._id]: 0 }))}
+                      onClick={() => handleRateOrder(order._id, s)}
+                      title={`Rate ${s} star${s > 1 ? "s" : ""}`}
+                      disabled={submittingRating[order._id]}
+                    >
+                      ★
+                    </button>
+                  );
+                })}
+                {order.rating && (
+                  <span className="detail-rating-score-badge">
+                    {order.rating} / 5 Stars ⭐
+                  </span>
+                )}
+              </div>
+            </div>
+          </>
         ) : isCancelled ? (
           <div className="order-compact-timeline-bar cancelled">
             <span className="cancelled-indicator-cross">✕</span>
@@ -896,6 +975,57 @@ export default function YourOrdersPage({
                           <span className="row-price-val">₹{order.totalAmount}</span>
                         </div>
                         {cue && <div className="order-row-cue-line">{cue}</div>}
+
+                        {order.orderStatus === "Completed" && (
+                          <div className="order-row-rating-section" onClick={(e) => e.stopPropagation()}>
+                            {order.rating ? (
+                              <div className="order-rated-inline">
+                                <span className="rated-check">✓ Rated</span>
+                                <div className="rated-stars-inline">
+                                  {[1, 2, 3, 4, 5].map((s) => (
+                                    <span
+                                      key={s}
+                                      className={`star-char ${s <= order.rating ? "filled" : "empty"}`}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleRateOrder(order._id, s);
+                                      }}
+                                      title={`Click to re-rate ${s} star${s > 1 ? "s" : ""}`}
+                                    >
+                                      ★
+                                    </span>
+                                  ))}
+                                </div>
+                                <span className="rated-score-text">({order.rating}/5)</span>
+                              </div>
+                            ) : (
+                              <div className="order-rate-inline">
+                                <span className="rate-prompt-label">Rate Food:</span>
+                                <div className="rate-star-buttons">
+                                  {[1, 2, 3, 4, 5].map((s) => (
+                                    <button
+                                      key={s}
+                                      type="button"
+                                      className={`rate-star-btn ${
+                                        (hoverRating[order._id] || 0) >= s ? "hovered" : ""
+                                      }`}
+                                      onMouseEnter={() => setHoverRating((prev) => ({ ...prev, [order._id]: s }))}
+                                      onMouseLeave={() => setHoverRating((prev) => ({ ...prev, [order._id]: 0 }))}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleRateOrder(order._id, s);
+                                      }}
+                                      title={`Rate ${s} star${s > 1 ? "s" : ""}`}
+                                      disabled={submittingRating[order._id]}
+                                    >
+                                      ★
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
 
                       {/* Right Status Badge */}

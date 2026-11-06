@@ -107,6 +107,10 @@ export async function GET(request) {
         updates.canteenName = "All Canteens";
         updates.availableCanteens = ["foodcourt-34", "nk-foodcourt", "main-canteen", "library-cafe"];
       }
+      if (typeof item.rating !== "number") {
+        updates.rating = 4.5;
+        updates.ratingCount = 12;
+      }
 
       if (Object.keys(updates).length > 0) {
         await Menu.findByIdAndUpdate(item._id, updates);

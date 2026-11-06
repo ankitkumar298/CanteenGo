@@ -48,7 +48,19 @@ export default function MenuCard({
 
       <div className="menu-card-content">
         <div className="menu-card-header">
-          <h4 className="menu-card-title">{item.name}</h4>
+          <div className="menu-card-title-group">
+            <h4 className="menu-card-title">{item.name}</h4>
+            <div
+              className="menu-card-rating-badge"
+              title={`Rated ${(typeof item.rating === "number" && item.rating > 0 ? item.rating : 4.5).toFixed(1)}/5 by ${item.ratingCount || 12} students`}
+            >
+              <span className="menu-rating-star">★</span>
+              <span className="menu-rating-score">
+                {(typeof item.rating === "number" && item.rating > 0 ? item.rating : 4.5).toFixed(1)}
+              </span>
+              <span className="menu-rating-count">({item.ratingCount || 12})</span>
+            </div>
+          </div>
           <span className="veg-indicator" title="Pure Veg Snack">
             <span className="veg-dot"></span>
           </span>

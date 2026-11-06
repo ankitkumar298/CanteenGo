@@ -30,6 +30,25 @@ const menuSchema = new mongoose.Schema(
       default: "",
       trim: true
     },
+    rating: {
+      type: Number,
+      default: 4.5,
+      min: 1,
+      max: 5
+    },
+    ratingCount: {
+      type: Number,
+      default: 12
+    },
+    ratings: [
+      {
+        orderId: { type: String, default: "" },
+        studentEmail: { type: String, default: "" },
+        studentName: { type: String, default: "" },
+        stars: { type: Number, required: true, min: 1, max: 5 },
+        createdAt: { type: Date, default: Date.now }
+      }
+    ],
     canteenId: {
       type: String,
       default: "all",

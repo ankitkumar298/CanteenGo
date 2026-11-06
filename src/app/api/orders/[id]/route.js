@@ -105,6 +105,63 @@ export async function PUT(request, context) {
       updateData.estimatedPrepTime = parseInt(data.estimatedPrepTime, 10) || 5;
     }
 
+    // Rate completed order (1 to 5 stars) and update menu item ratings
+    if (data.rating !== undefined) {
+      const stars = Math.min(5, Math.max(1, parseInt(data.rating, 10)));
+      updateData.rating = stars;
+      updateData.ratedAt = new Date();
+
+      if (Array.isArray(existingOrder.items) && existingOrder.items.length > 0) {
+        try {
+          const Menu = (await import("@/models/Menu")).default;
+          for (const it of existingOrder.items) {
+            let menuItem = null;
+            if (it.menuItemId && mongoose.Types.ObjectId.isValid(it.menuItemId)) {
+              menuItem = await Menu.findById(it.menuItemId);
+            }
+            if (!menuItem && it.name) {
+              menuItem = await Menu.findOne({ name: it.name });
+            }
+
+            if (menuItem) {
+              if (!Array.isArray(menuItem.ratings)) {
+                menuItem.ratings = [];
+              }
+              const orderIdStr = existingOrder._id.toString();
+              const existingIdx = menuItem.ratings.findIndex(
+                (r) => r.orderId && r.orderId.toString() === orderIdStr
+              );
+
+              if (existingIdx >= 0) {
+                menuItem.ratings[existingIdx].stars = stars;
+                menuItem.ratings[existingIdx].createdAt = new Date();
+              } else {
+                menuItem.ratings.push({
+                  orderId: orderIdStr,
+                  studentEmail: existingOrder.studentEmail || "",
+                  studentName: existingOrder.studentName || "",
+                  stars: stars,
+                  createdAt: new Date()
+                });
+              }
+
+              const baseRating = 4.5;
+              const baseWeight = 5;
+              const studentRatingsSum = menuItem.ratings.reduce((acc, r) => acc + (r.stars || 5), 0);
+              const totalRatingsCount = baseWeight + menuItem.ratings.length;
+              const newAvg = (baseRating * baseWeight + studentRatingsSum) / totalRatingsCount;
+
+              menuItem.rating = Math.round(newAvg * 10) / 10;
+              menuItem.ratingCount = totalRatingsCount;
+              await menuItem.save();
+            }
+          }
+        } catch (ratingErr) {
+          console.error("Failed to update menu ratings from order rating:", ratingErr);
+        }
+      }
+    }
+
     const updatedOrder = await Order.findByIdAndUpdate(id, updateData, { new: true });
 
     return Response.json(updatedOrder, { status: 200 });

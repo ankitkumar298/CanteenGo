@@ -251,7 +251,16 @@ export default function StudentPage({
     fetchMenu();
     fetchCanteenStats();
     const interval = setInterval(fetchCanteenStats, 20000);
-    return () => clearInterval(interval);
+
+    const handleMenuRatingUpdated = () => {
+      fetchMenu();
+    };
+    window.addEventListener("menu-rating-updated", handleMenuRatingUpdated);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("menu-rating-updated", handleMenuRatingUpdated);
+    };
   }, []);
 
   const fetchCanteenStats = async () => {
