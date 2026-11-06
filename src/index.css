@@ -11414,3 +11414,79 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
   transform: translateY(-1px);
 }
 
+/* ==========================================================================
+   Student Floating Bottom Toast Notification (1.5s Auto-dismiss, Not Green)
+   ========================================================================== */
+.student-bottom-toast {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 99999;
+  background: #0f172a;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 9999px;
+  padding: 10px 24px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 14px 34px -4px rgba(15, 23, 42, 0.4), 0 4px 12px rgba(0, 0, 0, 0.15);
+  pointer-events: none;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  white-space: nowrap;
+  max-width: 90vw;
+}
+
+.student-bottom-toast.toast-enter {
+  animation: toastSlideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.student-bottom-toast.toast-exit {
+  animation: toastSlideDown 0.22s cubic-bezier(0.7, 0, 0.84, 0) forwards;
+}
+
+@keyframes toastSlideUp {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 24px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+@keyframes toastSlideDown {
+  from {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, 24px) scale(0.95);
+  }
+}
+
+.student-bottom-toast.toast-error {
+  background: #181111;
+  border-color: #ef4444;
+  color: #fee2e2;
+  box-shadow: 0 14px 34px -4px rgba(239, 68, 68, 0.3);
+}
+
+.student-bottom-toast .toast-icon {
+  font-size: 1.05rem;
+  line-height: 1;
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.student-bottom-toast .toast-message {
+  line-height: 1.3;
+  color: inherit;
+}
+

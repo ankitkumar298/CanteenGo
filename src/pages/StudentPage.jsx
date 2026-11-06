@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import MenuCard from "../components/MenuCard";
 import StatusBadge from "../components/StatusBadge";
 import UpiModal from "../components/UpiModal";
@@ -169,6 +169,36 @@ export default function StudentPage({
 
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+
+  // Bottom Toast Notification (1.5s auto-dismiss with slide up / down animation)
+  const [toast, setToast] = useState(null);
+  const toastTimeoutRef = useRef(null);
+
+  const showToast = useCallback((message, type = "info") => {
+    if (!message) return;
+    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+    setToast({ message, type, isExiting: false });
+    toastTimeoutRef.current = setTimeout(() => {
+      setToast((prev) => (prev ? { ...prev, isExiting: true } : null));
+      setTimeout(() => {
+        setToast(null);
+      }, 250);
+    }, 1500);
+  }, []);
+
+  useEffect(() => {
+    if (successMessage) {
+      showToast(successMessage, "info");
+      setSuccessMessage("");
+    }
+  }, [successMessage, showToast]);
+
+  useEffect(() => {
+    if (errorMessage) {
+      showToast(errorMessage, "error");
+      setErrorMessage("");
+    }
+  }, [errorMessage, showToast]);
 
   const [lastPlacedOrder, setLastPlacedOrder] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -600,9 +630,6 @@ export default function StudentPage({
           </div>
         </div>
       </div>
-
-      {errorMessage && <div className="alert alert-error">{errorMessage}</div>}
-      {successMessage && <div className="alert alert-success">{successMessage}</div>}
 
       {/* Animated Order Success Modal */}
       <OrderSuccessOverlay
@@ -1192,6 +1219,18 @@ export default function StudentPage({
           </div>
         </div>
       </div>
+
+      {/* Floating Bottom Toast Alert (1.5s auto-dismiss with slide up / down animation) */}
+      {toast && (
+        <div
+          className={`student-bottom-toast ${toast.isExiting ? "toast-exit" : "toast-enter"} toast-${toast.type}`}
+        >
+          <span className="toast-icon">
+            {toast.type === "error" ? "⚠️" : "📍"}
+          </span>
+          <span className="toast-message">{toast.message}</span>
+        </div>
+      )}
 
       {/* Choose Canteen Modal (Light Orange-White Theme & Dynamic Sorting) */}
       <ChooseCanteenModal
