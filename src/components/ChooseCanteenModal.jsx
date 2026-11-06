@@ -97,15 +97,16 @@ export default function ChooseCanteenModal({
 
   // Compute live data and dynamic sorting for canteens
   const sortedCanteens = useMemo(() => {
-    let candidateCanteens = canteensList;
+    // Filter out "all" placeholder — an item can only be picked up from a real campus canteen
+    let candidateCanteens = canteensList.filter((c) => c.id !== "all" && c.name !== "All Canteens");
 
     // Filter canteens strictly to those where this item is offered
     if (isItemMode && activeItem) {
       const avail = activeItem.availableCanteens;
       if (Array.isArray(avail) && avail.length > 0 && !avail.includes("all")) {
-        candidateCanteens = canteensList.filter((c) => avail.includes(c.id || c.canteenId));
+        candidateCanteens = candidateCanteens.filter((c) => avail.includes(c.id || c.canteenId));
       } else if (activeItem.canteenId && activeItem.canteenId !== "all") {
-        candidateCanteens = canteensList.filter((c) => (c.id || c.canteenId) === activeItem.canteenId);
+        candidateCanteens = candidateCanteens.filter((c) => (c.id || c.canteenId) === activeItem.canteenId);
       }
     }
 

@@ -98,6 +98,25 @@ export default function StudentPage({
   const [isCanteenModalOpen, setIsCanteenModalOpen] = useState(false);
   const [canteenModalItem, setCanteenModalItem] = useState(null);
 
+  // Sanitize cart items: An order can never go to "All Canteens"
+  useEffect(() => {
+    if (Array.isArray(cart) && cart.some((it) => it.canteen?.id === "all" || it.canteen?.name === "All Canteens")) {
+      const fallbackCanteen = canteensList.find((c) => c.id !== "all" && c.name !== "All Canteens") || defaultCanteenObj;
+      setCart((prevCart) =>
+        prevCart.map((it) => {
+          if (it.canteen?.id === "all" || it.canteen?.name === "All Canteens") {
+            return {
+              ...it,
+              canteen: fallbackCanteen,
+              price: getCanteenItemPrice(it.basePrice || it.price, fallbackCanteen)
+            };
+          }
+          return it;
+        })
+      );
+    }
+  }, [cart, canteensList, defaultCanteenObj, setCart]);
+
   const handleSelectCanteen = (newCanteen, targetItem, computedPrice) => {
     setIsCanteenModalOpen(false);
     setCanteenModalItem(null);
@@ -250,13 +269,21 @@ export default function StudentPage({
     setErrorMessage("");
     setSuccessMessage("");
 
+    // When viewing "All Canteens", an order cannot be placed to "All Canteens".
+    // Prompt the student to choose which specific campus canteen to pick up this item from!
+    if (!selectedCanteen || selectedCanteen.id === "all" || selectedCanteen.name === "All Canteens") {
+      setCanteenModalItem(item);
+      setIsCanteenModalOpen(true);
+      return;
+    }
+
     const itemCanteen = selectedCanteen?.name ? selectedCanteen : DEFAULT_CANTEEN;
     const basePrice = item.price;
     const finalPrice = getCanteenItemPrice(basePrice, itemCanteen);
 
     setCart((prevCart) => {
       const existingIndex = prevCart.findIndex(
-        (ci) => ci.menuItemId === item._id
+        (ci) => ci.menuItemId === item._id && (ci.canteen?.id === itemCanteen.id || ci.canteen?.name === itemCanteen.name)
       );
 
       if (existingIndex > -1) {
@@ -278,6 +305,8 @@ export default function StudentPage({
         ];
       }
     });
+
+    setSuccessMessage(`✓ Added ${item.name} to cart (${itemCanteen.shortName || itemCanteen.name})`);
   };
 
   // Increase quantity from card or cart
@@ -313,6 +342,14 @@ export default function StudentPage({
   const handleAddDynamicCombo = (itemsToAdd) => {
     setErrorMessage("");
     setSuccessMessage("");
+
+    // If on "All Canteens", prompt to select a canteen first
+    if (!selectedCanteen || selectedCanteen.id === "all" || selectedCanteen.name === "All Canteens") {
+      setCanteenModalItem(itemsToAdd[0]?.item || null);
+      setIsCanteenModalOpen(true);
+      showToast("Please choose a pickup canteen first", "info");
+      return;
+    }
 
     const itemCanteen = selectedCanteen?.name ? selectedCanteen : DEFAULT_CANTEEN;
 
@@ -372,23 +409,29 @@ export default function StudentPage({
         )
       ).join(", ");
 
+      const firstValidCanteen = cart.find((i) => i.canteen?.id && i.canteen?.id !== "all")?.canteen ||
+        (selectedCanteen?.id !== "all" ? selectedCanteen : defaultCanteenObj);
+
       const orderPayload = {
         studentName: studentName.trim() || studentProfile?.name || "Student",
         studentEmail: studentProfile?.email || "",
         studentPhone: studentProfile?.phone || "",
         paymentMethod,
         remarks: remarks.trim(),
-        canteenId: selectedCanteen?.id || cart[0]?.canteen?.id || "foodcourt-34",
-        canteenName: canteenSummary || selectedCanteen?.name || "Food Court near 34 Block",
-        counterName: counterSummary || selectedCanteen?.counter || "Counter 1 (Fast Dispatch)",
-        items: cart.map((item) => ({
-          menuItemId: item.menuItemId,
-          quantity: item.quantity,
-          price: item.price,
-          canteenId: item.canteen?.id || selectedCanteen?.id || "foodcourt-34",
-          canteenName: item.canteen?.name || selectedCanteen?.name || "Food Court near 34 Block",
-          counterName: item.canteen?.counter || selectedCanteen?.counter || "Counter 1"
-        }))
+        canteenId: firstValidCanteen?.id || "foodcourt-34",
+        canteenName: canteenSummary && !canteenSummary.includes("All Canteens") ? canteenSummary : (firstValidCanteen?.name || "Food Court near 34 Block"),
+        counterName: counterSummary || firstValidCanteen?.counter || "Counter 1 (Fast Dispatch)",
+        items: cart.map((item) => {
+          const itemCanteen = item.canteen?.id !== "all" ? item.canteen : firstValidCanteen;
+          return {
+            menuItemId: item.menuItemId,
+            quantity: item.quantity,
+            price: item.price,
+            canteenId: itemCanteen?.id || "foodcourt-34",
+            canteenName: itemCanteen?.name || "Food Court near 34 Block",
+            counterName: itemCanteen?.counter || "Counter 1"
+          };
+        })
       };
 
       const res = await fetch("/api/orders", {
