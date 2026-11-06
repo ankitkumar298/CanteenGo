@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { CartIcon, ChefIcon, QueueIcon, ReceiptIcon, LogOutIcon } from "./Icons";
 
 export default function Navbar({
@@ -11,22 +11,23 @@ export default function Navbar({
   onOpenProfile,
   onLogout
 }) {
-  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
-  const profileDropdownRef = useRef(null);
+  // Student Profile Dropdown state
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (profileDropdownRef.current && !profileDropdownRef.current.contains(e.target)) {
-        setIsProfileDropdownOpen(false);
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setIsDropdownOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const initial = studentProfile?.name ? studentProfile.name.trim().charAt(0).toUpperCase() : "A";
-  const firstName = studentProfile?.name ? studentProfile.name.trim().split(" ")[0] : "Student";
-  const userSubText = studentProfile?.studentId || studentProfile?.rollNo || studentProfile?.phone || "Student";
+  const initial = (studentProfile?.name || "A").trim().charAt(0).toUpperCase();
+  const displayName = studentProfile?.name ? studentProfile.name.split(" ")[0] : "Akshay";
+  const idDisplay = studentProfile?.studentId || studentProfile?.rollNo || studentProfile?.regNo || studentProfile?.phone || "20TCS04210";
   return (
     <header className="navbar">
       {/* Left: Brand Logo & Title */}
@@ -115,88 +116,89 @@ export default function Navbar({
         )}
 
         {userRole === "student" && studentProfile?.name && (
-          <div className="nav-profile-menu-wrapper" ref={profileDropdownRef}>
+          <div className="nav-profile-menu-wrap" ref={dropdownRef}>
             <button
               type="button"
-              className="nav-student-profile-chip"
-              onClick={() => setIsProfileDropdownOpen((prev) => !prev)}
-              aria-expanded={isProfileDropdownOpen}
-              title="Student Account & Orders"
+              className={`nav-profile-pill-btn ${isDropdownOpen ? "active" : ""}`}
+              onClick={() => setIsDropdownOpen((prev) => !prev)}
+              aria-haspopup="true"
+              aria-expanded={isDropdownOpen}
+              title="Account Menu"
             >
-              <div className="profile-chip-avatar-circle">{initial}</div>
-              <div className="profile-chip-text">
-                <span className="profile-chip-name">{firstName}</span>
-                <span className="profile-chip-phone">{userSubText}</span>
+              <div className="nav-profile-avatar-circle">
+                <span>{initial}</span>
               </div>
-              <span className={`profile-chip-chevron ${isProfileDropdownOpen ? "open" : ""}`}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="6 9 12 15 18 9" />
-                </svg>
-              </span>
+              <div className="nav-profile-info-text">
+                <span className="nav-profile-name">{displayName}</span>
+                <span className="nav-profile-id">{idDisplay}</span>
+              </div>
+              <svg
+                className={`nav-profile-chevron ${isDropdownOpen ? "open" : ""}`}
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
             </button>
 
-            {/* Dropdown Menu matching exact user design */}
-            {isProfileDropdownOpen && (
-              <div className="nav-profile-dropdown-menu">
-                {/* 1. My Profile */}
+            {isDropdownOpen && (
+              <div className="nav-profile-dropdown-card">
                 <button
                   type="button"
                   className="nav-profile-dropdown-item"
                   onClick={() => {
-                    setIsProfileDropdownOpen(false);
-                    if (onOpenProfile) onOpenProfile();
+                    setIsDropdownOpen(false);
+                    onOpenProfile();
                   }}
                 >
-                  <span className="dropdown-item-icon">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                      <circle cx="12" cy="7" r="4" />
-                    </svg>
-                  </span>
-                  <span className="dropdown-item-label">My Profile</span>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                  </svg>
+                  <span>My Profile</span>
                 </button>
 
-                {/* 2. My Orders */}
                 <button
                   type="button"
                   className="nav-profile-dropdown-item"
                   onClick={() => {
-                    setIsProfileDropdownOpen(false);
-                    if (setStudentTab) setStudentTab("my-orders");
+                    setIsDropdownOpen(false);
+                    setStudentTab("my-orders");
                   }}
                 >
-                  <span className="dropdown-item-icon">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="m7.5 4.27 9 5.15" />
-                      <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" />
-                      <path d="m3.3 7 8.7 5 8.7-5" />
-                      <path d="M12 22V12" />
-                    </svg>
-                  </span>
-                  <span className="dropdown-item-label">My Orders</span>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="m7.5 4.27 9 5.15"></path>
+                    <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"></path>
+                    <path d="m3.3 7 8.7 5 8.7-5"></path>
+                    <path d="M12 22V12"></path>
+                  </svg>
+                  <span>My Orders</span>
                 </button>
 
                 <div className="nav-profile-dropdown-divider" />
 
-                {/* 3. Log Out */}
                 <button
                   type="button"
-                  className="nav-profile-dropdown-item item-logout"
+                  className="nav-profile-dropdown-item logout"
                   onClick={() => {
-                    setIsProfileDropdownOpen(false);
+                    setIsDropdownOpen(false);
                     if (window.confirm("Are you sure you want to log out of your student profile?")) {
-                      if (onLogout) onLogout();
+                      onLogout();
                     }
                   }}
                 >
-                  <span className="dropdown-item-icon item-logout-icon">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                      <polyline points="16 17 21 12 16 7" />
-                      <line x1="21" y1="12" x2="9" y2="12" />
-                    </svg>
-                  </span>
-                  <span className="dropdown-item-label item-logout-label">Log Out</span>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                  </svg>
+                  <span>Log Out</span>
                 </button>
               </div>
             )}
