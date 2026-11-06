@@ -12296,3 +12296,209 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
   color: inherit;
 }
 
+/* ==========================================================================
+   Modern Clean CanteenGo App Footer (Matching Screenshot)
+   ========================================================================== */
+.app-main-footer {
+  width: 100%;
+  background: #ffffff;
+  border-top: 1px solid #e2e8f0;
+  margin-top: auto;
+  padding: 24px 20px 20px;
+}
+
+.app-footer-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-footer-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.app-footer-col {
+  display: flex;
+  align-items: center;
+}
+
+.app-footer-v-divider {
+  width: 1px;
+  height: 38px;
+  background: #e2e8f0;
+  flex-shrink: 0;
+}
+
+/* Brand col */
+.app-footer-brand-col {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.app-footer-logo-img {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  object-fit: cover;
+}
+
+.app-footer-brand-text {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.app-footer-brand-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.1;
+  letter-spacing: -0.3px;
+}
+
+.app-footer-brand-title .brand-accent {
+  color: #ea580c;
+}
+
+.app-footer-brand-sub {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #64748b;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+/* System info col */
+.app-footer-system-col {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.app-footer-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #475569;
+  flex-shrink: 0;
+}
+
+.app-footer-system-text {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.app-footer-system-title {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.2;
+}
+
+.app-footer-system-sub {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+/* Contact & Github col */
+.app-footer-contact-col {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+}
+
+.app-footer-contact-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #0f172a !important;
+  font-size: 0.84rem;
+  font-weight: 600;
+  text-decoration: none !important;
+  transition: color 0.15s ease;
+}
+
+.app-footer-contact-row:hover {
+  color: #ea580c !important;
+  text-decoration: none !important;
+}
+
+/* Links col */
+.app-footer-links-col {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.app-footer-nav-link {
+  color: #1e293b !important;
+  font-size: 0.84rem;
+  font-weight: 600;
+  text-decoration: none !important;
+  transition: color 0.15s ease;
+  cursor: pointer;
+}
+
+.app-footer-nav-link:hover {
+  color: #ea580c !important;
+  text-decoration: none !important;
+}
+
+.app-footer-nav-span {
+  cursor: default;
+}
+
+/* Bottom Row */
+.app-footer-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 18px;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.app-footer-copyright {
+  font-size: 0.84rem;
+  color: #475569;
+  font-weight: 500;
+}
+
+.app-footer-capstone-badge {
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  color: #c2410c;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+@media (max-width: 900px) {
+  .app-footer-v-divider {
+    display: none;
+  }
+  .app-footer-top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+}
+

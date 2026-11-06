@@ -4,6 +4,7 @@ import { createContext, useContext, useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import StudentProfileModal from "@/components/StudentProfileModal";
 import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 import { CAMPUS_CANTEENS } from "@/data/canteens";
 
 const AppContext = createContext(null);
@@ -208,40 +209,7 @@ export function AppProvider({ children }) {
           {children}
         </main>
 
-        {pathname !== "/" && (
-          <footer
-            style={{
-              textAlign: "center",
-              padding: "28px 20px",
-              color: "#64748b",
-              fontSize: "0.85rem",
-              background: "#ffffff",
-              borderTop: "1px solid #e2e8f0",
-              marginTop: "auto"
-            }}
-          >
-            <p
-              style={{
-                fontWeight: "700",
-                color: "#0f172a",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "8px"
-              }}
-            >
-              <img
-                src="/images/canteengo-logo.png"
-                alt="canteenGo"
-                style={{ width: "22px", height: "22px", borderRadius: "5px" }}
-              />
-              canteenGo — Smart College Canteen Ordering & Live Queue
-            </p>
-            <p style={{ marginTop: "6px", color: "#94a3b8" }}>
-              B.Tech CSE Capstone Project • Next.js App Router + MongoDB & Mongoose
-            </p>
-          </footer>
-        )}
+        {pathname !== "/" && <Footer />}
 
         <StudentProfileModal
           isOpen={isProfileModalOpen}
