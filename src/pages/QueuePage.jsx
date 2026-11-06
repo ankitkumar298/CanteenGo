@@ -1296,9 +1296,15 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
   const currentOrdersAhead = currentStudentOrder ? getOrdersAhead(currentStudentOrder) : 0;
   const currentWaitTime = currentStudentOrder ? getEstimatedWaitTime(currentStudentOrder) : "";
 
-  // Dropdown state for switching active tokens in Selected Order box (in sticky mode)
-  const [isOrderDropdownOpen, setIsOrderDropdownOpen] = useState(false);
-  const orderDropdownRef = useRef(null);
+  // Handle cycling to next active token in this canteen (No prev button, loops from last to first)
+  const handleNextOrder = () => {
+    if (!canteenActiveStudentOrders || canteenActiveStudentOrders.length <= 1) return;
+    const currentIndex = canteenActiveStudentOrders.findIndex(
+      (o) => o._id === currentStudentOrder?._id
+    );
+    const nextIndex = (currentIndex + 1) % canteenActiveStudentOrders.length;
+    setSelectedStudentOrderId(canteenActiveStudentOrders[nextIndex]._id);
+  };
 
   // Detect when user has scrolled to the bottom of the page
   const [isAtBottom, setIsAtBottom] = useState(false);
@@ -1311,16 +1317,6 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
       tokenScrollRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" });
     }
   };
-
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (orderDropdownRef.current && !orderDropdownRef.current.contains(e.target)) {
-        setIsOrderDropdownOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   useEffect(() => {
     const checkBottom = () => {
@@ -1684,7 +1680,7 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
 
           {/* Main Card Body */}
           <div className="cq-yo-card-body">
-            {/* Left: Selected Order Info Box with Dropdown */}
+            {/* Left: Selected Order Info Box with Next Order Button */}
             <div className="cq-yo-selected-box">
               <div className="cq-yo-cloche-icon">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -1695,80 +1691,30 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
                 </svg>
               </div>
 
-              {/* Selected Order title / Dropdown switcher (In sticky compact mode, or when multiple orders) */}
-              {!isAtBottom && canteenActiveStudentOrders.length > 1 ? (
-                <div className="cq-yo-select-order-wrap" ref={orderDropdownRef}>
-                  <button
-                    type="button"
-                    className="cq-yo-order-selector-btn"
-                    onClick={() => setIsOrderDropdownOpen((prev) => !prev)}
-                    title="Click to switch your active order in this canteen"
-                  >
-                    <div className="cq-yo-dd-header-line">
-                      <span className="cq-yo-selected-title">Selected Order</span>
-                      <span className="cq-yo-tokens-badge">{canteenActiveStudentOrders.length} Tokens</span>
-                      <span className={`cq-yo-chevron ${isOrderDropdownOpen ? "open" : ""}`}>▾</span>
-                    </div>
-                    <p className="cq-yo-selected-desc">
-                      Tap to switch ({currentStudentOrder.tokenNumber})
-                    </p>
-                  </button>
-
-                  {/* Upward-opening Dropdown Menu */}
-                  {isOrderDropdownOpen && (
-                    <div className="cq-yo-dropdown-popover">
-                      <div className="cq-yo-popover-header">
-                        <span>Switch Order ({selectedBoardCanteen.shortName || selectedBoardCanteen.name})</span>
-                        <span className="cq-yo-popover-count">{canteenActiveStudentOrders.length} Active</span>
-                      </div>
-                      <div className="cq-yo-popover-list">
-                        {canteenActiveStudentOrders.map((ord) => {
-                          const isSel = currentStudentOrder?._id === ord._id;
-                          const statusKey = ord.orderStatus === "Preparing"
-                            ? "preparing"
-                            : ord.orderStatus === "Ready"
-                            ? "ready"
-                            : "queued";
-                          const statusText = ord.orderStatus === "Preparing"
-                            ? "In Progress"
-                            : ord.orderStatus;
-                          const itemsList = ord.items?.map((it) => `${it.name} ×${it.quantity}`).join(", ") || "Fresh Meal";
-
-                          return (
-                            <button
-                              key={ord._id}
-                              type="button"
-                              className={`cq-yo-popover-item ${isSel ? "active" : ""}`}
-                              onClick={() => {
-                                setSelectedStudentOrderId(ord._id);
-                                setIsOrderDropdownOpen(false);
-                              }}
-                            >
-                              <div className="cq-yo-popover-item-left">
-                                <span className="cq-yo-popover-token">{ord.tokenNumber}</span>
-                                <span className="cq-yo-popover-items">{itemsList}</span>
-                              </div>
-                              <div className="cq-yo-popover-item-right">
-                                <span className={`cq-yo-popover-badge status-${statusKey}`}>
-                                  ● {statusText}
-                                </span>
-                                {isSel && <span className="cq-yo-popover-check">✓</span>}
-                              </div>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
+              <div className="cq-yo-selected-texts">
+                <div className="cq-yo-selected-title-row">
+                  <h4 className="cq-yo-selected-title">Selected Order</h4>
+                  {canteenActiveStudentOrders.length > 1 && (
+                    <button
+                      type="button"
+                      className="cq-yo-next-btn"
+                      onClick={handleNextOrder}
+                      title="Next order in this canteen"
+                    >
+                      <span>Next</span>
+                      <span className="cq-yo-next-count">
+                        ({(canteenActiveStudentOrders.findIndex((o) => o._id === currentStudentOrder?._id) + 1)}/{canteenActiveStudentOrders.length})
+                      </span>
+                      <span className="cq-yo-next-arrow">›</span>
+                    </button>
                   )}
                 </div>
-              ) : (
-                <div className="cq-yo-selected-texts">
-                  <h4 className="cq-yo-selected-title">Selected Order</h4>
-                  <p className="cq-yo-selected-desc">
-                    Track real-time status, counter and pickup details.
-                  </p>
-                </div>
-              )}
+                <p className="cq-yo-selected-desc">
+                  {canteenActiveStudentOrders.length > 1
+                    ? "Tap Next to cycle through your active tokens"
+                    : "Track real-time status, counter and pickup details."}
+                </p>
+              </div>
             </div>
 
             {/* Middle: Token No. + Order Items */}

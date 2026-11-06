@@ -11506,193 +11506,49 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
   position: relative;
 }
 
-/* Selected Order Dropdown Switcher */
-.cq-yo-select-order-wrap {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-}
-
-.cq-yo-order-selector-btn {
-  background: none;
-  border: none;
-  padding: 0;
-  text-align: left;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.cq-yo-dd-header-line {
+.cq-yo-selected-title-row {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 10px;
 }
 
-.cq-yo-tokens-badge {
+.cq-yo-next-btn {
   background: #ea580c;
   color: #ffffff;
-  font-size: 0.68rem;
-  font-weight: 800;
-  padding: 1px 7px;
+  border: none;
   border-radius: 9999px;
-  letter-spacing: 0.02em;
-}
-
-.cq-yo-chevron {
-  font-size: 0.8rem;
-  color: #ea580c;
-  transition: transform 0.2s ease;
+  padding: 3px 10px;
+  font-size: 0.74rem;
   font-weight: 800;
-}
-
-.cq-yo-chevron.open {
-  transform: rotate(180deg);
-}
-
-.cq-yo-dropdown-popover {
-  position: absolute;
-  bottom: calc(100% + 14px);
-  left: -8px;
-  width: 290px;
-  max-height: 280px;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 16px;
-  box-shadow: 0 -8px 30px rgba(15, 23, 42, 0.15), 0 4px 12px rgba(0, 0, 0, 0.05);
-  z-index: 1050;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  animation: popoverSlideUp 0.18s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes popoverSlideUp {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.cq-yo-popover-header {
-  background: #fff7ed;
-  border-bottom: 1px solid #fed7aa;
-  padding: 10px 14px;
-  font-size: 0.78rem;
-  font-weight: 800;
-  color: #c2410c;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-}
-
-.cq-yo-popover-count {
-  background: #ffffff;
-  color: #ea580c;
-  font-size: 0.7rem;
-  padding: 2px 6px;
-  border-radius: 9999px;
-  font-weight: 800;
-}
-
-.cq-yo-popover-list {
-  padding: 6px;
-  overflow-y: auto;
-  max-height: 230px;
-  display: flex;
-  flex-direction: column;
   gap: 4px;
-}
-
-.cq-yo-popover-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 10px;
-  background: #ffffff;
-  border: 1px solid #f1f5f9;
-  border-radius: 10px;
   cursor: pointer;
-  transition: all 0.15s ease;
-  text-align: left;
-  width: 100%;
+  transition: all 0.16s ease;
+  box-shadow: 0 2px 8px rgba(234, 88, 12, 0.28);
+  white-space: nowrap;
 }
 
-.cq-yo-popover-item:hover {
-  background: #fffaf5;
-  border-color: #fed7aa;
+.cq-yo-next-btn:hover {
+  background: #c2410c;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(234, 88, 12, 0.35);
 }
 
-.cq-yo-popover-item.active {
-  background: #fff7ed;
-  border-color: #ea580c;
+.cq-yo-next-btn:active {
+  transform: translateY(0);
 }
 
-.cq-yo-popover-item-left {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  overflow: hidden;
+.cq-yo-next-count {
+  font-size: 0.7rem;
+  opacity: 0.92;
+  font-weight: 700;
 }
 
-.cq-yo-popover-token {
+.cq-yo-next-arrow {
   font-size: 0.92rem;
-  font-weight: 900;
-  color: #0f172a;
-}
-
-.cq-yo-popover-item.active .cq-yo-popover-token {
-  color: #ea580c;
-}
-
-.cq-yo-popover-items {
-  font-size: 0.72rem;
-  color: #64748b;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 140px;
-}
-
-.cq-yo-popover-item-right {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
-}
-
-.cq-yo-popover-badge {
-  font-size: 0.68rem;
+  line-height: 1;
   font-weight: 800;
-  padding: 2px 7px;
-  border-radius: 9999px;
-  white-space: nowrap;
-}
-
-.cq-yo-popover-badge.status-preparing {
-  background: #ffedd5;
-  color: #c2410c;
-}
-
-.cq-yo-popover-badge.status-ready {
-  background: #dcfce7;
-  color: #15803d;
-}
-
-.cq-yo-popover-badge.status-queued {
-  background: #f1f5f9;
-  color: #64748b;
-}
-
-.cq-yo-popover-check {
-  color: #ea580c;
-  font-weight: 900;
-  font-size: 0.85rem;
 }
 
 .cq-yo-cloche-icon {
