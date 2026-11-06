@@ -4,7 +4,7 @@ import StatusBadge from "../components/StatusBadge";
 import UpiModal from "../components/UpiModal";
 import OrderSuccessOverlay from "../components/OrderSuccessOverlay";
 import ChooseCanteenModal from "../components/ChooseCanteenModal";
-import { CAMPUS_CANTEENS, DEFAULT_CANTEEN, getCanteenItemPrice, isCanteenOpenNow } from "../data/canteens";
+import { CAMPUS_CANTEENS, DEFAULT_CANTEEN, getCanteenItemPrice, isCanteenOpenNow, getItemEstimateTime } from "../data/canteens";
 import { useAppContext } from "@/context/AppContext";
 import {
   SearchIcon,
@@ -1047,7 +1047,12 @@ export default function StudentPage({
                         }}
                       />
                       <div className="cart-item-details">
-                        <span className="cart-item-title">{item.name}</span>
+                        <div className="cart-item-title-row">
+                          <span className="cart-item-title">{item.name}</span>
+                          <span className="cart-item-time-badge" title="Estimated preparation time">
+                            ⏱️ {getItemEstimateTime(item)}
+                          </span>
+                        </div>
                         <button
                           type="button"
                           className="cart-item-canteen-link"

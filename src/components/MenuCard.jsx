@@ -1,6 +1,7 @@
 import { useState } from "react";
 import StatusBadge from "./StatusBadge";
 import { PlusIcon, MinusIcon, FoodPlaceholderIcon } from "./Icons";
+import { getItemEstimateTime } from "../data/canteens";
 
 export default function MenuCard({
   item,
@@ -85,6 +86,9 @@ export default function MenuCard({
             <span className="currency-symbol">₹</span>
             <span className="price-number">{item.price}</span>
             <span className="price-unit">/ item</span>
+            <span className="menu-card-time-badge" title="Estimated prep time">
+              ⏱️ {getItemEstimateTime(item)}
+            </span>
           </div>
 
           {/* Interactive Add or Quantity Stepper */}
