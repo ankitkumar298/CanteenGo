@@ -1296,6 +1296,14 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
   const currentOrdersAhead = currentStudentOrder ? getOrdersAhead(currentStudentOrder) : 0;
   const currentWaitTime = currentStudentOrder ? getEstimatedWaitTime(currentStudentOrder) : "";
 
+  const tokenScrollRef = useRef(null);
+  const scrollTokens = (direction) => {
+    if (tokenScrollRef.current) {
+      const scrollAmount = direction === "left" ? -180 : 180;
+      tokenScrollRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" });
+    }
+  };
+
   // Filter orders for the selected canteen
   const boardOrders = useMemo(() => {
     return orders.filter((o) => matchesCanteen(o, selectedBoardCanteen));
@@ -1544,107 +1552,191 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
         </div>
       </div>
 
-      {/* 5. BOTTOM HIGHLIGHT STRIP: YOUR ORDER (with integrated active token switcher) */}
+      {/* 5. BOTTOM HIGHLIGHT STRIP: YOUR ORDER (with exact design matching user specification) */}
       {currentStudentOrder ? (
         <div className="cq-your-order-card">
-          {/* Integrated token switcher inside the card header (only if multiple active orders in this canteen) */}
-          {canteenActiveStudentOrders.length > 1 && (
-            <div className="cq-yo-card-header">
-              <div className="cq-yo-header-label">
-                <span className="cq-yo-header-icon">🔄</span>
-                <span>Switch Active Order in {selectedBoardCanteen.shortName || selectedBoardCanteen.name} ({canteenActiveStudentOrders.length}):</span>
+          {/* Top Token Navigation Strip */}
+          {canteenActiveStudentOrders.length > 0 && (
+            <div className="cq-yo-tokens-strip">
+              <div className="cq-yo-strip-left">
+                {/* Orange Stack Icon */}
+                <div className="cq-yo-stack-icon" aria-hidden="true">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ea580c" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+                  </svg>
+                </div>
+                <span className="cq-yo-strip-title">Your Tokens</span>
+                <span className="cq-yo-strip-count-pill">
+                  {canteenActiveStudentOrders.length} Order{canteenActiveStudentOrders.length > 1 ? "s" : ""}
+                </span>
+                <div className="cq-yo-strip-divider" />
+                <button
+                  type="button"
+                  className="cq-yo-arrow-btn"
+                  onClick={() => scrollTokens("left")}
+                  aria-label="Previous tokens"
+                >
+                  ‹
+                </button>
               </div>
-              <div className="cq-yo-token-chips">
+
+              {/* Scrollable Token Cards Row */}
+              <div className="cq-yo-tokens-carousel" ref={tokenScrollRef}>
                 {canteenActiveStudentOrders.map((ord) => {
                   const isSel = currentStudentOrder?._id === ord._id;
+                  const statusKey = ord.orderStatus === "Preparing"
+                    ? "preparing"
+                    : ord.orderStatus === "Ready"
+                    ? "ready"
+                    : "queued";
+                  const statusLabel = isSel
+                    ? ord.orderStatus === "Preparing"
+                      ? "In Progress"
+                      : ord.orderStatus
+                    : ord.orderStatus === "Preparing"
+                    ? "Preparing"
+                    : ord.orderStatus === "Ready"
+                    ? "Ready"
+                    : "Queued";
+
                   return (
                     <button
                       key={ord._id}
                       type="button"
-                      className={`cq-yo-tab-chip ${isSel ? "active" : ""}`}
+                      className={`cq-token-card-pill ${isSel ? "active" : ""}`}
                       onClick={() => setSelectedStudentOrderId(ord._id)}
                     >
-                      <span className="cq-tab-token-num">Token {ord.tokenNumber}</span>
-                      <span className={`cq-tab-badge status-${ord.orderStatus?.toLowerCase()}`}>
-                        {ord.orderStatus}
+                      <span className="cq-tcp-token">{ord.tokenNumber}</span>
+                      <span className={`cq-tcp-status status-${statusKey}`}>
+                        <span className="cq-tcp-dot">●</span> {statusLabel}
                       </span>
+                      {isSel && <span className="cq-tcp-active-bar" />}
                     </button>
                   );
                 })}
               </div>
+
+              <div className="cq-yo-strip-right">
+                <button
+                  type="button"
+                  className="cq-yo-arrow-btn"
+                  onClick={() => scrollTokens("right")}
+                  aria-label="Next tokens"
+                >
+                  ›
+                </button>
+              </div>
             </div>
           )}
 
+          {/* Main Card Body */}
           <div className="cq-yo-card-body">
-            {/* Left Block */}
-            <div className="cq-yo-left">
-              <span className="cq-yo-bag-icon">🛍️</span>
-              <div>
-                <h4 className="cq-yo-title">YOUR ORDER</h4>
-                <p className="cq-yo-desc">
-                  Track your order in real-time with live queue updates.
+            {/* Left: Selected Order Info Box */}
+            <div className="cq-yo-selected-box">
+              <div className="cq-yo-cloche-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 17H6a6 6 0 0 1 12 0z" />
+                  <path d="M12 9V6" />
+                  <path d="M4 17h16" />
+                  <circle cx="12" cy="5" r="1" fill="#ffffff" />
+                </svg>
+              </div>
+              <div className="cq-yo-selected-texts">
+                <h4 className="cq-yo-selected-title">Selected Order</h4>
+                <p className="cq-yo-selected-desc">
+                  Track real-time status, counter and pickup details.
                 </p>
               </div>
             </div>
 
-            {/* Token Block */}
-            <div className="cq-yo-token-block">
-              <span className="cq-yo-token-pill">★ YOUR TOKEN</span>
-              <span className="cq-yo-token-num">{currentStudentOrder.tokenNumber}</span>
-            </div>
-
-            {/* Items & Status */}
-            <div className="cq-yo-food-block">
-              <div className="cq-yo-food-name">
-                {currentStudentOrder.items?.[0]
-                  ? `${currentStudentOrder.items[0].name} × ${currentStudentOrder.items[0].quantity}${currentStudentOrder.items.length > 1 ? ` +${currentStudentOrder.items.length - 1} more` : ""}`
-                  : "Your Meal"}
+            {/* Middle: Token No. + Order Items */}
+            <div className="cq-yo-token-details-row">
+              <div className="cq-yo-token-col">
+                <span className="cq-yo-sublabel">Token No.</span>
+                <span className="cq-yo-token-huge">{currentStudentOrder.tokenNumber}</span>
               </div>
-              <span className={`cq-yo-status-pill status-${currentStudentOrder.orderStatus?.toLowerCase()}`}>
-                ● {currentStudentOrder.orderStatus?.toUpperCase()}
-              </span>
-            </div>
-
-            {/* Stats Group */}
-            <div className="cq-yo-stats-group">
-              {/* Orders ahead */}
-              <div className="cq-yo-stat-item">
-                <span className="cq-yo-stat-icon">👥</span>
-                <div>
-                  <div className="cq-yo-stat-val">
-                    {currentOrdersAhead === 0 ? "Next Up!" : `${currentOrdersAhead} orders`}
-                  </div>
-                  <div className="cq-yo-stat-lbl">before yours</div>
+              <div className="cq-yo-items-col">
+                <span className="cq-yo-sublabel">Order Items</span>
+                <div className="cq-yo-items-title">
+                  {currentStudentOrder.items?.map((it) => `${it.name} ×${it.quantity}`).join(", ") || "Fresh Canteen Meal"}
                 </div>
-              </div>
-
-              {/* Estimated wait */}
-              <div className="cq-yo-stat-item">
-                <span className="cq-yo-stat-icon">🕒</span>
-                <div>
-                  <div className="cq-yo-stat-val">
-                    {currentWaitTime || "~8 min"}
-                  </div>
-                  <div className="cq-yo-stat-lbl">Estimated wait</div>
-                </div>
-              </div>
-
-              {/* Pickup counter */}
-              <div className="cq-yo-stat-item">
-                <span className="cq-yo-stat-icon">📍</span>
-                <div>
-                  <div className="cq-yo-stat-val">
-                    {currentStudentOrder.counterName || selectedBoardCanteen.counter?.split(" ")[0] || "Counter 1"}
-                  </div>
-                  <div className="cq-yo-stat-lbl">Pickup counter</div>
+                <div className={`cq-yo-status-tag status-${currentStudentOrder.orderStatus === "Preparing" ? "preparing" : currentStudentOrder.orderStatus === "Ready" ? "ready" : "queued"}`}>
+                  <span className="cq-yo-tag-dot">●</span>
+                  <span>
+                    {currentStudentOrder.orderStatus === "Preparing"
+                      ? "In Progress"
+                      : currentStudentOrder.orderStatus}
+                  </span>
                 </div>
               </div>
             </div>
+
+            {/* Right: Meta Column (Ordered At, Kitchen Status, Pickup) */}
+            <div className="cq-yo-meta-stack">
+              {/* Ordered At */}
+              <div className="cq-yo-meta-line">
+                <div className="cq-yo-meta-icon-bubble purple">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                  </svg>
+                </div>
+                <div className="cq-yo-meta-info">
+                  <span className="cq-yo-meta-sub">Ordered At</span>
+                  <span className="cq-yo-meta-val">
+                    {currentStudentOrder.createdAt
+                      ? new Date(currentStudentOrder.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+                      : "Recently"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Preparing / Kitchen Status */}
+              <div className="cq-yo-meta-line">
+                <div className="cq-yo-meta-icon-bubble orange">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M6 13.87A4 4 0 0 1 7.41 6a5.11 5.11 0 0 1 1.05-1.54 5 5 0 0 1 7.08 0A5.11 5.11 0 0 1 16.59 6 4 4 0 0 1 18 13.87V21H6Z" />
+                    <line x1="6" y1="17" x2="18" y2="17" />
+                  </svg>
+                </div>
+                <div className="cq-yo-meta-info">
+                  <span className="cq-yo-meta-main">
+                    {currentStudentOrder.orderStatus === "Preparing"
+                      ? "Preparing at Kitchen"
+                      : currentStudentOrder.orderStatus === "Ready"
+                      ? "Ready for Pickup"
+                      : "In Kitchen Queue"}
+                  </span>
+                  <span className="cq-yo-meta-sub">
+                    {currentWaitTime ? `Approx. ${currentWaitTime}` : "Started 2 min ago"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Pickup Counter */}
+              <div className="cq-yo-meta-line">
+                <div className="cq-yo-meta-icon-bubble red">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                    <circle cx="12" cy="10" r="3" />
+                  </svg>
+                </div>
+                <div className="cq-yo-meta-info">
+                  <span className="cq-yo-meta-sub">Pickup</span>
+                  <span className="cq-yo-meta-val">
+                    {currentStudentOrder.counterName || selectedBoardCanteen.counter || "Counter 1 (Fast Dispatch)"}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Vertical Separator */}
+            <div className="cq-yo-action-divider" />
 
             {/* Action button */}
             <button
               type="button"
-              className="cq-yo-btn"
+              className="cq-yo-track-cta-btn"
               onClick={() => setActiveTab && setActiveTab("my-orders")}
             >
               Track My Order →
@@ -1654,11 +1746,13 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
       ) : (
         <div className="cq-your-order-card cq-yo-empty-card">
           <div className="cq-yo-card-body">
-            <div className="cq-yo-left">
-              <span className="cq-yo-bag-icon">{selectedBoardCanteen.icon || "🏢"}</span>
-              <div>
-                <h4 className="cq-yo-title">{selectedBoardCanteen.shortName || selectedBoardCanteen.name}</h4>
-                <p className="cq-yo-desc">
+            <div className="cq-yo-selected-box" style={{ background: "#f8fafc" }}>
+              <div className="cq-yo-cloche-icon" style={{ background: "#64748b" }}>
+                <span style={{ fontSize: "20px" }}>{selectedBoardCanteen.icon || "🏢"}</span>
+              </div>
+              <div className="cq-yo-selected-texts">
+                <h4 className="cq-yo-selected-title">{selectedBoardCanteen.shortName || selectedBoardCanteen.name}</h4>
+                <p className="cq-yo-selected-desc">
                   Pickup: {selectedBoardCanteen.counter?.split(" ")[0] || "Counter 1"}
                 </p>
               </div>
@@ -1673,7 +1767,7 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
             </div>
             <button
               type="button"
-              className="cq-yo-btn"
+              className="cq-yo-track-cta-btn"
               onClick={() => setActiveTab && setActiveTab("order")}
             >
               Order from {selectedBoardCanteen.shortName || selectedBoardCanteen.name} →

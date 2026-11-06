@@ -11242,15 +11242,15 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
   gap: 2px;
 }
 
-/* Bottom Highlight Strip / Card: YOUR ORDER (Sticky to bottom on scroll) */
+/* Bottom Highlight Strip / Card: YOUR ORDER (Sticky to bottom on scroll, Clean Modern Card - NO orange outline) */
 .cq-your-order-card {
   position: sticky;
   bottom: 12px;
   z-index: 950;
   background: #ffffff;
-  border: 2px solid #fdba74;
-  border-radius: 20px;
-  box-shadow: 0 -4px 28px rgba(234, 88, 12, 0.16), 0 8px 24px rgba(0, 0, 0, 0.08);
+  border: 1px solid #eef2f6; /* Clean subtle border - NO orange outline border */
+  border-radius: 22px;
+  box-shadow: 0 6px 30px rgba(15, 23, 42, 0.08), 0 1px 4px rgba(15, 23, 42, 0.04);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -11258,119 +11258,214 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
 }
 
 .cq-yo-empty-card {
-  border-color: #e2e8f0;
-  box-shadow: 0 -4px 22px rgba(0, 0, 0, 0.07), 0 4px 14px rgba(0, 0, 0, 0.04);
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
 }
 
-.cq-yo-empty-card .cq-yo-left {
-  background: linear-gradient(135deg, #64748b, #475569);
+/* 1. Top Tokens Strip */
+.cq-yo-tokens-strip {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 14px;
+  padding: 12px 22px 10px 22px;
+  background: #ffffff;
+  border-bottom: 1px solid #f1f5f9;
+  position: relative;
 }
 
-/* Integrated Header inside the Card for multiple tokens */
-.cq-yo-card-header {
+.cq-yo-strip-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.cq-yo-stack-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.cq-yo-strip-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #0f172a;
+  white-space: nowrap;
+}
+
+.cq-yo-strip-count-pill {
   background: #fff7ed;
-  border-bottom: 1.5px solid #fed7aa;
-  padding: 8px 18px;
+  color: #ea580c;
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+
+.cq-yo-strip-divider {
+  width: 1px;
+  height: 24px;
+  background: #e2e8f0;
+  margin: 0 4px;
+}
+
+.cq-yo-arrow-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1.5px solid #e2e8f0;
+  background: #ffffff;
+  color: #64748b;
+  font-size: 1.2rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+  flex-shrink: 0;
+  line-height: 1;
+  padding: 0;
+}
+
+.cq-yo-arrow-btn:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+.cq-yo-strip-right {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* Tokens Carousel */
+.cq-yo-tokens-carousel {
   display: flex;
   align-items: center;
   gap: 12px;
-  flex-wrap: wrap;
-}
-
-.cq-yo-header-label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.8rem;
-  font-weight: 800;
-  color: #c2410c;
-  white-space: nowrap;
-}
-
-.cq-yo-header-icon {
-  font-size: 0.95rem;
-}
-
-.cq-yo-token-chips {
-  display: flex;
-  align-items: center;
-  gap: 8px;
   overflow-x: auto;
-  padding: 2px 0;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  scroll-behavior: smooth;
   flex: 1;
+  padding: 4px 4px 8px 4px;
 }
 
-.cq-yo-tab-chip {
+.cq-yo-tokens-carousel::-webkit-scrollbar {
+  display: none;
+}
+
+.cq-token-card-pill {
   background: #ffffff;
-  border: 1.5px solid #fed7aa;
-  border-radius: 9999px;
-  padding: 4px 12px;
-  font-size: 0.78rem;
-  font-weight: 800;
-  color: #c2410c;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 8px 18px;
+  min-width: 95px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
   cursor: pointer;
+  transition: all 0.18s ease;
+  position: relative;
+  flex-shrink: 0;
+  text-align: center;
+}
+
+.cq-token-card-pill:hover:not(.active) {
+  border-color: #fdba74;
+  background: #fffaf5;
+}
+
+.cq-token-card-pill.active {
+  background: linear-gradient(135deg, #ea580c, #f97316);
+  border-color: transparent;
+  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.32);
+}
+
+.cq-tcp-token {
+  font-size: 0.98rem;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.2;
+}
+
+.cq-token-card-pill.active .cq-tcp-token {
+  color: #ffffff;
+}
+
+.cq-tcp-status {
+  font-size: 0.74rem;
+  font-weight: 700;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  white-space: nowrap;
-  transition: all 0.15s ease;
+  gap: 4px;
+  line-height: 1.2;
 }
 
-.cq-yo-tab-chip:hover {
-  background: #ffedd5;
-  border-color: #fb923c;
+.cq-tcp-dot {
+  font-size: 0.72rem;
+  line-height: 1;
 }
 
-.cq-yo-tab-chip.active {
-  background: #ea580c;
-  color: #ffffff;
-  border-color: #ea580c;
-  box-shadow: 0 2px 8px rgba(234, 88, 12, 0.28);
+.cq-tcp-status.status-preparing {
+  color: #d97706;
+}
+.cq-tcp-status.status-preparing .cq-tcp-dot {
+  color: #f59e0b;
 }
 
-.cq-tab-token-num {
-  font-weight: 800;
-}
-
-.cq-tab-badge {
-  font-size: 0.68rem;
-  font-weight: 700;
-  padding: 1px 6px;
-  border-radius: 9999px;
-  text-transform: capitalize;
-}
-
-.cq-yo-tab-chip.active .cq-tab-badge {
-  background: rgba(255, 255, 255, 0.25);
-  color: #ffffff;
-}
-
-.cq-yo-tab-chip:not(.active) .cq-tab-badge.status-pending {
-  background: #fef3c7;
-  color: #b45309;
-}
-
-.cq-yo-tab-chip:not(.active) .cq-tab-badge.status-preparing {
-  background: #ffedd5;
-  color: #c2410c;
-}
-
-.cq-yo-tab-chip:not(.active) .cq-tab-badge.status-ready {
-  background: #dcfce7;
+.cq-tcp-status.status-ready {
   color: #15803d;
 }
+.cq-tcp-status.status-ready .cq-tcp-dot {
+  color: #10b981;
+}
 
-/* Card Body */
+.cq-tcp-status.status-queued {
+  color: #64748b;
+}
+.cq-tcp-status.status-queued .cq-tcp-dot {
+  color: #94a3b8;
+}
+
+.cq-token-card-pill.active .cq-tcp-status {
+  color: #ffffff;
+}
+.cq-token-card-pill.active .cq-tcp-dot {
+  color: #ffffff;
+}
+
+.cq-tcp-active-bar {
+  position: absolute;
+  bottom: -7px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 36px;
+  height: 3.5px;
+  background: #ea580c;
+  border-radius: 9999px;
+}
+
+/* 2. Main Card Body */
 .cq-yo-card-body {
-  padding: 14px 20px;
+  padding: 16px 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 20px;
+  gap: 22px;
+  background: #ffffff;
   width: 100%;
 }
 
-@media (max-width: 1100px) {
+@media (max-width: 1200px) {
   .cq-yo-card-body {
     flex-wrap: wrap;
     gap: 16px;
@@ -11382,174 +11477,230 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
     flex-direction: column;
     align-items: stretch;
   }
-  .cq-yo-stats-group {
-    justify-content: space-between;
-  }
 }
 
-.cq-yo-left {
-  background: linear-gradient(135deg, #ea580c, #f97316);
-  border-radius: 14px;
-  padding: 12px 16px;
-  color: #ffffff;
+/* Left: Selected Order pill box */
+.cq-yo-selected-box {
+  background: #fff7ed;
+  border-radius: 16px;
+  padding: 12px 18px;
   display: flex;
   align-items: center;
-  gap: 12px;
-  min-width: 170px;
+  gap: 14px;
   flex-shrink: 0;
+  min-width: 250px;
+  max-width: 320px;
 }
 
-.cq-yo-bag-icon {
-  font-size: 26px;
-  line-height: 1;
-}
-
-.cq-yo-title {
-  font-size: 0.95rem;
-  font-weight: 900;
-  letter-spacing: 0.04em;
-  margin: 0;
-}
-
-.cq-yo-desc {
-  font-size: 0.72rem;
-  opacity: 0.95;
-  margin: 2px 0 0;
-  line-height: 1.25;
-}
-
-.cq-yo-token-block {
+.cq-yo-cloche-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #ea580c, #f97316);
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
   flex-shrink: 0;
-  white-space: nowrap;
-  min-width: fit-content;
+  box-shadow: 0 4px 10px rgba(234, 88, 12, 0.25);
 }
 
-.cq-yo-token-pill {
-  background: #ea580c;
-  color: #ffffff;
-  font-size: 0.68rem;
+.cq-yo-selected-texts {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cq-yo-selected-title {
+  margin: 0;
+  font-size: 1.02rem;
   font-weight: 800;
-  padding: 2px 8px;
-  border-radius: 9999px;
-  white-space: nowrap;
-  letter-spacing: 0.03em;
-  line-height: 1.2;
+  color: #0f172a;
 }
 
-.cq-yo-token-num {
-  font-size: 2.2rem;
+.cq-yo-selected-desc {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #64748b;
+  line-height: 1.35;
+}
+
+/* Middle: Token Details Row */
+.cq-yo-token-details-row {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-shrink: 0;
+}
+
+.cq-yo-token-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 90px;
+}
+
+.cq-yo-sublabel {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.cq-yo-token-huge {
+  font-size: 2.3rem;
   font-weight: 900;
   color: #ea580c;
   line-height: 1;
   letter-spacing: -0.02em;
-  white-space: nowrap;
-  word-break: keep-all;
 }
 
-.cq-yo-food-block {
+.cq-yo-items-col {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  min-width: 130px;
-  flex-shrink: 0;
+  max-width: 240px;
 }
 
-.cq-yo-food-name {
+.cq-yo-items-title {
   font-size: 0.95rem;
   font-weight: 800;
   color: #0f172a;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 180px;
+  max-width: 230px;
 }
 
-.cq-yo-status-pill {
-  font-size: 0.72rem;
+.cq-yo-status-tag {
+  font-size: 0.74rem;
   font-weight: 800;
-  padding: 2px 8px;
-  border-radius: 6px;
+  padding: 3px 10px;
+  border-radius: 9999px;
   width: fit-content;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  white-space: nowrap;
+  gap: 5px;
 }
 
-.cq-yo-status-pill.status-pending {
-  background: #fef3c7;
-  color: #d97706;
+.cq-yo-status-tag.status-preparing {
+  background: #fff7ed;
+  color: #ea580c;
 }
 
-.cq-yo-status-pill.status-preparing {
-  background: #ffedd5;
-  color: #c2410c;
-}
-
-.cq-yo-status-pill.status-ready {
+.cq-yo-status-tag.status-ready {
   background: #dcfce7;
   color: #15803d;
 }
 
-.cq-yo-stats-group {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  flex: 1;
-  justify-content: space-around;
-  flex-wrap: wrap;
+.cq-yo-status-tag.status-queued {
+  background: #f1f5f9;
+  color: #64748b;
 }
 
-.cq-yo-stat-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  white-space: nowrap;
-}
-
-.cq-yo-stat-icon {
-  font-size: 1.25rem;
+.cq-yo-tag-dot {
+  font-size: 0.7rem;
   line-height: 1;
 }
 
-.cq-yo-stat-val {
-  font-size: 0.92rem;
+/* Right: Meta Stack */
+.cq-yo-meta-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  min-width: 210px;
+}
+
+.cq-yo-meta-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cq-yo-meta-icon-bubble {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.cq-yo-meta-icon-bubble.purple {
+  background: #f5f3ff;
+  color: #8b5cf6;
+}
+
+.cq-yo-meta-icon-bubble.orange {
+  background: #fff7ed;
+  color: #ea580c;
+}
+
+.cq-yo-meta-icon-bubble.red {
+  background: #fef2f2;
+  color: #ea580c;
+}
+
+.cq-yo-meta-info {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  line-height: 1.2;
+}
+
+.cq-yo-meta-sub {
+  font-size: 0.74rem;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.cq-yo-meta-val {
+  font-size: 0.86rem;
   font-weight: 800;
   color: #0f172a;
-  line-height: 1.2;
-  white-space: nowrap;
 }
 
-.cq-yo-stat-lbl {
-  font-size: 0.7rem;
-  color: #64748b;
-  font-weight: 500;
-  white-space: nowrap;
+.cq-yo-meta-main {
+  font-size: 0.84rem;
+  font-weight: 800;
+  color: #0f172a;
 }
 
-.cq-yo-btn {
+/* Vertical Action Divider */
+.cq-yo-action-divider {
+  width: 1px;
+  height: 52px;
+  background: #e2e8f0;
+  margin: 0 4px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 1200px) {
+  .cq-yo-action-divider {
+    display: none;
+  }
+}
+
+/* Track CTA Button */
+.cq-yo-track-cta-btn {
   background: #ea580c;
   color: #ffffff;
   border: none;
   border-radius: 12px;
-  padding: 12px 20px;
-  font-size: 0.92rem;
+  padding: 13px 26px;
+  font-size: 0.95rem;
   font-weight: 800;
   cursor: pointer;
   white-space: nowrap;
-  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.3);
+  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.35);
   transition: all 0.2s ease;
   flex-shrink: 0;
 }
 
-.cq-yo-btn:hover {
+.cq-yo-track-cta-btn:hover {
   background: #c2410c;
   transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(234, 88, 12, 0.4);
 }
 
 /* ==========================================================================
