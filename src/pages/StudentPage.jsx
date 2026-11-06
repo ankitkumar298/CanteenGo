@@ -728,9 +728,7 @@ export default function StudentPage({
                     aria-expanded={isCanteenDropdownOpen}
                   >
                     <span className="canteen-trigger-text">
-                      <span className="canteen-trigger-icon">
-                        {currentCanteen.id === "all" ? "🌐" : currentCanteen.icon || "🏢"}
-                      </span>
+                      <LocationPinIcon size={16} className="canteen-trigger-location-icon" />
                       <span>
                         {currentCanteen.id === "all"
                           ? "All Canteens"

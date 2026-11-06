@@ -1744,6 +1744,12 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
   overflow: hidden;
 }
 
+.canteen-trigger-location-icon {
+  color: #ea580c;
+  flex-shrink: 0;
+  display: inline-flex;
+}
+
 .canteen-trigger-icon {
   font-size: 1.05rem;
   line-height: 1;
