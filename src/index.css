@@ -1799,6 +1799,21 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
   gap: 18px;
 }
 
+.menu-update-fade {
+  animation: menuCanteenUpdate 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes menuCanteenUpdate {
+  0% {
+    opacity: 0.25;
+    transform: translateY(10px) scale(0.99);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 .menu-card {
   background: #ffffff;
   border-radius: var(--radius-md);

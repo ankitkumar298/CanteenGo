@@ -8,7 +8,8 @@ export default function MenuCard({
   onAddToCart,
   onIncrease,
   onDecrease,
-  onOpenCanteenModal
+  onOpenCanteenModal,
+  selectedCanteen
 }) {
   const [imgError, setImgError] = useState(false);
 
@@ -65,13 +66,15 @@ export default function MenuCard({
             title="Check availability & wait times across canteens"
           >
             <span>
-              {Array.isArray(item.availableCanteens) && item.availableCanteens.length > 0 && !item.availableCanteens.includes("all")
-                ? item.availableCanteens.length === 1
-                  ? `📍 Only at ${item.canteenName || "Selected Canteen"}`
-                  : `📍 Available at ${item.availableCanteens.length} canteens`
-                : item.canteenId && item.canteenId !== "all"
-                  ? `📍 Only at ${item.canteenName || "Selected Canteen"}`
-                  : "📍 Available across all canteens"}
+              {selectedCanteen && selectedCanteen.id !== "all"
+                ? `📍 ${selectedCanteen.shortName || selectedCanteen.name}`
+                : Array.isArray(item.availableCanteens) && item.availableCanteens.length > 0 && !item.availableCanteens.includes("all")
+                  ? item.availableCanteens.length === 1
+                    ? `📍 Only at ${item.canteenName || "Selected Canteen"}`
+                    : `📍 Available at ${item.availableCanteens.length} canteens`
+                  : item.canteenId && item.canteenId !== "all"
+                    ? `📍 Only at ${item.canteenName || "Selected Canteen"}`
+                    : "📍 Available at 4 canteens"}
             </span>
             <span className="canteen-arrow">›</span>
           </button>

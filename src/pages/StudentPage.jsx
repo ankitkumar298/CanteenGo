@@ -153,8 +153,12 @@ export default function StudentPage({
     try {
       localStorage.setItem("canteenGo_selectedCanteen", JSON.stringify(newCanteen));
     } catch {}
-    setSuccessMessage(`📍 Pickup canteen set to ${newCanteen.name}`);
-    setTimeout(() => setSuccessMessage(""), 3500);
+    if (newCanteen.id === "all") {
+      setSuccessMessage("🌐 Showing menu for All Campus Canteens");
+    } else {
+      setSuccessMessage(`📍 Pickup canteen set to ${newCanteen.name}`);
+    }
+    setMenuAnimKey((prev) => prev + 1);
   };
 
   useEffect(() => {
@@ -203,6 +207,7 @@ export default function StudentPage({
   const [lastPlacedOrder, setLastPlacedOrder] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [menuAnimKey, setMenuAnimKey] = useState(0);
 
   const [isUpiModalOpen, setIsUpiModalOpen] = useState(false);
 
@@ -470,7 +475,9 @@ export default function StudentPage({
     const currentCanteenName = (selectedCanteen?.name || "").toLowerCase();
 
     let matchesCanteen = true;
-    if (Array.isArray(item.availableCanteens) && item.availableCanteens.length > 0) {
+    if (currentCanteenId === "all" || currentCanteenName.includes("all")) {
+      matchesCanteen = true;
+    } else if (Array.isArray(item.availableCanteens) && item.availableCanteens.length > 0) {
       matchesCanteen =
         item.availableCanteens.includes("all") ||
         item.availableCanteens.includes(currentCanteenId) ||
@@ -700,15 +707,28 @@ export default function StudentPage({
                 <div className="canteen-dropdown-wrap">
                   <select
                     className="canteen-select-dropdown"
-                    value={currentCanteen.id || currentCanteen.canteenId || ""}
+                    value={currentCanteen.id || currentCanteen.canteenId || "all"}
                     onChange={(e) => {
-                      const found = canteensList.find(
-                        (c) => (c.id || c.canteenId) === e.target.value
-                      );
-                      if (found) handleSelectCanteen(found);
+                      const val = e.target.value;
+                      if (val === "all") {
+                        handleSelectCanteen({
+                          id: "all",
+                          canteenId: "all",
+                          name: "All Canteens",
+                          shortName: "All Canteens",
+                          icon: "🌐"
+                        });
+                      } else {
+                        const found = canteensList.find(
+                          (c) => (c.id || c.canteenId) === val
+                        );
+                        if (found) handleSelectCanteen(found);
+                      }
+                      setMenuAnimKey((prev) => prev + 1);
                     }}
                     aria-label="Select Canteen Hub"
                   >
+                    <option value="all">🌐 All Canteens</option>
                     {canteensList.map((canteen) => {
                       const cId = canteen.id || canteen.canteenId;
                       return (
@@ -823,12 +843,20 @@ export default function StudentPage({
                   {filteredMenu.map((item) => {
                     const cartItem = cart.find((ci) => ci.menuItemId === item._id);
                     const quantityInCart = cartItem ? cartItem.quantity : 0;
+                    const itemWithDynamicPrice =
+                      currentCanteen && currentCanteen.id !== "all"
+                        ? {
+                            ...item,
+                            price: getCanteenItemPrice(item.basePrice || item.price, currentCanteen)
+                          }
+                        : item;
 
                     return (
                       <MenuCard
                         key={item._id}
-                        item={item}
+                        item={itemWithDynamicPrice}
                         cartQuantity={quantityInCart}
+                        selectedCanteen={currentCanteen}
                         onAddToCart={handleAddToCart}
                         onIncrease={handleIncreaseQuantity}
                         onDecrease={handleDecreaseQuantity}
@@ -856,16 +884,24 @@ export default function StudentPage({
                 </button>
               </div>
             ) : (
-              <div className="menu-grid">
+              <div key={menuAnimKey} className="menu-grid menu-update-fade">
                 {filteredMenu.map((item) => {
                   const cartItem = cart.find((ci) => ci.menuItemId === item._id);
                   const quantityInCart = cartItem ? cartItem.quantity : 0;
+                  const itemWithDynamicPrice =
+                    currentCanteen && currentCanteen.id !== "all"
+                      ? {
+                          ...item,
+                          price: getCanteenItemPrice(item.basePrice || item.price, currentCanteen)
+                        }
+                      : item;
 
                   return (
                     <MenuCard
                       key={item._id}
-                      item={item}
+                      item={itemWithDynamicPrice}
                       cartQuantity={quantityInCart}
+                      selectedCanteen={currentCanteen}
                       onAddToCart={handleAddToCart}
                       onIncrease={handleIncreaseQuantity}
                       onDecrease={handleDecreaseQuantity}
