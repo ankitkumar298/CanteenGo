@@ -8501,46 +8501,160 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
   border-radius: var(--radius-full);
 }
 
-/* Navbar Student Profile Chip */
+/* Navbar Student Profile Menu Wrapper & Dropdown */
+.nav-profile-menu-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
 .nav-student-profile-chip {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   background: #f8fafc;
-  border: 1.5px solid #e2e8f0;
-  padding: 5px 12px;
-  border-radius: var(--radius-full);
+  border: 1.5px solid #eef2f6;
+  padding: 4px 14px 4px 5px;
+  border-radius: 9999px;
   cursor: pointer;
   transition: all 0.2s ease;
   color: #0f172a;
 }
 
 .nav-student-profile-chip:hover {
-  background: #ffedd5;
-  border-color: #ea580c;
-  transform: translateY(-1px);
+  background: #ffffff;
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
-.profile-chip-avatar {
-  font-size: 1rem;
+.profile-chip-avatar-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #fef3c7;
+  color: #78350f;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 1.05rem;
+  flex-shrink: 0;
+  border: 1px solid #fde68a;
 }
 
 .profile-chip-text {
   display: flex;
   flex-direction: column;
   text-align: left;
-}
-
-.profile-chip-name {
-  font-size: 0.8rem;
-  font-weight: 800;
-  color: #0f172a;
   line-height: 1.2;
 }
 
+.profile-chip-name {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
 .profile-chip-phone {
-  font-size: 0.68rem;
+  font-size: 0.74rem;
+  font-weight: 600;
   color: #64748b;
+}
+
+.profile-chip-chevron {
+  display: flex;
+  align-items: center;
+  color: #0f172a;
+  transition: transform 0.2s ease;
+  margin-left: 2px;
+}
+
+.profile-chip-chevron.open {
+  transform: rotate(180deg);
+}
+
+/* Dropdown Menu (Exact match to screenshot) */
+.nav-profile-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 205px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.12), 0 2px 8px rgba(15, 23, 42, 0.04);
+  padding: 8px;
+  z-index: 1200;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  animation: navMenuFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes navMenuFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.nav-profile-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 14px;
+  background: transparent;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.nav-profile-dropdown-item:hover {
+  background: #f8fafc;
+}
+
+.dropdown-item-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0f172a;
+  flex-shrink: 0;
+}
+
+.dropdown-item-label {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.nav-profile-dropdown-divider {
+  height: 1px;
+  background: #f1f5f9;
+  margin: 5px 6px;
+}
+
+.nav-profile-dropdown-item.item-logout {
+  color: #dc2626;
+}
+
+.nav-profile-dropdown-item.item-logout:hover {
+  background: #fef2f2;
+}
+
+.item-logout-icon {
+  color: #dc2626;
+}
+
+.item-logout-label {
+  color: #dc2626;
 }
 
 /* Your Orders Page: Student Profile Identity Banner */
