@@ -482,61 +482,8 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
 }
 
 /* ==========================================================================
-   Campus Canteens Filter Row (Under Hero Poster)
+   Campus Canteens Filter Row (Removed - Replaced by Search Toolbar Dropdown)
    ========================================================================== */
-.campus-canteens-filter-bar {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 14px;
-  margin: 16px 0 24px;
-  padding: 4px 2px;
-}
-
-.campus-canteens-filter-label {
-  font-size: 1.05rem;
-  font-weight: 800;
-  color: #0f172a;
-  letter-spacing: -0.01em;
-  white-space: nowrap;
-}
-
-.campus-canteens-filter-chips {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.campus-canteen-chip-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 9px 22px;
-  border-radius: 9999px;
-  background: #f1f5f9;
-  border: 1.5px solid #e2e8f0;
-  font-size: 0.94rem;
-  font-weight: 700;
-  color: #1e293b;
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
-}
-
-.campus-canteen-chip-btn:hover {
-  background: #fff7ed;
-  border-color: #fdba74;
-  color: #ea580c;
-  transform: translateY(-1px);
-}
-
-.campus-canteen-chip-btn.active {
-  background: #ea580c;
-  border-color: #ea580c;
-  color: #ffffff;
-  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.28);
-}
 
 .campus-canteen-chip-btn .chip-icon {
   font-size: 1.1rem;
@@ -1690,6 +1637,20 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
   margin-bottom: 22px;
 }
 
+.menu-search-canteen-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.menu-search-canteen-row .search-input-wrap {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
 .search-input-wrap {
   position: relative;
   display: flex;
@@ -1705,20 +1666,22 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
 
 .search-input {
   width: 100%;
-  padding: 11px 40px 11px 42px;
-  border-radius: var(--radius-full);
+  height: 44px;
+  padding: 0 40px 0 42px;
+  border-radius: 12px;
   border: 1.5px solid #cbd5e1;
   background: #f8fafc;
   font-size: 0.92rem;
   color: #0f172a;
   outline: none;
   transition: all 0.2s ease;
+  box-sizing: border-box;
 }
 
 .search-input:focus {
   background: #ffffff;
-  border-color: #f97316;
-  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
+  border-color: #ea580c;
+  box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.15);
 }
 
 .clear-search-btn {
@@ -1730,6 +1693,69 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
   cursor: pointer;
   font-size: 0.9rem;
   padding: 4px;
+}
+
+/* Canteen Selector Dropdown beside Search Input */
+.canteen-dropdown-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 230px;
+  max-width: 300px;
+  flex-shrink: 0;
+}
+
+.canteen-select-dropdown {
+  width: 100%;
+  height: 44px;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background: #ffffff;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 12px;
+  padding: 0 36px 0 14px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #0f172a;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  box-sizing: border-box;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.canteen-select-dropdown:hover {
+  border-color: #ea580c;
+  background: #fffaf5;
+}
+
+.canteen-select-dropdown:focus {
+  border-color: #ea580c;
+  box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.15);
+}
+
+.canteen-dropdown-arrow {
+  position: absolute;
+  right: 14px;
+  font-size: 0.65rem;
+  color: #64748b;
+  pointer-events: none;
+}
+
+@media (max-width: 768px) {
+  .menu-search-canteen-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .canteen-dropdown-wrap {
+    min-width: 100%;
+    max-width: 100%;
+  }
 }
 
 .category-scroll-chips {

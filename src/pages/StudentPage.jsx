@@ -601,27 +601,6 @@ export default function StudentPage({
         </div>
       </div>
 
-      {/* Campus Canteens Filter Row (Right under the poster) */}
-      <div className="campus-canteens-filter-bar">
-        <span className="campus-canteens-filter-label">Campus Canteens:</span>
-        <div className="campus-canteens-filter-chips">
-          {canteensList.map((canteen) => {
-            const cId = canteen.id || canteen.canteenId;
-            const isSelected = (currentCanteen.id || currentCanteen.canteenId) === cId;
-            return (
-              <button
-                key={cId}
-                type="button"
-                className={`campus-canteen-chip-btn ${isSelected ? "active" : ""}`}
-                onClick={() => handleSelectCanteen(canteen)}
-              >
-                <span className="chip-icon">{canteen.icon || "🏢"}</span>
-                <span>{canteen.shortName || canteen.name}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
       {errorMessage && <div className="alert alert-error">{errorMessage}</div>}
       {successMessage && <div className="alert alert-success">{successMessage}</div>}
 
@@ -670,23 +649,51 @@ export default function StudentPage({
           <div className="card">
             {/* Search and Category Filter Toolbar */}
             <div className="menu-toolbar">
-              <div className="search-input-wrap">
-                <SearchIcon size={18} className="search-icon" />
-                <input
-                  type="text"
-                  className="search-input"
-                  placeholder="Search snacks, beverages, rolls..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                {searchQuery && (
-                  <button
-                    className="clear-search-btn"
-                    onClick={() => setSearchQuery("")}
+              <div className="menu-search-canteen-row">
+                <div className="search-input-wrap">
+                  <SearchIcon size={18} className="search-icon" />
+                  <input
+                    type="text"
+                    className="search-input"
+                    placeholder="Search snacks, beverages, rolls..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                  {searchQuery && (
+                    <button
+                      className="clear-search-btn"
+                      onClick={() => setSearchQuery("")}
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+
+                {/* Canteen Selector Dropdown right next to search bar */}
+                <div className="canteen-dropdown-wrap">
+                  <select
+                    className="canteen-select-dropdown"
+                    value={currentCanteen.id || currentCanteen.canteenId || ""}
+                    onChange={(e) => {
+                      const found = canteensList.find(
+                        (c) => (c.id || c.canteenId) === e.target.value
+                      );
+                      if (found) handleSelectCanteen(found);
+                    }}
+                    aria-label="Select Canteen Hub"
                   >
-                    ✕
-                  </button>
-                )}
+                    {canteensList.map((canteen) => {
+                      const cId = canteen.id || canteen.canteenId;
+                      return (
+                        <option key={cId} value={cId}>
+                          {canteen.icon ? `${canteen.icon} ` : "🏢 "}
+                          {canteen.shortName || canteen.name}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <span className="canteen-dropdown-arrow">▼</span>
+                </div>
               </div>
 
               {/* Dynamic Filter Chips with Combos Option */}
