@@ -1266,17 +1266,6 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
 
   const [selectedStudentOrderId, setSelectedStudentOrderId] = useState(null);
 
-  const currentStudentOrder = (() => {
-    if (selectedStudentOrderId) {
-      const match = studentMatchedOrders.find((o) => o._id === selectedStudentOrderId);
-      if (match) return match;
-    }
-    return activeStudentOrders[0] || pastStudentOrders[0] || null;
-  })();
-
-  const currentOrdersAhead = currentStudentOrder ? getOrdersAhead(currentStudentOrder) : 0;
-  const currentWaitTime = currentStudentOrder ? getEstimatedWaitTime(currentStudentOrder) : "";
-
   // Selected Canteen for the Live Queue Display
   const [selectedBoardCanteenId, setSelectedBoardCanteenId] = useState(() => {
     if (selectedCanteen?.id) return selectedCanteen.id;
@@ -1291,15 +1280,21 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
     );
   }, [canteensList, selectedBoardCanteenId]);
 
-  // When student switches their personal order, auto-focus public board to that canteen
-  useEffect(() => {
-    if (currentStudentOrder) {
-      const match = canteensList.find((c) => matchesCanteen(currentStudentOrder, c));
-      if (match && (match.id || match.canteenId) !== selectedBoardCanteenId) {
-        setSelectedBoardCanteenId(match.id || match.canteenId);
-      }
+  // Canteen-specific active student orders (Only orders belonging to the currently selected canteen!)
+  const canteenActiveStudentOrders = useMemo(() => {
+    return activeStudentOrders.filter((o) => matchesCanteen(o, selectedBoardCanteen));
+  }, [activeStudentOrders, selectedBoardCanteen]);
+
+  const currentStudentOrder = useMemo(() => {
+    if (selectedStudentOrderId) {
+      const match = canteenActiveStudentOrders.find((o) => o._id === selectedStudentOrderId);
+      if (match) return match;
     }
-  }, [currentStudentOrder?._id]);
+    return canteenActiveStudentOrders[0] || null;
+  }, [canteenActiveStudentOrders, selectedStudentOrderId]);
+
+  const currentOrdersAhead = currentStudentOrder ? getOrdersAhead(currentStudentOrder) : 0;
+  const currentWaitTime = currentStudentOrder ? getEstimatedWaitTime(currentStudentOrder) : "";
 
   // Filter orders for the selected canteen
   const boardOrders = useMemo(() => {
@@ -1552,15 +1547,15 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
       {/* 5. BOTTOM HIGHLIGHT STRIP: YOUR ORDER (with integrated active token switcher) */}
       {currentStudentOrder ? (
         <div className="cq-your-order-card">
-          {/* Integrated token switcher inside the card header (only if multiple active orders) */}
-          {activeStudentOrders.length > 1 && (
+          {/* Integrated token switcher inside the card header (only if multiple active orders in this canteen) */}
+          {canteenActiveStudentOrders.length > 1 && (
             <div className="cq-yo-card-header">
               <div className="cq-yo-header-label">
                 <span className="cq-yo-header-icon">🔄</span>
-                <span>Switch Active Order ({activeStudentOrders.length}):</span>
+                <span>Switch Active Order in {selectedBoardCanteen.shortName || selectedBoardCanteen.name} ({canteenActiveStudentOrders.length}):</span>
               </div>
               <div className="cq-yo-token-chips">
-                {activeStudentOrders.map((ord) => {
+                {canteenActiveStudentOrders.map((ord) => {
                   const isSel = currentStudentOrder?._id === ord._id;
                   return (
                     <button
@@ -1657,23 +1652,23 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
           </div>
         </div>
       ) : (
-        <div className="cq-your-order-card">
+        <div className="cq-your-order-card cq-yo-empty-card">
           <div className="cq-yo-card-body">
             <div className="cq-yo-left">
-              <span className="cq-yo-bag-icon">🛍️</span>
+              <span className="cq-yo-bag-icon">{selectedBoardCanteen.icon || "🏢"}</span>
               <div>
-                <h4 className="cq-yo-title">CAMPUS ORDERS</h4>
+                <h4 className="cq-yo-title">{selectedBoardCanteen.shortName || selectedBoardCanteen.name}</h4>
                 <p className="cq-yo-desc">
-                  Order your favorite meal and skip the waiting line.
+                  Pickup: {selectedBoardCanteen.counter?.split(" ")[0] || "Counter 1"}
                 </p>
               </div>
             </div>
             <div style={{ flex: 1, padding: "0 10px" }}>
               <div style={{ fontWeight: 800, color: "#0f172a", fontSize: "0.96rem" }}>
-                No Active Orders in Queue
+                No Active Orders in {selectedBoardCanteen.shortName || selectedBoardCanteen.name}
               </div>
               <div style={{ fontSize: "0.78rem", color: "#64748b" }}>
-                Select delicious snacks, meals, or beverages from the menu to get your digital queue token!
+                You have no active orders in this canteen. Switch canteen above to view other orders or order fresh food!
               </div>
             </div>
             <button
@@ -1681,7 +1676,7 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
               className="cq-yo-btn"
               onClick={() => setActiveTab && setActiveTab("order")}
             >
-              Browse Menu & Order Food →
+              Order from {selectedBoardCanteen.shortName || selectedBoardCanteen.name} →
             </button>
           </div>
         </div>

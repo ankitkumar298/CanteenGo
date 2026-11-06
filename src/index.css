@@ -11242,16 +11242,28 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
   gap: 2px;
 }
 
-/* Bottom Highlight Strip / Card: YOUR ORDER */
+/* Bottom Highlight Strip / Card: YOUR ORDER (Sticky to bottom on scroll) */
 .cq-your-order-card {
+  position: sticky;
+  bottom: 12px;
+  z-index: 950;
   background: #ffffff;
   border: 2px solid #fdba74;
   border-radius: 20px;
-  box-shadow: 0 8px 30px rgba(234, 88, 12, 0.12);
+  box-shadow: 0 -4px 28px rgba(234, 88, 12, 0.16), 0 8px 24px rgba(0, 0, 0, 0.08);
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  margin-top: 6px;
+  margin-top: 24px;
+}
+
+.cq-yo-empty-card {
+  border-color: #e2e8f0;
+  box-shadow: 0 -4px 22px rgba(0, 0, 0, 0.07), 0 4px 14px rgba(0, 0, 0, 0.04);
+}
+
+.cq-yo-empty-card .cq-yo-left {
+  background: linear-gradient(135deg, #64748b, #475569);
 }
 
 /* Integrated Header inside the Card for multiple tokens */
