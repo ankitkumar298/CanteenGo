@@ -2,8 +2,8 @@ export default function Footer() {
   return (
     <footer className="app-main-footer">
       <div className="app-footer-inner">
-        {/* Top Section */}
-        <div className="app-footer-top">
+        {/* Top Section - Centered */}
+        <div className="app-footer-top footer-centered">
           {/* 1. Logo & Brand */}
           <div className="app-footer-col app-footer-brand-col">
             <img
@@ -21,38 +21,7 @@ export default function Footer() {
 
           <div className="app-footer-v-divider" />
 
-          {/* 2. Campus System Info */}
-          <div className="app-footer-col app-footer-system-col">
-            <div className="app-footer-icon-wrap">
-              <svg
-                width="22"
-                height="22"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#334155"
-                strokeWidth="1.9"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                <circle cx="9" cy="7" r="4"></circle>
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-              </svg>
-            </div>
-            <div className="app-footer-system-text">
-              <strong className="app-footer-system-title">
-                A Campus Canteen Management System
-              </strong>
-              <span className="app-footer-system-sub">
-                Order • Track • Pickup • Live Queue
-              </span>
-            </div>
-          </div>
-
-          <div className="app-footer-v-divider" />
-
-          {/* 3. Contact & GitHub */}
+          {/* 2. Contact & GitHub */}
           <div className="app-footer-col app-footer-contact-col">
             <a
               href="mailto:contact@canteengo.in"
@@ -94,7 +63,7 @@ export default function Footer() {
 
           <div className="app-footer-v-divider" />
 
-          {/* 4. Navigation Links */}
+          {/* 3. Navigation Links */}
           <div className="app-footer-col app-footer-links-col">
             <a
               href="https://github.com/ankitkumar298/CanteenGo"
@@ -119,30 +88,11 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* Bottom Section */}
-        <div className="app-footer-bottom">
+        {/* Bottom Section - Centered */}
+        <div className="app-footer-bottom footer-centered">
           <span className="app-footer-copyright">
             © 2026 canteenGo. All rights reserved.
           </span>
-
-          <div className="app-footer-capstone-badge">
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#ea580c"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-              <circle cx="9" cy="7" r="4"></circle>
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-            </svg>
-            <span>A B.Tech CSE Capstone Project</span>
-          </div>
         </div>
       </div>
     </footer>

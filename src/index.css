@@ -12317,9 +12317,9 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
 .app-footer-top {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   flex-wrap: wrap;
-  gap: 20px;
+  gap: 32px;
   padding-bottom: 20px;
   border-bottom: 1px solid #f1f5f9;
 }
@@ -12377,41 +12377,6 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
   margin-top: 2px;
 }
 
-/* System info col */
-.app-footer-system-col {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.app-footer-icon-wrap {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #475569;
-  flex-shrink: 0;
-}
-
-.app-footer-system-text {
-  display: flex;
-  flex-direction: column;
-  text-align: left;
-}
-
-.app-footer-system-title {
-  font-size: 0.88rem;
-  font-weight: 800;
-  color: #0f172a;
-  line-height: 1.2;
-}
-
-.app-footer-system-sub {
-  font-size: 0.78rem;
-  font-weight: 500;
-  color: #64748b;
-  margin-top: 2px;
-}
-
 /* Contact & Github col */
 .app-footer-contact-col {
   display: flex;
@@ -12466,29 +12431,16 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
 .app-footer-bottom {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   padding-top: 18px;
-  flex-wrap: wrap;
-  gap: 14px;
+  text-align: center;
 }
 
 .app-footer-copyright {
   font-size: 0.84rem;
   color: #475569;
   font-weight: 500;
-}
-
-.app-footer-capstone-badge {
-  background: #fff7ed;
-  border: 1px solid #fed7aa;
-  color: #c2410c;
-  border-radius: 999px;
-  padding: 6px 14px;
-  font-size: 0.8rem;
-  font-weight: 700;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
+  text-align: center;
 }
 
 @media (max-width: 900px) {
@@ -12497,7 +12449,7 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
   }
   .app-footer-top {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
     gap: 16px;
   }
 }
