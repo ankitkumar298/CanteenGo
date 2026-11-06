@@ -722,6 +722,7 @@ export default function StudentPage({
         order={lastPlacedOrder}
         onClose={() => setIsOverlayOpen(false)}
         onGoToYourOrders={() => setActiveTab && setActiveTab("my-orders")}
+        onTrackOrder={() => setActiveTab && setActiveTab("queue")}
       />
 
       {/* Active Token Bar with Go to Your Orders button */}

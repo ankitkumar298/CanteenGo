@@ -1,16 +1,14 @@
 import { useState, useEffect } from "react";
-import StatusBadge from "./StatusBadge";
-import { CheckCircleIcon, QueueIcon, PlusIcon, ShieldCheckIcon, ReceiptIcon } from "./Icons";
 
 export default function OrderSuccessOverlay({
   isOpen,
   isSubmitting,
   order,
   onClose,
-  onGoToYourOrders
+  onGoToYourOrders,
+  onTrackOrder
 }) {
   const [loadingStep, setLoadingStep] = useState(0);
-  const [copiedToken, setCopiedToken] = useState(false);
 
   useEffect(() => {
     if (!isSubmitting) {
@@ -29,17 +27,26 @@ export default function OrderSuccessOverlay({
 
   if (!isOpen) return null;
 
-  const handleCopyToken = () => {
-    if (order && order.tokenNumber) {
-      navigator.clipboard.writeText(order.tokenNumber);
-      setCopiedToken(true);
-      setTimeout(() => setCopiedToken(false), 2000);
-    }
-  };
+  const counterDisplay = order?.counterName
+    ? (order.counterName.includes("(") ? order.counterName : `${order.counterName} (Fast Dispatch)`)
+    : "Counter 1 (Fast Dispatch)";
+
+  const waitDisplay = order?.estimatedPrepTime
+    ? `~ ${order.estimatedPrepTime} min`
+    : "~ 8 min";
+
+  const statusDisplay = order?.orderStatus === "Ready" ? "Ready" : "Preparing";
 
   return (
-    <div className="order-overlay-backdrop">
-      <div className="order-overlay-card">
+    <div
+      className="order-overlay-backdrop"
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !isSubmitting) {
+          onClose();
+        }
+      }}
+    >
+      <div className="order-overlay-card confirm-modal-card">
         {/* PHASE 1: SUBMITTING / PLACING ORDER RADAR ANIMATION */}
         {isSubmitting && (
           <div className="placing-order-box">
@@ -88,124 +95,241 @@ export default function OrderSuccessOverlay({
           </div>
         )}
 
-        {/* PHASE 2: ORDER CONFIRMED WITH LIVE DIGITAL TOKEN CARD */}
+        {/* PHASE 2: ORDER CONFIRMED MODAL CARD */}
         {!isSubmitting && order && (
-          <div className="placed-order-box">
-            {/* Confetti particles */}
-            <div className="confetti-container">
-              <span className="confetti c1"></span>
-              <span className="confetti c2"></span>
-              <span className="confetti c3"></span>
-              <span className="confetti c4"></span>
-              <span className="confetti c5"></span>
-              <span className="confetti c6"></span>
+          <div className="confirm-card-content">
+            {/* Top Right Close Button */}
+            <button
+              type="button"
+              className="confirm-modal-close-btn"
+              onClick={onClose}
+              aria-label="Close"
+              title="Close"
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+
+            {/* Confetti & Green Success Checkmark */}
+            <div className="confirm-icon-wrapper">
+              <svg
+                className="confirm-confetti-svg"
+                viewBox="0 0 100 100"
+                fill="none"
+              >
+                {/* top green dash */}
+                <line x1="50" y1="6" x2="50" y2="15" stroke="#22c55e" strokeWidth="3" strokeLinecap="round" />
+                {/* top right yellow dash */}
+                <line x1="72" y1="16" x2="79" y2="23" stroke="#eab308" strokeWidth="3" strokeLinecap="round" />
+                {/* right orange dash */}
+                <line x1="86" y1="48" x2="93" y2="50" stroke="#f97316" strokeWidth="3" strokeLinecap="round" />
+                {/* bottom right purple dash */}
+                <line x1="75" y1="75" x2="82" y2="82" stroke="#a855f7" strokeWidth="3" strokeLinecap="round" />
+                {/* bottom left purple dash */}
+                <line x1="25" y1="76" x2="31" y2="70" stroke="#a855f7" strokeWidth="3" strokeLinecap="round" />
+                {/* left yellow curved shape */}
+                <path d="M 10 49 Q 15 46 17 50 Q 15 54 10 49 Z" fill="#eab308" />
+                {/* top left green dash */}
+                <line x1="22" y1="22" x2="28" y2="28" stroke="#22c55e" strokeWidth="3" strokeLinecap="round" />
+                {/* top left yellow oval */}
+                <ellipse cx="36" cy="11" rx="4.5" ry="2.2" transform="rotate(-30 36 11)" fill="#eab308" />
+              </svg>
+
+              <div className="confirm-green-circle">
+                <svg
+                  width="26"
+                  height="26"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#ffffff"
+                  strokeWidth="3.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              </div>
             </div>
 
-            <div className="success-bounce-icon">
-              <CheckCircleIcon size={38} className="check-svg" />
-            </div>
-
-            <h2 className="placed-title">Order Confirmed!</h2>
-            <p className="placed-subtitle">
-              Your order is sent to the canteen chef. Save your pickup token below:
+            {/* Headings */}
+            <h2 className="confirm-title">Order Confirmed!</h2>
+            <p className="confirm-subtitle">
+              Your order has been placed successfully.
             </p>
 
-            {/* Futuristic Digital Kiosk Token Card */}
-            <div className="digital-token-card">
-              <div className="token-card-glow"></div>
-              <div className="token-card-top">
-                <span className="token-campus-tag">CANTEENGO EXPRESS TICKET</span>
-                <span className="token-live-indicator">
-                  <span className="live-dot"></span> LIVE TICKET
-                </span>
-              </div>
-
-              <div className="token-number-display">
-                <span className="token-prefix">TOKEN</span>
-                <span className="token-huge-num">{order.tokenNumber}</span>
-              </div>
-
-              <div className="token-barcode-strip">
-                <div className="barcode-bars">
-                  <span></span><span></span><span></span><span></span><span></span>
-                  <span></span><span></span><span></span><span></span><span></span>
-                  <span></span><span></span><span></span><span></span><span></span>
+            {/* Token & Estimated Wait 2-column Box */}
+            <div className="confirm-token-wait-banner">
+              <div className="confirm-token-col">
+                <div className="confirm-banner-icon-wrap">
+                  <svg
+                    width="32"
+                    height="24"
+                    viewBox="0 0 24 18"
+                    fill="none"
+                    stroke="#ea580c"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M2 5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4V5z"></path>
+                    <line x1="12" y1="3" x2="12" y2="15" strokeDasharray="2 2"></line>
+                  </svg>
                 </div>
-                <button
-                  type="button"
-                  className="btn-copy-token"
-                  onClick={handleCopyToken}
-                  title="Copy Token Number"
-                >
-                  {copiedToken ? "✓ Copied" : "Copy Token"}
-                </button>
-              </div>
-
-              <div className="token-card-meta">
-                <div className="token-meta-item">
-                  <span className="meta-label">STUDENT</span>
-                  <span className="meta-val">{order.studentName}</span>
-                </div>
-                <div className="token-meta-item">
-                  <span className="meta-label">AMOUNT</span>
-                  <span className="meta-val">₹{order.totalAmount}</span>
-                </div>
-                <div className="token-meta-item">
-                  <span className="meta-label">PAYMENT</span>
-                  <span className="meta-val">{order.paymentStatus} ({order.paymentMethod})</span>
+                <div className="confirm-col-text">
+                  <span className="confirm-col-label">Token No.</span>
+                  <span className="confirm-token-val">{order.tokenNumber}</span>
                 </div>
               </div>
 
-              {order.pickupCode && (
-                <div className="token-pickup-pin-box">
-                  <div className="pin-title">
-                    <ShieldCheckIcon size={14} />
-                    <span>SECURE PICKUP PIN (OTP)</span>
-                  </div>
-                  <div className="pin-digits-wrap">
-                    {order.pickupCode.split("").map((digit, i) => (
-                      <span key={i} className="pin-digit-box">{digit}</span>
-                    ))}
-                  </div>
-                  <small className="pin-help-text">Give this 4-digit PIN at Counter 1 to verify and collect your food.</small>
-                </div>
-              )}
-            </div>
+              <div className="confirm-banner-divider"></div>
 
-            {/* Ordered Items Summary */}
-            <div className="placed-items-summary">
-              <div className="summary-title">Items Ordered:</div>
-              <div className="summary-pills">
-                {order.items?.map((item, idx) => (
-                  <span key={idx} className="summary-item-pill">
-                    {item.name} <strong className="pill-qty">×{item.quantity}</strong>
-                  </span>
-                ))}
+              <div className="confirm-wait-col">
+                <div className="confirm-banner-icon-wrap">
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#ea580c"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                  </svg>
+                </div>
+                <div className="confirm-col-text">
+                  <span className="confirm-col-label">Estimated Wait</span>
+                  <span className="confirm-wait-val">{waitDisplay}</span>
+                </div>
               </div>
             </div>
 
-            {/* Quick Actions */}
-            <div className="placed-actions">
-              {onGoToYourOrders && (
-                <button
-                  type="button"
-                  className="btn btn-primary btn-overlay-action"
-                  onClick={() => {
-                    onClose();
-                    onGoToYourOrders();
-                  }}
+            {/* Order Details List */}
+            <div className="confirm-details-section">
+              <div className="confirm-details-header">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#78350f"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
                 >
-                  <ReceiptIcon size={17} />
-                  <span>Go to Your Orders</span>
-                </button>
-              )}
+                  <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                  <line x1="3" y1="6" x2="21" y2="6"></line>
+                  <path d="M16 10a4 4 0 0 1-8 0"></path>
+                </svg>
+                <span className="confirm-details-title">Order Details</span>
+              </div>
+
+              <div className="confirm-items-list">
+                {order.items?.map((item, idx) => {
+                  const lineTotal = (item.price || 0) * (item.quantity || 1);
+                  return (
+                    <div key={idx} className="confirm-item-row">
+                      <span className="confirm-item-name">
+                        {item.name} × {item.quantity}
+                      </span>
+                      <span className="confirm-item-price">₹{lineTotal}</span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="confirm-total-divider"></div>
+
+              <div className="confirm-total-row">
+                <span className="confirm-total-label">Total</span>
+                <span className="confirm-total-amount">₹{order.totalAmount}</span>
+              </div>
+            </div>
+
+            {/* Pickup Counter Row */}
+            <div className="confirm-meta-row">
+              <div className="confirm-meta-label-wrap">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="#f97316"
+                  stroke="#ea580c"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                  <circle cx="12" cy="10" r="3" fill="#ffffff"></circle>
+                </svg>
+                <span className="confirm-meta-text">Pickup Counter</span>
+              </div>
+              <span className="confirm-counter-badge">{counterDisplay}</span>
+            </div>
+
+            {/* Order Status Row */}
+            <div className="confirm-meta-row confirm-status-row">
+              <div className="confirm-meta-label-wrap">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#ea580c"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M6 13.87A4 4 0 0 1 7.41 6a5.11 5.11 0 0 1 1.05-1.54 5 5 0 0 1 7.08 0A5.11 5.11 0 0 1 16.59 6 4 4 0 0 1 18 13.87V21H6Z" />
+                  <line x1="6" y1="17" x2="18" y2="17" />
+                </svg>
+                <span className="confirm-meta-text">Order Status</span>
+              </div>
+              <span className="confirm-status-badge">
+                <span className="confirm-status-dot"></span>
+                <span>{statusDisplay}</span>
+              </span>
+            </div>
+
+            {/* Bottom Action Buttons */}
+            <div className="confirm-actions-row">
               <button
                 type="button"
-                className="btn btn-secondary btn-overlay-action"
-                onClick={onClose}
+                className="confirm-btn-secondary"
+                onClick={() => {
+                  onClose();
+                  if (onGoToYourOrders) onGoToYourOrders();
+                }}
               >
-                <PlusIcon size={17} />
-                <span>Order More Food</span>
+                View My Orders
+              </button>
+
+              <button
+                type="button"
+                className="confirm-btn-primary"
+                onClick={() => {
+                  onClose();
+                  if (onTrackOrder) {
+                    onTrackOrder();
+                  } else if (onGoToYourOrders) {
+                    onGoToYourOrders();
+                  }
+                }}
+              >
+                Track Order →
               </button>
             </div>
           </div>
