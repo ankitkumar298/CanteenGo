@@ -209,6 +209,22 @@ export default function StudentPage({
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [menuAnimKey, setMenuAnimKey] = useState(0);
 
+  // Custom Canteen Dropdown state & outside-click close
+  const [isCanteenDropdownOpen, setIsCanteenDropdownOpen] = useState(false);
+  const canteenDropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (canteenDropdownRef.current && !canteenDropdownRef.current.contains(e.target)) {
+        setIsCanteenDropdownOpen(false);
+      }
+    };
+    if (isCanteenDropdownOpen) {
+      document.addEventListener("mousedown", handleOutsideClick);
+    }
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, [isCanteenDropdownOpen]);
+
   const [isUpiModalOpen, setIsUpiModalOpen] = useState(false);
 
   useEffect(() => {
@@ -703,43 +719,75 @@ export default function StudentPage({
                   )}
                 </div>
 
-                {/* Canteen Selector Dropdown right next to search bar */}
-                <div className="canteen-dropdown-wrap">
-                  <select
-                    className="canteen-select-dropdown"
-                    value={currentCanteen.id || currentCanteen.canteenId || "all"}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      if (val === "all") {
-                        handleSelectCanteen({
-                          id: "all",
-                          canteenId: "all",
-                          name: "All Canteens",
-                          shortName: "All Canteens",
-                          icon: "🌐"
-                        });
-                      } else {
-                        const found = canteensList.find(
-                          (c) => (c.id || c.canteenId) === val
-                        );
-                        if (found) handleSelectCanteen(found);
-                      }
-                      setMenuAnimKey((prev) => prev + 1);
-                    }}
-                    aria-label="Select Canteen Hub"
+                {/* Custom Canteen Dropdown Selector */}
+                <div className="custom-canteen-dropdown-wrap" ref={canteenDropdownRef}>
+                  <button
+                    type="button"
+                    className={`custom-canteen-trigger ${isCanteenDropdownOpen ? "active" : ""}`}
+                    onClick={() => setIsCanteenDropdownOpen((prev) => !prev)}
+                    aria-expanded={isCanteenDropdownOpen}
                   >
-                    <option value="all">🌐 All Canteens</option>
-                    {canteensList.map((canteen) => {
-                      const cId = canteen.id || canteen.canteenId;
-                      return (
-                        <option key={cId} value={cId}>
-                          {canteen.icon ? `${canteen.icon} ` : "🏢 "}
-                          {canteen.shortName || canteen.name}
-                        </option>
-                      );
-                    })}
-                  </select>
-                  <span className="canteen-dropdown-arrow">▼</span>
+                    <span className="canteen-trigger-text">
+                      <span className="canteen-trigger-icon">
+                        {currentCanteen.id === "all" ? "🌐" : currentCanteen.icon || "🏢"}
+                      </span>
+                      <span>
+                        {currentCanteen.id === "all"
+                          ? "All Canteens"
+                          : currentCanteen.shortName || currentCanteen.name}
+                      </span>
+                    </span>
+                    <span className={`canteen-trigger-arrow ${isCanteenDropdownOpen ? "open" : ""}`}>
+                      ▼
+                    </span>
+                  </button>
+
+                  {isCanteenDropdownOpen && (
+                    <div className="custom-canteen-menu">
+                      <button
+                        type="button"
+                        className={`custom-canteen-option ${currentCanteen.id === "all" ? "selected" : ""}`}
+                        onClick={() => {
+                          handleSelectCanteen({
+                            id: "all",
+                            canteenId: "all",
+                            name: "All Canteens",
+                            shortName: "All Canteens",
+                            icon: "🌐"
+                          });
+                          setIsCanteenDropdownOpen(false);
+                          setMenuAnimKey((prev) => prev + 1);
+                        }}
+                      >
+                        <span className="canteen-opt-icon">🌐</span>
+                        <span className="canteen-opt-name">All Canteens</span>
+                        {currentCanteen.id === "all" && <span className="canteen-check-mark">✓</span>}
+                      </button>
+
+                      <div className="custom-canteen-divider"></div>
+
+                      {canteensList.map((canteen) => {
+                        const cId = canteen.id || canteen.canteenId;
+                        const isSelected = (currentCanteen.id || currentCanteen.canteenId) === cId;
+                        return (
+                          <button
+                            key={cId}
+                            type="button"
+                            className={`custom-canteen-option ${isSelected ? "selected" : ""}`}
+                            onClick={() => {
+                              handleSelectCanteen(canteen);
+                              setIsCanteenDropdownOpen(false);
+                              setMenuAnimKey((prev) => prev + 1);
+                            }}
+                          >
+                            <span className="canteen-opt-icon">{canteen.icon || "🏢"}</span>
+                            <span className="canteen-opt-name">{canteen.shortName || canteen.name}</span>
+                            {isSelected && <span className="canteen-check-mark">✓</span>}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
 
