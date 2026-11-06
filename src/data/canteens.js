@@ -205,42 +205,71 @@ export const isCanteenOpenNow = (canteen) => {
 
 /**
  * Calculates estimated preparation/wait time for a particular item.
- * Syncs with live canteen stats so times in Cart and Choose Canteen Modal match identically.
+ * Supports dynamic canteen selection and live kitchen stats so times in Menu, Cart and Modal stay synchronized.
  */
-export const getItemEstimateTime = (item, liveStatsMap = null) => {
+export const getItemEstimateTime = (item, canteen = null, liveStatsMap = null) => {
   if (!item) return "~5 min";
 
-  // 1. Check live stats map for the item's canteen
-  const cName = item.canteen?.name;
-  if (liveStatsMap && cName && liveStatsMap[cName] && typeof liveStatsMap[cName].waitMinutes === "number") {
-    return `~${liveStatsMap[cName].waitMinutes} min`;
+  // In case liveStatsMap was passed as the 2nd argument
+  if (canteen && !canteen.id && !canteen.name && !canteen.waitMinutes && !canteen.prepMinutes && typeof canteen === "object") {
+    liveStatsMap = canteen;
+    canteen = null;
   }
 
-  // 2. Check if waitMinutes is attached to item or item.canteen
-  if (typeof item.waitMinutes === "number") {
-    return `~${item.waitMinutes} min`;
-  }
-  if (typeof item.canteen?.waitMinutes === "number") {
-    return `~${item.canteen.waitMinutes} min`;
+  // Resolve target canteen: passed parameter OR item.canteen
+  const targetCanteen = (canteen && canteen.id !== "all" && canteen.name !== "All Canteens") ? canteen : item.canteen;
+  const cName = targetCanteen?.name;
+
+  // Get canteen base wait time from liveStatsMap or canteen prepMinutes
+  let canteenWait = null;
+  if (liveStatsMap && cName) {
+    if (liveStatsMap[cName] && typeof liveStatsMap[cName].waitMinutes === "number") {
+      canteenWait = liveStatsMap[cName].waitMinutes;
+    } else {
+      const cleanName = cName.toLowerCase().replace(/canteen|food court/gi, "").trim();
+      const matchedKey = Object.keys(liveStatsMap).find((k) => {
+        const cleanK = k.toLowerCase().replace(/canteen|food court/gi, "").trim();
+        return cleanK && (cleanK.includes(cleanName) || cleanName.includes(cleanK));
+      });
+      if (matchedKey && typeof liveStatsMap[matchedKey].waitMinutes === "number") {
+        canteenWait = liveStatsMap[matchedKey].waitMinutes;
+      }
+    }
   }
 
-  // 3. Check canteen prepMinutes
-  if (typeof item.canteen?.prepMinutes === "number") {
-    return `~${item.canteen.prepMinutes} min`;
+  if (canteenWait === null) {
+    if (typeof targetCanteen?.waitMinutes === "number") {
+      canteenWait = targetCanteen.waitMinutes;
+    } else if (typeof targetCanteen?.prepMinutes === "number") {
+      canteenWait = targetCanteen.prepMinutes;
+    }
   }
-
-  if (item.prepTime) return item.prepTime;
-  if (item.prepMinutes) return `~${item.prepMinutes} min`;
 
   const name = (item.name || "").toLowerCase();
+  const category = (item.category || "").toLowerCase();
+
+  // If a specific canteen is selected:
+  if (canteenWait !== null) {
+    // Quick items (beverages & pre-made hot snacks) take ~60% of canteen queue time (min 2-3 min)
+    if (name.includes("chai") || name.includes("tea") || name.includes("coffee") || name.includes("samosa") || name.includes("patty") || category.includes("beverage")) {
+      return `~${Math.max(2, Math.round(canteenWait * 0.6))} min`;
+    }
+    // Made-to-order hot meals (Maggi, Roll, Sandwich, Burger) take full canteen wait time
+    return `~${canteenWait} min`;
+  }
+
+  // If on "All Canteens" or no canteen specified, show typical preparation time
   let minutes = 5;
   if (name.includes("chai") || name.includes("tea")) minutes = 3;
   else if (name.includes("coffee") || name.includes("shake")) minutes = 4;
   else if (name.includes("samosa") || name.includes("patty") || name.includes("kachori")) minutes = 3;
   else if (name.includes("maggi") || name.includes("noodle")) minutes = 6;
-  else if (name.includes("roll") || name.includes("wrap")) minutes = 6;
-  else if (name.includes("sandwich") || name.includes("burger")) minutes = 6;
-  else if (name.includes("pizza") || name.includes("thali") || name.includes("meal")) minutes = 8;
+  else if (name.includes("roll") || name.includes("wrap")) minutes = 8;
+  else if (name.includes("sandwich") || name.includes("burger")) minutes = 7;
+  else if (name.includes("pizza") || name.includes("thali") || name.includes("meal")) minutes = 10;
+  else if (category.includes("beverage")) minutes = 3;
+  else if (category.includes("snack")) minutes = 4;
+  else if (category.includes("wrap") || category.includes("meal")) minutes = 8;
 
   return `~${minutes} min`;
 };

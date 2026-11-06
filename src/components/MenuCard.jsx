@@ -10,7 +10,8 @@ export default function MenuCard({
   onIncrease,
   onDecrease,
   onOpenCanteenModal,
-  selectedCanteen
+  selectedCanteen,
+  liveStatsMap
 }) {
   const [imgError, setImgError] = useState(false);
 
@@ -91,7 +92,7 @@ export default function MenuCard({
                 <circle cx="12" cy="12" r="10"></circle>
                 <polyline points="12 6 12 12 16 14"></polyline>
               </svg>
-              <span>{getItemEstimateTime(item)}</span>
+              <span>{getItemEstimateTime(item, selectedCanteen, liveStatsMap)}</span>
             </span>
           </div>
 

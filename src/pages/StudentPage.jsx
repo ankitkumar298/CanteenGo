@@ -964,6 +964,7 @@ export default function StudentPage({
                         item={itemWithDynamicPrice}
                         cartQuantity={quantityInCart}
                         selectedCanteen={currentCanteen}
+                        liveStatsMap={liveCanteenStats}
                         onAddToCart={handleAddToCart}
                         onIncrease={handleIncreaseQuantity}
                         onDecrease={handleDecreaseQuantity}
@@ -1009,6 +1010,7 @@ export default function StudentPage({
                       item={itemWithDynamicPrice}
                       cartQuantity={quantityInCart}
                       selectedCanteen={currentCanteen}
+                      liveStatsMap={liveCanteenStats}
                       onAddToCart={handleAddToCart}
                       onIncrease={handleIncreaseQuantity}
                       onDecrease={handleDecreaseQuantity}
@@ -1072,7 +1074,7 @@ export default function StudentPage({
                               <circle cx="12" cy="12" r="10"></circle>
                               <polyline points="12 6 12 12 16 14"></polyline>
                             </svg>
-                            <span>{getItemEstimateTime(item, liveCanteenStats)}</span>
+                            <span>{getItemEstimateTime(item, item.canteen, liveCanteenStats)}</span>
                           </span>
                         </div>
                         <button
