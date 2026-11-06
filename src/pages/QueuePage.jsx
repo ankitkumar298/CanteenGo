@@ -1296,9 +1296,21 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
   const currentOrdersAhead = currentStudentOrder ? getOrdersAhead(currentStudentOrder) : 0;
   const currentWaitTime = currentStudentOrder ? getEstimatedWaitTime(currentStudentOrder) : "";
 
-  // Dropdown state for switching active tokens in Selected Order box
+  // Dropdown state for switching active tokens in Selected Order box (in sticky mode)
   const [isOrderDropdownOpen, setIsOrderDropdownOpen] = useState(false);
   const orderDropdownRef = useRef(null);
+
+  // Detect when user has scrolled to the bottom of the page
+  const [isAtBottom, setIsAtBottom] = useState(false);
+  const bottomSentinelRef = useRef(null);
+  const tokenScrollRef = useRef(null);
+
+  const scrollTokens = (direction) => {
+    if (tokenScrollRef.current) {
+      const scrollAmount = direction === "left" ? -180 : 180;
+      tokenScrollRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" });
+    }
+  };
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -1308,6 +1320,41 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    const checkBottom = () => {
+      const scrollPos = window.innerHeight + window.scrollY;
+      const docHeight = document.documentElement.scrollHeight;
+      // When within 110px of bottom, consider at bottom
+      const atBottom = scrollPos >= docHeight - 110;
+      setIsAtBottom((prev) => (prev !== atBottom ? atBottom : prev));
+    };
+
+    checkBottom();
+    window.addEventListener("scroll", checkBottom, { passive: true });
+    window.addEventListener("resize", checkBottom, { passive: true });
+
+    let observer;
+    if (typeof IntersectionObserver !== "undefined" && bottomSentinelRef.current) {
+      observer = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting) {
+            setIsAtBottom(true);
+          } else {
+            checkBottom();
+          }
+        },
+        { rootMargin: "0px 0px 60px 0px" }
+      );
+      observer.observe(bottomSentinelRef.current);
+    }
+
+    return () => {
+      window.removeEventListener("scroll", checkBottom);
+      window.removeEventListener("resize", checkBottom);
+      if (observer) observer.disconnect();
+    };
   }, []);
 
   // Filter orders for the selected canteen
@@ -1558,10 +1605,84 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
         </div>
       </div>
 
-      {/* 5. BOTTOM HIGHLIGHT STRIP: YOUR ORDER (Compact single-row sticky card with dropdown in Selected Order) */}
+      {/* 5. BOTTOM HIGHLIGHT STRIP: YOUR ORDER (Dynamic: Compact when sticky, Full tokens strip when at bottom) */}
       {currentStudentOrder ? (
-        <div className="cq-your-order-card">
-          {/* Main Card Body (Single Compact Sticky Bar) */}
+        <div className={`cq-your-order-card ${isAtBottom ? "at-bottom" : "sticky-compact"}`}>
+          {/* Top Token Navigation Strip (Appears when user reaches bottom of the page) */}
+          {isAtBottom && canteenActiveStudentOrders.length > 0 && (
+            <div className="cq-yo-tokens-strip">
+              <div className="cq-yo-strip-left">
+                {/* Orange Stack Icon */}
+                <div className="cq-yo-stack-icon" aria-hidden="true">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ea580c" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+                  </svg>
+                </div>
+                <span className="cq-yo-strip-title">Your Tokens</span>
+                <span className="cq-yo-strip-count-pill">
+                  {canteenActiveStudentOrders.length} Order{canteenActiveStudentOrders.length > 1 ? "s" : ""}
+                </span>
+                <div className="cq-yo-strip-divider" />
+                <button
+                  type="button"
+                  className="cq-yo-arrow-btn"
+                  onClick={() => scrollTokens("left")}
+                  aria-label="Previous tokens"
+                >
+                  ‹
+                </button>
+              </div>
+
+              {/* Scrollable Token Cards Row */}
+              <div className="cq-yo-tokens-carousel" ref={tokenScrollRef}>
+                {canteenActiveStudentOrders.map((ord) => {
+                  const isSel = currentStudentOrder?._id === ord._id;
+                  const statusKey = ord.orderStatus === "Preparing"
+                    ? "preparing"
+                    : ord.orderStatus === "Ready"
+                    ? "ready"
+                    : "queued";
+                  const statusLabel = isSel
+                    ? ord.orderStatus === "Preparing"
+                      ? "In Progress"
+                      : ord.orderStatus
+                    : ord.orderStatus === "Preparing"
+                    ? "Preparing"
+                    : ord.orderStatus === "Ready"
+                    ? "Ready"
+                    : "Queued";
+
+                  return (
+                    <button
+                      key={ord._id}
+                      type="button"
+                      className={`cq-token-card-pill ${isSel ? "active" : ""}`}
+                      onClick={() => setSelectedStudentOrderId(ord._id)}
+                    >
+                      <span className="cq-tcp-token">{ord.tokenNumber}</span>
+                      <span className={`cq-tcp-status status-${statusKey}`}>
+                        <span className="cq-tcp-dot">●</span> {statusLabel}
+                      </span>
+                      {isSel && <span className="cq-tcp-active-bar" />}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="cq-yo-strip-right">
+                <button
+                  type="button"
+                  className="cq-yo-arrow-btn"
+                  onClick={() => scrollTokens("right")}
+                  aria-label="Next tokens"
+                >
+                  ›
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Main Card Body */}
           <div className="cq-yo-card-body">
             {/* Left: Selected Order Info Box with Dropdown */}
             <div className="cq-yo-selected-box">
@@ -1574,8 +1695,8 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
                 </svg>
               </div>
 
-              {/* Selected Order title / Dropdown switcher */}
-              {canteenActiveStudentOrders.length > 1 ? (
+              {/* Selected Order title / Dropdown switcher (In sticky compact mode, or when multiple orders) */}
+              {!isAtBottom && canteenActiveStudentOrders.length > 1 ? (
                 <div className="cq-yo-select-order-wrap" ref={orderDropdownRef}>
                   <button
                     type="button"
@@ -1776,6 +1897,8 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
           </div>
         </div>
       )}
+      {/* Bottom Sentinel to detect when user reaches the end of the page */}
+      <div ref={bottomSentinelRef} style={{ height: "1px", width: "100%", pointerEvents: "none" }} />
     </div>
   );
 }

@@ -11255,6 +11255,7 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
   display: flex;
   flex-direction: column;
   margin-top: 24px;
+  transition: all 0.25s ease;
 }
 
 .cq-yo-empty-card {
@@ -11262,7 +11263,7 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
 }
 
-/* 1. Top Tokens Strip */
+/* 1. Top Tokens Strip (Appears when scrolled to bottom) */
 .cq-yo-tokens-strip {
   display: flex;
   align-items: center;
@@ -11272,6 +11273,18 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
   background: #ffffff;
   border-bottom: 1px solid #f1f5f9;
   position: relative;
+  animation: stripFadeDown 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes stripFadeDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .cq-yo-strip-left {
