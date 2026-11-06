@@ -205,32 +205,42 @@ export const isCanteenOpenNow = (canteen) => {
 
 /**
  * Calculates estimated preparation/wait time for a particular item.
- * Uses item-specific characteristics and canteen load.
+ * Syncs with live canteen stats so times in Cart and Choose Canteen Modal match identically.
  */
-export const getItemEstimateTime = (item) => {
+export const getItemEstimateTime = (item, liveStatsMap = null) => {
   if (!item) return "~5 min";
+
+  // 1. Check live stats map for the item's canteen
+  const cName = item.canteen?.name;
+  if (liveStatsMap && cName && liveStatsMap[cName] && typeof liveStatsMap[cName].waitMinutes === "number") {
+    return `~${liveStatsMap[cName].waitMinutes} min`;
+  }
+
+  // 2. Check if waitMinutes is attached to item or item.canteen
+  if (typeof item.waitMinutes === "number") {
+    return `~${item.waitMinutes} min`;
+  }
+  if (typeof item.canteen?.waitMinutes === "number") {
+    return `~${item.canteen.waitMinutes} min`;
+  }
+
+  // 3. Check canteen prepMinutes
+  if (typeof item.canteen?.prepMinutes === "number") {
+    return `~${item.canteen.prepMinutes} min`;
+  }
+
   if (item.prepTime) return item.prepTime;
   if (item.prepMinutes) return `~${item.prepMinutes} min`;
 
   const name = (item.name || "").toLowerCase();
-  const category = (item.category || "").toLowerCase();
-
   let minutes = 5;
   if (name.includes("chai") || name.includes("tea")) minutes = 3;
   else if (name.includes("coffee") || name.includes("shake")) minutes = 4;
-  else if (name.includes("samosa") || name.includes("patty") || name.includes("kachori") || name.includes("puff")) minutes = 3;
+  else if (name.includes("samosa") || name.includes("patty") || name.includes("kachori")) minutes = 3;
   else if (name.includes("maggi") || name.includes("noodle")) minutes = 6;
-  else if (name.includes("roll") || name.includes("wrap")) minutes = 8;
-  else if (name.includes("sandwich") || name.includes("burger")) minutes = 7;
-  else if (name.includes("pizza") || name.includes("thali") || name.includes("rice") || name.includes("meal")) minutes = 10;
-  else if (category.includes("beverage")) minutes = 3;
-  else if (category.includes("snack")) minutes = 4;
-  else if (category.includes("wrap") || category.includes("meal")) minutes = 8;
-
-  // Factor in canteen modifier if assigned
-  if (item.canteen?.prepMinutes) {
-    minutes = Math.round((minutes + item.canteen.prepMinutes) / 2);
-  }
+  else if (name.includes("roll") || name.includes("wrap")) minutes = 6;
+  else if (name.includes("sandwich") || name.includes("burger")) minutes = 6;
+  else if (name.includes("pizza") || name.includes("thali") || name.includes("meal")) minutes = 8;
 
   return `~${minutes} min`;
 };

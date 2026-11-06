@@ -245,10 +245,28 @@ export default function StudentPage({
   }, [isCanteenDropdownOpen]);
 
   const [isUpiModalOpen, setIsUpiModalOpen] = useState(false);
+  const [liveCanteenStats, setLiveCanteenStats] = useState({});
 
   useEffect(() => {
     fetchMenu();
+    fetchCanteenStats();
+    const interval = setInterval(fetchCanteenStats, 20000);
+    return () => clearInterval(interval);
   }, []);
+
+  const fetchCanteenStats = async () => {
+    try {
+      const res = await fetch("/api/canteens/stats");
+      if (res.ok) {
+        const data = await res.json();
+        const map = {};
+        data.forEach((s) => {
+          map[s.canteenName] = s;
+        });
+        setLiveCanteenStats(map);
+      }
+    } catch {}
+  };
 
   const fetchMenu = async () => {
     try {
@@ -1050,7 +1068,11 @@ export default function StudentPage({
                         <div className="cart-item-title-row">
                           <span className="cart-item-title">{item.name}</span>
                           <span className="cart-item-time-badge" title="Estimated preparation time">
-                            ⏱️ {getItemEstimateTime(item)}
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" className="cart-clock-icon">
+                              <circle cx="12" cy="12" r="10"></circle>
+                              <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                            <span>{getItemEstimateTime(item, liveCanteenStats)}</span>
                           </span>
                         </div>
                         <button

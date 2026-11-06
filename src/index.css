@@ -2218,30 +2218,37 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
 .cart-item-time-badge {
   font-size: 0.72rem;
   font-weight: 700;
-  color: #ea580c;
-  background: #fff7ed;
-  border: 1px solid #fed7aa;
-  padding: 1px 7px;
+  color: #0f172a; /* Black */
+  opacity: 0.78;  /* Opacity thoda sa kam */
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 2px 7px;
   border-radius: 9999px;
   display: inline-flex;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
   line-height: 1.2;
   white-space: nowrap;
+}
+
+.cart-clock-icon {
+  flex-shrink: 0;
+  color: #0f172a;
 }
 
 .menu-card-time-badge {
   font-size: 0.72rem;
   font-weight: 700;
-  color: #c2410c;
-  background: #fff7ed;
-  border: 1px solid #fed7aa;
+  color: #0f172a; /* Black */
+  opacity: 0.78;  /* Opacity thoda sa kam */
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
   padding: 2px 7px;
   border-radius: 9999px;
   margin-left: 6px;
   display: inline-flex;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
   line-height: 1.2;
   white-space: nowrap;
 }
