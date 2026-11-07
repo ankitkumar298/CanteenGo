@@ -1454,6 +1454,7 @@ export default function StudentPage({
         targetItem={canteenModalItem}
         cartItems={cart}
         canteens={canteensList}
+        menuItems={menu}
       />
     </div>
   );

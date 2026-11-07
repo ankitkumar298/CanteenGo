@@ -16,11 +16,13 @@ export default function ChooseCanteenModal({
   onSelectCanteen,
   targetItem = null,
   cartItems = [],
-  canteens: propCanteens
+  canteens: propCanteens,
+  menuItems: propMenuItems = []
 }) {
   const { canteens: ctxCanteens } = useAppContext();
   const canteensList = propCanteens || (ctxCanteens && ctxCanteens.length > 0 ? ctxCanteens : CAMPUS_CANTEENS);
 
+  const [dbMenuItems, setDbMenuItems] = useState(propMenuItems || []);
   const [imgError, setImgError] = useState(false);
   const [activeItem, setActiveItem] = useState(targetItem);
   const [sortBy, setSortBy] = useState("recommended");
@@ -28,6 +30,26 @@ export default function ChooseCanteenModal({
   const sortDropdownRef = useRef(null);
   const [liveStats, setLiveStats] = useState({});
   const [loadingStats, setLoadingStats] = useState(false);
+
+  useEffect(() => {
+    if (propMenuItems && propMenuItems.length > 0) {
+      setDbMenuItems(propMenuItems);
+    }
+  }, [propMenuItems]);
+
+  // Always refresh menu items when opened to have latest sold-out status per canteen
+  useEffect(() => {
+    if (isOpen) {
+      fetch("/api/menu")
+        .then((res) => (res.ok ? res.json() : []))
+        .then((data) => {
+          if (Array.isArray(data) && data.length > 0) {
+            setDbMenuItems(data);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     const handleOutsideClick = (e) => {
@@ -90,24 +112,54 @@ export default function ChooseCanteenModal({
     };
   }, [isOpen, onClose]);
 
-  const isItemMode = Boolean(activeItem && activeItem.name);
+  // Match active item with full database item to ensure soldOutCanteens and canteenPrices are always present
+  const resolvedActiveItem = useMemo(() => {
+    if (!activeItem) return null;
+    const match = dbMenuItems.find(
+      (m) =>
+        (activeItem.menuItemId && (m._id === activeItem.menuItemId || m.id === activeItem.menuItemId)) ||
+        (activeItem._id && (m._id === activeItem._id || m.id === activeItem._id)) ||
+        (m.name && activeItem.name && m.name.toLowerCase() === activeItem.name.toLowerCase())
+    );
+    if (match) {
+      return {
+        ...match,
+        ...activeItem,
+        soldOutCanteens: match.soldOutCanteens || activeItem.soldOutCanteens || [],
+        canteenPrices: match.canteenPrices || activeItem.canteenPrices || {},
+        availableCanteens: match.availableCanteens || activeItem.availableCanteens || []
+      };
+    }
+    return activeItem;
+  }, [activeItem, dbMenuItems]);
+
+  const isItemMode = Boolean(resolvedActiveItem && resolvedActiveItem.name);
   const displayItemImage =
-    !imgError && activeItem?.image ? activeItem.image : "/images/samosa.jpg";
-  const basePrice = activeItem?.basePrice ?? activeItem?.price ?? 0;
+    !imgError && resolvedActiveItem?.image ? resolvedActiveItem.image : "/images/samosa.jpg";
+  const basePrice = resolvedActiveItem?.basePrice ?? resolvedActiveItem?.price ?? 0;
 
   // Compute live data and dynamic sorting for canteens
   const sortedCanteens = useMemo(() => {
     // Filter out "all" placeholder — an item can only be picked up from a real campus canteen
     let candidateCanteens = canteensList.filter((c) => c.id !== "all" && c.name !== "All Canteens");
 
-    // Filter canteens strictly to those where this item is offered
-    if (isItemMode && activeItem) {
-      const avail = activeItem.availableCanteens;
-      if (Array.isArray(avail) && avail.length > 0 && !avail.includes("all")) {
-        candidateCanteens = candidateCanteens.filter((c) => avail.includes(c.id || c.canteenId));
-      } else if (activeItem.canteenId && activeItem.canteenId !== "all") {
-        candidateCanteens = candidateCanteens.filter((c) => (c.id || c.canteenId) === activeItem.canteenId);
-      }
+    // Filter canteens strictly to those where this item is offered AND NOT SOLD OUT
+    if (isItemMode && resolvedActiveItem) {
+      candidateCanteens = candidateCanteens.filter((c) => {
+        // Exclude canteens where this item is marked Sold Out
+        if (!isItemAvailableAtCanteen(resolvedActiveItem, c)) {
+          return false;
+        }
+
+        const avail = resolvedActiveItem.availableCanteens;
+        if (Array.isArray(avail) && avail.length > 0 && !avail.includes("all")) {
+          return avail.includes(c.id || c.canteenId);
+        } else if (resolvedActiveItem.canteenId && resolvedActiveItem.canteenId !== "all") {
+          return (c.id || c.canteenId) === resolvedActiveItem.canteenId;
+        }
+
+        return true;
+      });
     }
 
     const list = candidateCanteens.map((canteen) => {
@@ -119,8 +171,8 @@ export default function ChooseCanteenModal({
           ? stats.waitMinutes
           : canteen.prepMinutes;
       const rushStatus = stats.rushStatus || canteen.rushStatus;
-      const price = getItemPriceForCanteen(activeItem, canteen);
-      const isAvailableAtCanteen = isItemAvailableAtCanteen(activeItem, canteen);
+      const price = getItemPriceForCanteen(resolvedActiveItem, canteen);
+      const isAvailableAtCanteen = isItemAvailableAtCanteen(resolvedActiveItem, canteen);
 
       // Calculate approximate ready-by time
       const readyDate = new Date(Date.now() + calculatedWait * 60000);
@@ -155,7 +207,7 @@ export default function ChooseCanteenModal({
         b.waitMinutes * 1.5 + b.walkingMinutes * 2 - (b.stockCount || 0) * 0.1;
       return scoreA - scoreB;
     });
-  }, [sortBy, liveStats, basePrice, activeItem]);
+  }, [sortBy, liveStats, basePrice, resolvedActiveItem, isItemMode, canteensList]);
 
   // Comparison bar summary metrics
   const availableCanteenPrices = sortedCanteens
@@ -164,8 +216,8 @@ export default function ChooseCanteenModal({
   const bestPrice =
     availableCanteenPrices.length > 0
       ? Math.min(...availableCanteenPrices)
-      : getItemPriceForCanteen(activeItem, selectedCanteen) || basePrice;
-  const currentItemPrice = getItemPriceForCanteen(activeItem, activeItem?.canteen || selectedCanteen);
+      : getItemPriceForCanteen(resolvedActiveItem, selectedCanteen) || basePrice;
+  const currentItemPrice = getItemPriceForCanteen(resolvedActiveItem, resolvedActiveItem?.canteen || selectedCanteen);
   const maxSave = Math.max(0, currentItemPrice - bestPrice);
 
   if (!isOpen) return null;
@@ -188,14 +240,16 @@ export default function ChooseCanteenModal({
               </div>
               <h3 className="choose-canteen-title">
                 {isItemMode
-                  ? `Available at ${sortedCanteens.length} Canteen${sortedCanteens.length > 1 ? "s" : ""}`
+                  ? sortedCanteens.length > 0
+                    ? `Available at ${sortedCanteens.length} Canteen${sortedCanteens.length > 1 ? "s" : ""}`
+                    : "Sold Out at All Canteens"
                   : "Choose Campus Canteen"}
               </h3>
               <p className="choose-canteen-subtitle">
                 {isItemMode
-                  ? activeItem?.isFromCart
-                    ? `Showing live availability for your cart item: ${activeItem?.name}`
-                    : `Compare kitchen prep speed and distance for ${activeItem?.name}`
+                  ? resolvedActiveItem?.isFromCart
+                    ? `Showing live availability for your cart item: ${resolvedActiveItem?.name}`
+                    : `Compare kitchen prep speed and distance for ${resolvedActiveItem?.name}`
                   : "Select where you want to order and pick up your hot food"}
               </p>
             </div>
@@ -229,7 +283,13 @@ export default function ChooseCanteenModal({
                       className={`cart-switcher-pill ${isSelected ? "active" : ""}`}
                       onClick={() => {
                         setImgError(false);
+                        const matched = dbMenuItems.find(
+                          (m) =>
+                            (ci.menuItemId && (m._id === ci.menuItemId || m.id === ci.menuItemId)) ||
+                            (m.name && ci.name && m.name.toLowerCase() === ci.name.toLowerCase())
+                        );
                         setActiveItem({
+                          ...(matched || {}),
                           menuItemId: ci.menuItemId,
                           name: ci.name,
                           basePrice: ci.basePrice || ci.price,
@@ -237,7 +297,9 @@ export default function ChooseCanteenModal({
                           image: ci.image,
                           quantity: ci.quantity,
                           canteen: ci.canteen || selectedCanteen,
-                          isFromCart: true
+                          isFromCart: true,
+                          soldOutCanteens: matched?.soldOutCanteens || ci.soldOutCanteens || [],
+                          canteenPrices: matched?.canteenPrices || ci.canteenPrices || {}
                         });
                       }}
                     >
@@ -269,13 +331,13 @@ export default function ChooseCanteenModal({
               <div className="preview-col preview-col-item">
                 <img
                   src={displayItemImage}
-                  alt={activeItem?.name}
+                  alt={resolvedActiveItem?.name}
                   className="preview-item-thumb"
                   onError={() => setImgError(true)}
                 />
                 <div className="preview-item-info">
                   <span className="preview-item-label">Comparing Availability For</span>
-                  <strong className="preview-item-name">{activeItem?.name}</strong>
+                  <strong className="preview-item-name">{resolvedActiveItem?.name}</strong>
                 </div>
               </div>
               <div className="preview-col preview-col-metric">
@@ -351,7 +413,18 @@ export default function ChooseCanteenModal({
 
         {/* Scrollable List of Canteens */}
         <div className="choose-canteen-list">
-          {sortedCanteens.map((canteen) => {
+          {sortedCanteens.length === 0 ? (
+            <div style={{ padding: "40px 20px", textAlign: "center", color: "#64748b" }}>
+              <div style={{ fontSize: "2.4rem", marginBottom: "8px" }}>🍽️</div>
+              <p style={{ fontSize: "1.05rem", fontWeight: "700", color: "#17243A", margin: "0 0 6px 0" }}>
+                Currently Sold Out at All Campus Canteens
+              </p>
+              <p style={{ fontSize: "0.84rem", margin: 0, color: "#64748b" }}>
+                "{resolvedActiveItem?.name || "This item"}" is out of stock right now. Please select another item.
+              </p>
+            </div>
+          ) : (
+            sortedCanteens.map((canteen) => {
             const currentItemCanteen = activeItem?.canteen || selectedCanteen;
             const isCurrent =
               currentItemCanteen?.id === canteen.id ||
@@ -564,7 +637,7 @@ export default function ChooseCanteenModal({
                 </div>
               </div>
             );
-          })}
+          }))}
 
           {/* Bottom spacer so the last card & action button are 100% visible and accessible */}
           <div className="choose-canteen-bottom-spacer" />
