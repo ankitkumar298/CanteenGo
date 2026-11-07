@@ -11451,38 +11451,86 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .cq-col-title-wrap {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 1.05rem;
-  font-weight: 800;
-  color: #0f172a;
+  gap: 10px;
 }
 
-.cq-col-badge {
-  width: 24px;
-  height: 24px;
+.cq-col-icon-circle {
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.8rem;
-  font-weight: 800;
+  font-size: 1.05rem;
+  flex-shrink: 0;
+}
+.cq-col-icon-circle.prep {
+  background: #ffedd5;
+  color: #ea580c;
+}
+.cq-col-icon-circle.ready {
+  background: #22c55e;
   color: #ffffff;
+  font-weight: 900;
+  font-size: 1.1rem;
+}
+.cq-col-icon-circle.queue {
+  background: #e2e8f0;
+  color: #334155;
 }
 
-.cq-col-badge.badge-orange { background: #ea580c; }
-.cq-col-badge.badge-green { background: #16a34a; }
-.cq-col-badge.badge-gray { background: #64748b; }
+.cq-col-title-box {
+  display: flex;
+  flex-direction: column;
+}
+
+.cq-col-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.2;
+}
+
+.cq-col-sub {
+  font-size: 0.76rem;
+  color: #64748b;
+  font-weight: 500;
+  margin-top: 1px;
+}
+
+.cq-col-badge {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+.cq-col-badge.badge-orange {
+  background: #fed7aa;
+  color: #c2410c;
+}
+.cq-col-badge.badge-green {
+  background: #16a34a;
+  color: #ffffff;
+}
+.cq-col-badge.badge-gray {
+  background: #e2e8f0;
+  color: #475569;
+}
 
 .cq-col-body {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   flex: 1;
 }
 
@@ -11514,113 +11562,141 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
   color: #94a3b8;
 }
 
-/* Now Preparing Cards */
-.cq-prep-card {
-  background: #ffffff;
-  border: 1px solid #fed7aa;
-  border-radius: 14px;
-  padding: 14px 16px;
-  display: flex;
+/* Ticket Pill Badges */
+.cq-ticket-badge {
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  box-shadow: 0 2px 6px rgba(234, 88, 12, 0.05);
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-weight: 800;
+  font-size: 0.95rem;
+  letter-spacing: -0.01em;
+  color: #ffffff;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.cq-ticket-badge.prep {
+  background: #ea580c;
+}
+.cq-ticket-badge.ready {
+  background: #16a34a;
+}
+.cq-ticket-badge.queue {
+  background: #475569;
+  font-size: 0.86rem;
+  padding: 5px 10px;
 }
 
-.cq-prep-left {
+/* Card details */
+.cq-card-details {
+  flex: 1;
+  min-width: 0;
   display: flex;
-  align-items: center;
-  gap: 14px;
-  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
 }
 
-.cq-token-large-orange {
-  font-size: 1.35rem;
-  font-weight: 900;
-  color: #ea580c;
-  min-width: 65px;
-  letter-spacing: -0.02em;
-}
-
-.cq-prep-details {
-  min-width: 0;
-}
-
-.cq-prep-food {
+.cq-card-item-title {
   font-size: 0.92rem;
   font-weight: 800;
   color: #0f172a;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
-.cq-prep-sub {
+.cq-prep-status-line {
   font-size: 0.76rem;
-  color: #c2410c;
   font-weight: 600;
-  margin-top: 2px;
+  color: #ea580c;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
-.cq-counter-chip {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  padding: 3px 8px;
+.cq-prep-counter-line {
   font-size: 0.74rem;
-  font-weight: 700;
-  color: #334155;
-  white-space: nowrap;
+  font-weight: 500;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.cq-ready-pill-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #dcfce7;
+  color: #15803d;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  width: fit-content;
+}
+
+.cq-ready-counter-line {
+  font-size: 0.74rem;
+  font-weight: 500;
+  color: #64748b;
+}
+
+/* Right Decorative Arrow - purely look & display */
+.cq-card-decorative-arrow {
+  font-size: 1.35rem;
+  line-height: 1;
+  font-weight: 400;
+  color: #94a3b8;
+  padding: 0 4px;
+  pointer-events: none;
+  user-select: none;
+  cursor: default;
   flex-shrink: 0;
+}
+
+/* Now Preparing Cards */
+.cq-prep-card {
+  background: #ffffff;
+  border: 1px solid #fed7aa;
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  transition: all 0.2s ease;
+}
+
+/* My Order Outline (Halka outline jo bhi color ka card ho) */
+.cq-prep-card.is-my-order-prep {
+  border: 1.8px solid #ea580c !important;
+  box-shadow: 0 0 0 2px rgba(234, 88, 12, 0.18), 0 2px 8px rgba(234, 88, 12, 0.08) !important;
 }
 
 /* Ready for Pickup Cards */
 .cq-ready-card {
   background: #ffffff;
-  border: 1.5px solid #86efac;
+  border: 1px solid #bbf7d0;
   border-radius: 14px;
-  padding: 14px 16px;
-  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.08);
-}
-
-.cq-ready-top {
+  padding: 12px 14px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 6px;
+  gap: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  transition: all 0.2s ease;
 }
 
-.cq-token-large-green {
-  font-size: 1.45rem;
-  font-weight: 900;
-  color: #15803d;
-  letter-spacing: -0.02em;
-}
-
-.cq-ready-pill {
-  background: #16a34a;
-  color: #ffffff;
-  font-size: 0.72rem;
-  font-weight: 800;
-  padding: 3px 10px;
-  border-radius: 9999px;
-  letter-spacing: 0.02em;
-}
-
-.cq-ready-collect {
-  font-size: 0.86rem;
-  color: #0f172a;
-  font-weight: 700;
-}
-
-.cq-ready-collect strong {
-  color: #15803d;
-}
-
-.cq-ready-time {
-  font-size: 0.76rem;
-  color: #64748b;
-  margin-top: 4px;
+/* My Order Outline in Ready for Pickup */
+.cq-ready-card.is-my-order-ready {
+  border: 1.8px solid #16a34a !important;
+  box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.18), 0 2px 8px rgba(22, 163, 74, 0.08) !important;
 }
 
 /* Next in Queue Rows */
@@ -11628,76 +11704,76 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
   background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 12px;
-  padding: 10px 14px;
+  padding: 9px 12px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+  transition: all 0.2s ease;
 }
 
-.cq-queue-row.is-my-order {
-  border: 2px solid #ea580c;
-  background: #fff7ed;
-  box-shadow: 0 2px 8px rgba(234, 88, 12, 0.12);
+/* My Order Outline in Next in Queue */
+.cq-queue-row.is-my-order-queue {
+  border: 1.8px solid #475569 !important;
+  box-shadow: 0 0 0 2px rgba(71, 85, 105, 0.18), 0 2px 8px rgba(71, 85, 105, 0.08) !important;
 }
 
 .cq-q-pos {
-  font-size: 0.86rem;
+  font-size: 0.88rem;
   font-weight: 800;
-  color: #64748b;
-  min-width: 24px;
-}
-
-.cq-queue-row.is-my-order .cq-q-pos {
-  color: #ea580c;
-}
-
-.cq-q-token {
-  font-size: 1rem;
-  font-weight: 900;
   color: #0f172a;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.cq-queue-row.is-my-order .cq-q-token {
-  color: #ea580c;
-}
-
-.cq-you-pill {
-  background: #ea580c;
-  color: #ffffff;
-  font-size: 0.65rem;
-  font-weight: 900;
-  padding: 1px 6px;
-  border-radius: 9999px;
-  letter-spacing: 0.02em;
+  min-width: 20px;
 }
 
 .cq-q-items {
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   color: #64748b;
   font-weight: 600;
 }
 
-.cq-q-wait {
+.cq-q-wait-pill {
   background: #e0f2fe;
   color: #0284c7;
   font-size: 0.74rem;
   font-weight: 700;
   padding: 3px 8px;
-  border-radius: 6px;
+  border-radius: 9999px;
   white-space: nowrap;
 }
 
 .cq-q-private {
-  font-size: 0.72rem;
+  font-size: 0.74rem;
   font-weight: 700;
   color: #16a34a;
   display: flex;
   align-items: center;
   gap: 2px;
+}
+
+/* Subtle YOU Tag for My Order */
+.cq-mine-tag {
+  font-size: 0.64rem;
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+.cq-mine-tag.prep {
+  background: #fff7ed;
+  color: #ea580c;
+  border: 1px solid #fed7aa;
+}
+.cq-mine-tag.ready {
+  background: #f0fdf4;
+  color: #16a34a;
+  border: 1px solid #bbf7d0;
+}
+.cq-mine-tag.queue {
+  background: #f8fafc;
+  color: #475569;
+  border: 1px solid #cbd5e1;
 }
 
 /* Bottom Highlight Strip / Card: YOUR ORDER (Sticky to bottom on scroll, Clean Modern Card - NO orange outline) */

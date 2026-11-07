@@ -1507,8 +1507,13 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
         <div className="cq-col col-prep">
           <div className="cq-col-header">
             <div className="cq-col-title-wrap">
-              <FlameIcon size={18} />
-              <span>Now Preparing</span>
+              <div className="cq-col-icon-circle prep" aria-hidden="true">
+                🔥
+              </div>
+              <div className="cq-col-title-box">
+                <span className="cq-col-title">Now Preparing</span>
+                <span className="cq-col-sub">Orders in kitchen</span>
+              </div>
             </div>
             <span className="cq-col-badge badge-orange">{boardPreparingOrders.length}</span>
           </div>
@@ -1521,24 +1526,41 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
                 <small>Kitchen is ready for next orders</small>
               </div>
             ) : (
-              boardPreparingOrders.map((ord) => (
-                <div key={ord._id} className="cq-prep-card">
-                  <div className="cq-prep-left">
-                    <span className="cq-token-large-orange">{ord.tokenNumber}</span>
-                    <div className="cq-prep-details">
-                      <div className="cq-prep-food">
-                        {ord.items?.map((i) => `${i.name} × ${i.quantity}`).join(", ") || "Snacks"}
+              boardPreparingOrders.map((ord) => {
+                const isMine = isMyOrder(ord);
+                return (
+                  <div
+                    key={ord._id}
+                    className={`cq-prep-card ${isMine ? "is-my-order-prep" : ""}`}
+                  >
+                    {/* Left Ticket Pill */}
+                    <div className="cq-ticket-badge prep">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M2 5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4V5z"></path>
+                        <line x1="12" y1="3" x2="12" y2="15" strokeDasharray="2 2"></line>
+                      </svg>
+                      <span>{ord.tokenNumber}</span>
+                    </div>
+
+                    {/* Middle Details */}
+                    <div className="cq-card-details">
+                      <div className="cq-card-item-title">
+                        <span>{ord.items?.map((i) => `${i.name} × ${i.quantity}`).join(", ") || "Snacks"}</span>
+                        {isMine && <span className="cq-mine-tag prep">YOU</span>}
                       </div>
-                      <div className="cq-prep-sub">
-                        🔥 On stove with chef • Fresh cooking
+                      <div className="cq-prep-status-line">
+                        <span>👨‍🍳 On stove with chef</span>
+                      </div>
+                      <div className="cq-prep-counter-line">
+                        <span>📍 {ord.counterName || selectedBoardCanteen.counter || "Counter 1 (Fast Dispatch)"}</span>
                       </div>
                     </div>
+
+                    {/* Right Decorative Arrow */}
+                    <span className="cq-card-decorative-arrow" aria-hidden="true">›</span>
                   </div>
-                  <span className="cq-counter-chip">
-                    📍 {ord.counterName || selectedBoardCanteen.counter || "Counter 1"}
-                  </span>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>
@@ -1547,8 +1569,13 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
         <div className="cq-col col-ready">
           <div className="cq-col-header">
             <div className="cq-col-title-wrap">
-              <BellIcon size={18} />
-              <span>Ready for Pickup</span>
+              <div className="cq-col-icon-circle ready" aria-hidden="true">
+                ✓
+              </div>
+              <div className="cq-col-title-box">
+                <span className="cq-col-title">Ready for Pickup</span>
+                <span className="cq-col-sub">Order is ready at counter</span>
+              </div>
             </div>
             <span className="cq-col-badge badge-green">{boardReadyOrders.length}</span>
           </div>
@@ -1561,20 +1588,41 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
                 <small>Tokens ready for pickup appear here</small>
               </div>
             ) : (
-              boardReadyOrders.map((ord) => (
-                <div key={ord._id} className="cq-ready-card">
-                  <div className="cq-ready-top">
-                    <span className="cq-token-large-green">{ord.tokenNumber}</span>
-                    <span className="cq-ready-pill">✓ READY</span>
+              boardReadyOrders.map((ord) => {
+                const isMine = isMyOrder(ord);
+                return (
+                  <div
+                    key={ord._id}
+                    className={`cq-ready-card ${isMine ? "is-my-order-ready" : ""}`}
+                  >
+                    {/* Left Ticket Pill */}
+                    <div className="cq-ticket-badge ready">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M2 5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4V5z"></path>
+                        <line x1="12" y1="3" x2="12" y2="15" strokeDasharray="2 2"></line>
+                      </svg>
+                      <span>{ord.tokenNumber}</span>
+                    </div>
+
+                    {/* Middle Details */}
+                    <div className="cq-card-details">
+                      <div className="cq-card-item-title">
+                        <span>{ord.items?.map((i) => `${i.name} × ${i.quantity}`).join(", ") || "Snacks"}</span>
+                        {isMine && <span className="cq-mine-tag ready">YOU</span>}
+                      </div>
+                      <div>
+                        <span className="cq-ready-pill-badge">✓ Ready</span>
+                      </div>
+                      <div className="cq-ready-counter-line">
+                        <span>Collect at {ord.counterName || selectedBoardCanteen.counter || "Counter 1 (Fast Dispatch)"}</span>
+                      </div>
+                    </div>
+
+                    {/* Right Decorative Arrow */}
+                    <span className="cq-card-decorative-arrow" aria-hidden="true">›</span>
                   </div>
-                  <div className="cq-ready-collect">
-                    Please collect at <strong>{ord.counterName || selectedBoardCanteen.counter || "Counter 1 (Express Delivery)"}</strong>
-                  </div>
-                  <div className="cq-ready-time">
-                    Ready since {new Date(ord.updatedAt || ord.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                  </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>
@@ -1583,8 +1631,13 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
         <div className="cq-col col-queue">
           <div className="cq-col-header">
             <div className="cq-col-title-wrap">
-              <ClockIcon size={18} />
-              <span>Next in Queue</span>
+              <div className="cq-col-icon-circle queue" aria-hidden="true">
+                <ClockIcon size={16} />
+              </div>
+              <div className="cq-col-title-box">
+                <span className="cq-col-title">Next in Queue</span>
+                <span className="cq-col-sub">Waiting for your turn</span>
+              </div>
             </div>
             <span className="cq-col-badge badge-gray">{boardPendingOrders.length}</span>
           </div>
@@ -1597,23 +1650,26 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
                 <small>Order now for instant preparation</small>
               </div>
             ) : (
-              boardPendingOrders.slice(0, 5).map((ord, idx) => {
+              boardPendingOrders.slice(0, 6).map((ord, idx) => {
                 const isMine = isMyOrder(ord);
                 const itemCount = ord.items?.reduce((s, it) => s + it.quantity, 0) || 1;
                 return (
                   <div
                     key={ord._id}
-                    className={`cq-queue-row ${isMine ? "is-my-order" : ""}`}
+                    className={`cq-queue-row ${isMine ? "is-my-order-queue" : ""}`}
                   >
                     <span className="cq-q-pos">#{idx + 1}</span>
-                    <span className="cq-q-token">
-                      {isMine && "⭐ "}
-                      {ord.tokenNumber}
-                      {isMine && <span className="cq-you-pill">YOU</span>}
-                    </span>
+                    <div className="cq-ticket-badge queue">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M2 5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4V5z"></path>
+                        <line x1="12" y1="3" x2="12" y2="15" strokeDasharray="2 2"></line>
+                      </svg>
+                      <span>{ord.tokenNumber}</span>
+                    </div>
                     <span className="cq-q-items">📦 {itemCount} item{itemCount > 1 ? "s" : ""}</span>
-                    <span className="cq-q-wait">~{(idx + 1) * 3} min wait</span>
+                    <span className="cq-q-wait-pill">~{(idx + 1) * 3} min wait</span>
                     <span className="cq-q-private">🔒 Private</span>
+                    {isMine && <span className="cq-mine-tag queue">YOU</span>}
                   </div>
                 );
               })
