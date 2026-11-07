@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import StatusBadge from "../components/StatusBadge";
 import { CAMPUS_CANTEENS, getItemPriceForCanteen, isItemAvailableAtCanteen } from "../data/canteens";
 import { useAppContext } from "@/context/AppContext";
@@ -14,7 +14,9 @@ import {
   BellIcon,
   QueueIcon,
   ShieldCheckIcon,
-  AlertTriangleIcon
+  AlertTriangleIcon,
+  UploadIcon,
+  ImageIcon
 } from "../components/Icons";
 import QueuePage from "./QueuePage";
 import SecureHandoverModal from "../components/SecureHandoverModal";
@@ -66,6 +68,73 @@ export default function VendorPage({ onExitToHome }) {
   const [newItemImage, setNewItemImage] = useState("/images/samosa.jpg");
   const [newItemDescription, setNewItemDescription] = useState("");
   const [newItemAvailable, setNewItemAvailable] = useState(true);
+  const [imageLoadError, setImageLoadError] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const handleImageFileUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setMessage({ text: "Please select a valid image file (PNG, JPG, WEBP, etc.)", type: "error" });
+      return;
+    }
+
+    setIsUploadingImage(true);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result;
+      if (!dataUrl) {
+        setIsUploadingImage(false);
+        return;
+      }
+
+      // Automatically optimize/compress image using canvas to ensure fast load & small size
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const maxDim = 800;
+          let { width, height } = img;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressed = canvas.toDataURL("image/jpeg", 0.82);
+          setNewItemImage(compressed);
+          setImageLoadError(false);
+          setIsUploadingImage(false);
+          setMessage({ text: `Image "${file.name}" uploaded successfully!`, type: "success" });
+        } catch {
+          setNewItemImage(dataUrl);
+          setImageLoadError(false);
+          setIsUploadingImage(false);
+        }
+      };
+      img.onerror = () => {
+        setNewItemImage(dataUrl);
+        setImageLoadError(false);
+        setIsUploadingImage(false);
+      };
+      img.src = dataUrl;
+    };
+    reader.onerror = () => {
+      setIsUploadingImage(false);
+      setMessage({ text: "Failed to read image file. Please try another image.", type: "error" });
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
 
   // Edit Item State
   const [editingItemId, setEditingItemId] = useState(null);
@@ -753,25 +822,128 @@ export default function VendorPage({ onExitToHome }) {
                 </div>
               )}
 
-              {/* Dynamic Photo URL with Quick Picker Chips */}
-              <div className="form-group" style={{ marginBottom: "16px" }}>
-                <label className="form-label">Item Image URL:</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  placeholder="Enter image URL or pick a preset photo below"
-                  value={newItemImage}
-                  onChange={(e) => setNewItemImage(e.target.value)}
-                />
+              {/* Dynamic Photo Upload / Online URL / Live Preview */}
+              <div className="form-group" style={{ marginBottom: "18px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                  <label className="form-label" style={{ margin: 0 }}>Item Image (Online URL or File Upload):</label>
+                  {newItemImage && (
+                    <button
+                      type="button"
+                      className="btn-link-clear"
+                      onClick={() => {
+                        setNewItemImage("");
+                        setImageLoadError(false);
+                      }}
+                      title="Clear current photo"
+                    >
+                      Clear Image
+                    </button>
+                  )}
+                </div>
 
-                <div className="preset-photo-chips">
+                {/* Input row with URL input & Upload button */}
+                <div className="image-input-upload-row">
+                  <div className="image-url-input-wrap">
+                    <input
+                      type="text"
+                      className={`form-input ${imageLoadError ? "input-has-error" : ""}`}
+                      placeholder="Paste online image link (https://...) or upload a file"
+                      value={newItemImage}
+                      onChange={(e) => {
+                        setNewItemImage(e.target.value);
+                        setImageLoadError(false);
+                      }}
+                    />
+                  </div>
+
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    style={{ display: "none" }}
+                    onChange={handleImageFileUpload}
+                  />
+
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-upload-image"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploadingImage}
+                    title="Choose an image file from your device"
+                  >
+                    <UploadIcon size={16} />
+                    <span>{isUploadingImage ? "Uploading..." : "Upload Image"}</span>
+                  </button>
+                </div>
+
+                {/* Real-time Image Render & Live Preview Card */}
+                {newItemImage && newItemImage.trim() !== "" && (
+                  <div className={`item-image-preview-card ${imageLoadError ? "has-error" : ""}`}>
+                    <div className="preview-media-box">
+                      {imageLoadError ? (
+                        <div className="preview-error-placeholder">
+                          <ImageIcon size={26} />
+                          <span>Broken Link</span>
+                        </div>
+                      ) : (
+                        <img
+                          src={newItemImage}
+                          alt="Food item preview"
+                          className="preview-food-img"
+                          onLoad={() => setImageLoadError(false)}
+                          onError={() => setImageLoadError(true)}
+                        />
+                      )}
+                    </div>
+
+                    <div className="preview-meta-info">
+                      <div className="preview-title-row">
+                        <span className="preview-label">Live Image Preview</span>
+                        {!imageLoadError && (
+                          <span className="preview-badge-success">
+                            <CheckCircleIcon size={13} /> Loaded & Ready
+                          </span>
+                        )}
+                        {imageLoadError && (
+                          <span className="preview-badge-error">
+                            ⚠️ Unable to load
+                          </span>
+                        )}
+                      </div>
+
+                      <p className="preview-source-text">
+                        {newItemImage.startsWith("data:") ? (
+                          <span>📁 Uploaded from Device (Saved locally)</span>
+                        ) : newItemImage.startsWith("http") ? (
+                          <span className="text-truncate" title={newItemImage}>
+                            🔗 Online Web Link: {newItemImage.length > 55 ? `${newItemImage.slice(0, 55)}...` : newItemImage}
+                          </span>
+                        ) : (
+                          <span>🖼️ Preset Photo: {newItemImage}</span>
+                        )}
+                      </p>
+
+                      {imageLoadError && (
+                        <p className="preview-error-hint">
+                          This URL failed to load. Make sure the link is a direct public image link (e.g. .jpg, .png) or click <strong>Upload Image</strong>.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Quick Photos Preset Chips */}
+                <div className="preset-photo-chips" style={{ marginTop: "12px" }}>
                   <span className="preset-label">Quick Photos:</span>
                   {PHOTO_PRESETS.map((p) => (
                     <button
                       key={p.label}
                       type="button"
                       className={`preset-chip ${newItemImage === p.url ? "selected" : ""}`}
-                      onClick={() => setNewItemImage(p.url)}
+                      onClick={() => {
+                        setNewItemImage(p.url);
+                        setImageLoadError(false);
+                      }}
                     >
                       <img src={p.url} alt={p.label} className="chip-img" />
                       <span>{p.label}</span>
