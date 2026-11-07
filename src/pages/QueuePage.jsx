@@ -1299,11 +1299,9 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
     );
   }, [canteensList, selectedBoardCanteenId]);
 
-  // Canteen-specific active student orders (Only orders belonging to the currently selected canteen!)
+  // Canteen-specific active student orders (Strictly only orders belonging to the currently selected canteen!)
   const canteenActiveStudentOrders = useMemo(() => {
-    const forThisCanteen = activeStudentOrders.filter((o) => matchesCanteen(o, selectedBoardCanteen));
-    if (forThisCanteen.length > 0) return forThisCanteen;
-    return activeStudentOrders;
+    return activeStudentOrders.filter((o) => matchesCanteen(o, selectedBoardCanteen));
   }, [activeStudentOrders, selectedBoardCanteen]);
 
   const currentStudentOrder = useMemo(() => {
@@ -1889,7 +1887,7 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
           </div>
         </div>
       ) : (
-        <div className="cq-your-order-card cq-yo-empty-card">
+        <div className={`cq-your-order-card cq-yo-empty-card ${isAtBottom ? "at-bottom" : "sticky-compact"}`}>
           <div className="cq-yo-card-body">
             <div className="cq-yo-selected-box" style={{ background: "#f8fafc" }}>
               <div className="cq-yo-cloche-icon" style={{ background: "#64748b" }}>
@@ -1904,19 +1902,37 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
             </div>
             <div style={{ flex: 1, padding: "0 10px" }}>
               <div style={{ fontWeight: 800, color: "#0f172a", fontSize: "0.96rem" }}>
-                No Active Orders in {selectedBoardCanteen.shortName || selectedBoardCanteen.name}
+                No order at this canteen
               </div>
-              <div style={{ fontSize: "0.78rem", color: "#64748b" }}>
-                You have no active orders in this canteen. Switch canteen above to view other orders or order fresh food!
+              <div style={{ fontSize: "0.78rem", color: "#64748b", marginTop: "2px" }}>
+                You have no active orders in {selectedBoardCanteen.shortName || selectedBoardCanteen.name}.
+                {activeStudentOrders.length > 0 && " You have active orders in other canteens."}
               </div>
             </div>
-            <button
-              type="button"
-              className="cq-yo-track-cta-btn"
-              onClick={() => setActiveTab && setActiveTab("order")}
-            >
-              Order from {selectedBoardCanteen.shortName || selectedBoardCanteen.name} →
-            </button>
+            {activeStudentOrders.length > 0 ? (
+              <button
+                type="button"
+                className="cq-yo-track-cta-btn"
+                onClick={() => {
+                  const targetOrd = activeStudentOrders[0];
+                  const cMatch = canteensList.find((c) => matchesCanteen(targetOrd, c));
+                  if (cMatch) {
+                    setSelectedBoardCanteenId(cMatch.id || cMatch.canteenId);
+                  }
+                }}
+                title="Switch to your active order"
+              >
+                View Your Order ({activeStudentOrders[0]?.tokenNumber}) →
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="cq-yo-track-cta-btn"
+                onClick={() => setActiveTab && setActiveTab("order")}
+              >
+                Order from {selectedBoardCanteen.shortName || selectedBoardCanteen.name} →
+              </button>
+            )}
           </div>
         </div>
       )}
