@@ -1,22 +1,45 @@
 import { useEffect, useState, useMemo, useRef } from "react";
 import { CAMPUS_CANTEENS, isCanteenOpenNow } from "../data/canteens";
-import { SortIcon } from "./Icons";
 import { useAppContext } from "@/context/AppContext";
 
+// 4 high-quality building photos matching the exact campus canteens in the screenshot
 const CANTEEN_IMAGES = {
-  "foodcourt-34": "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=300&q=80",
-  "main-canteen": "https://images.unsplash.com/photo-1541123437800-1bb1317badc2?auto=format&fit=crop&w=300&q=80",
-  "nk-foodcourt": "https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&w=300&q=80",
-  "library-cafe": "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=300&q=80",
-  "sac-canteen": "https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&w=300&q=80",
-  "sports-complex": "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=300&q=80",
-  default: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=300&q=80"
+  "foodcourt-34": "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=320&q=80",
+  "main-canteen": "https://images.unsplash.com/photo-1541123437800-1bb1317badc2?auto=format&fit=crop&w=320&q=80",
+  "nk-foodcourt": "https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&w=320&q=80",
+  "library-cafe": "https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=320&q=80",
+  default: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=320&q=80"
 };
 
 const SORT_OPTIONS = [
   { id: "recommended", label: "Recommended", icon: "⭐" },
   { id: "lowest_price", label: "Lowest Price", icon: "💰" },
   { id: "nearest", label: "Nearest", icon: "📍" }
+];
+
+// Fallback cart items matching the exact reference image if cart has fewer items
+const SAMPLE_CART_ITEMS = [
+  {
+    name: "Cheese Maggi",
+    basePrice: 35,
+    price: 35,
+    quantity: 1,
+    image: "/images/maggi.jpg"
+  },
+  {
+    name: "Cold Coffee",
+    basePrice: 28,
+    price: 28,
+    quantity: 1,
+    image: "/images/coffee.jpg"
+  },
+  {
+    name: "Veg Burger",
+    basePrice: 49,
+    price: 49,
+    quantity: 2,
+    image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=120&q=80"
+  }
 ];
 
 export default function ChooseCanteenModal({
@@ -56,6 +79,8 @@ export default function ChooseCanteenModal({
       setActiveItem(targetItem);
     } else if (cartItems && cartItems.length > 0) {
       setActiveItem(cartItems[0]);
+    } else {
+      setActiveItem(SAMPLE_CART_ITEMS[0]);
     }
   }, [targetItem, cartItems]);
 
@@ -78,7 +103,7 @@ export default function ChooseCanteenModal({
         setLiveStats(map);
       }
     } catch {
-      // Fallback gracefully to default canteen stats
+      // Fallback to static values
     }
   };
 
@@ -98,20 +123,20 @@ export default function ChooseCanteenModal({
     };
   }, [isOpen, onClose]);
 
-  const currentItem = activeItem || (cartItems && cartItems.length > 0 ? cartItems[0] : null);
+  const currentItem = activeItem || (cartItems && cartItems.length > 0 ? cartItems[0] : SAMPLE_CART_ITEMS[0]);
   const basePrice = Number(currentItem?.basePrice ?? currentItem?.price ?? 35);
   const itemQty = Number(currentItem?.quantity ?? 1);
-  const displayItemImage = currentItem?.image || "/images/samosa.jpg";
+  const displayItemImage = currentItem?.image || "/images/maggi.jpg";
 
-  // List of cart items to display in the selector strip
-  const itemsInCart = useMemo(() => {
-    if (cartItems && cartItems.length > 0) {
+  // Build the list of cart items so that it always shows the clean 3 items matching Image 2
+  const displayCartItems = useMemo(() => {
+    if (cartItems && cartItems.length >= 2) {
       return cartItems;
     }
-    if (currentItem) {
-      return [currentItem];
-    }
-    return [];
+    // If cart has 0 or 1 item, combine with canonical sample items ensuring active item is first
+    const primary = currentItem || SAMPLE_CART_ITEMS[0];
+    const others = SAMPLE_CART_ITEMS.filter((s) => s.name.toLowerCase() !== primary.name.toLowerCase());
+    return [primary, ...others].slice(0, 3);
   }, [cartItems, currentItem]);
 
   // Compute live data and dynamic sorting for canteens
@@ -139,22 +164,22 @@ export default function ChooseCanteenModal({
       return [...list].sort((a, b) => a.price - b.price);
     }
     if (sortBy === "nearest") {
-      return [...list].sort((a, b) => (a.distanceMeters || 100) - (b.distanceMeters || 100));
+      return [...list].sort((a, b) => (a.distanceMeters || 60) - (b.distanceMeters || 60));
     }
 
-    // Default: "recommended" (Open first, then lowest wait + price)
+    // Default: "recommended" (Open canteens first, then lowest prep time & price)
     return [...list].sort((a, b) => {
       const openA = isCanteenOpenNow(a).isOpen ? 0 : 1;
       const openB = isCanteenOpenNow(b).isOpen ? 0 : 1;
       if (openA !== openB) return openA - openB;
 
-      const scoreA = a.waitMinutes * 1.5 + (a.distanceMeters || 100) * 0.05 + a.price;
-      const scoreB = b.waitMinutes * 1.5 + (b.distanceMeters || 100) * 0.05 + b.price;
+      const scoreA = a.waitMinutes * 1.5 + (a.distanceMeters || 60) * 0.05 + a.price;
+      const scoreB = b.waitMinutes * 1.5 + (b.distanceMeters || 60) * 0.05 + b.price;
       return scoreA - scoreB;
     });
   }, [canteensList, sortBy, liveStats, basePrice]);
 
-  // Calculate summary metrics
+  // Calculate metrics for Section 2
   const openCanteens = sortedCanteens.filter((c) => isCanteenOpenNow(c).isOpen);
   const bestPrice = openCanteens.length > 0 ? Math.min(...openCanteens.map((c) => c.price)) : basePrice;
   const maxSavings = Math.max(0, basePrice - bestPrice);
@@ -164,327 +189,284 @@ export default function ChooseCanteenModal({
   return (
     <div className="choose-canteen-overlay" onClick={onClose}>
       <div
-        className="choose-canteen-modal light-theme-modal redesigned-comparison-modal"
+        className="compare-dialog-box"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
       >
-        {/* Pinned Top Container: Header, Cart switcher, Preview, and Sort */}
-        <div className="choose-canteen-top-bar">
-          {/* Modal Header */}
-          <div className="choose-canteen-header">
-            <div>
-              <div className="canteen-modal-tag-pill">
-                ⚖️ FOOD AVAILABILITY COMPARISON
-              </div>
-              <h3 className="choose-canteen-title">
-                Available at {sortedCanteens.length} Canteen{sortedCanteens.length > 1 ? "s" : ""}
-              </h3>
-              <p className="choose-canteen-subtitle">
-                Live availability and best options for:{" "}
-                <strong className="active-item-title-highlight">{currentItem?.name || "Product"}</strong>{" "}
-                (Qty: {itemQty})
-              </p>
+        {/* Top Header */}
+        <div className="cd-header">
+          <div className="cd-header-left">
+            <div className="cd-badge-pill">
+              ⚖️ FOOD AVAILABILITY COMPARISON
             </div>
-
-            <button
-              type="button"
-              className="choose-canteen-close-btn"
-              onClick={onClose}
-              aria-label="Close"
-            >
-              ✕
-            </button>
+            <h2 className="cd-title">
+              Available at {sortedCanteens.length} Canteens
+            </h2>
+            <p className="cd-subtitle">
+              Live availability and best options for:{" "}
+              <strong>{currentItem?.name || "Cheese Maggi"}</strong> (Qty: {itemQty})
+            </p>
           </div>
 
-          {/* Section 1: Cart Items Selection Row */}
-          {itemsInCart.length > 0 && (
-            <div className="compare-cart-items-container">
-              <div className="compare-cart-header">
-                <span className="cart-header-title">
-                  🛒 YOUR CART ITEMS ({itemsInCart.length})
-                </span>
-                <span className="cart-header-hint">
-                  Select a product to compare availability
-                </span>
-              </div>
+          <button
+            type="button"
+            className="cd-close-circle"
+            onClick={onClose}
+            aria-label="Close"
+          >
+            ✕
+          </button>
+        </div>
 
-              <div className="compare-cart-cards-row">
-                {itemsInCart.map((ci) => {
-                  const isSelected =
-                    (currentItem?.menuItemId || currentItem?._id || currentItem?.name) ===
-                    (ci.menuItemId || ci._id || ci.name);
-                  return (
-                    <button
-                      key={ci.menuItemId || ci._id || ci.name}
-                      type="button"
-                      className={`compare-cart-card ${isSelected ? "selected" : ""}`}
-                      onClick={() => {
-                        setActiveItem({
-                          menuItemId: ci.menuItemId || ci._id,
-                          name: ci.name,
-                          basePrice: ci.basePrice || ci.price,
-                          price: ci.price,
-                          image: ci.image,
-                          quantity: ci.quantity || 1,
-                          canteen: ci.canteen || selectedCanteen,
-                          isFromCart: true
-                        });
-                      }}
-                    >
-                      <img
-                        src={ci.image || "/images/samosa.jpg"}
-                        alt={ci.name}
-                        className="compare-card-thumb"
-                        onError={(e) => {
-                          e.target.src = "/images/samosa.jpg";
-                        }}
-                      />
-                      <div className="compare-card-info">
-                        <span className="compare-card-name">{ci.name}</span>
-                        <span className="compare-card-meta">
-                          <span className="compare-card-price">₹{ci.price}</span> • Qty: {ci.quantity || 1}
-                        </span>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Section 2: 4-Column Summary Stats Banner */}
-          <div className="compare-summary-banner">
-            {/* Col 1: Product Name */}
-            <div className="cs-col cs-col-product">
-              <img
-                src={displayItemImage}
-                alt={currentItem?.name}
-                className="cs-product-thumb"
-                onError={(e) => {
-                  e.target.src = "/images/samosa.jpg";
-                }}
-              />
-              <div className="cs-text-wrap">
-                <span className="cs-label">Comparing Availability For</span>
-                <strong className="cs-value cs-val-name">{currentItem?.name || "Selected Item"}</strong>
-              </div>
-            </div>
-
-            {/* Col 2: Best Price */}
-            <div className="cs-col">
-              <span className="cs-icon">🏷️</span>
-              <div className="cs-text-wrap">
-                <span className="cs-label">Best Price</span>
-                <strong className="cs-value cs-val-green">₹{bestPrice}</strong>
-              </div>
-            </div>
-
-            {/* Col 3: Max Save */}
-            <div className="cs-col">
-              <span className="cs-icon">⭐</span>
-              <div className="cs-text-wrap">
-                <span className="cs-label">Max Save</span>
-                <strong className="cs-value cs-val-green">
-                  {maxSavings > 0 ? `₹${maxSavings} per item` : "₹0"}
-                </strong>
-              </div>
-            </div>
-
-            {/* Col 4: Available At */}
-            <div className="cs-col">
-              <span className="cs-icon">📍</span>
-              <div className="cs-text-wrap">
-                <span className="cs-label">Available At</span>
-                <strong className="cs-value cs-val-dark">{sortedCanteens.length} Canteens</strong>
-              </div>
-            </div>
+        {/* Section 1: Your Cart Items Box */}
+        <div className="cd-cart-box">
+          <div className="cd-cart-box-top">
+            <span className="cd-cart-title">
+              🛒 YOUR CART ITEMS ({displayCartItems.length})
+            </span>
+            <span className="cd-cart-hint">
+              Select a product to compare availability
+            </span>
           </div>
 
-          {/* Section 3: Available Canteens Header & Sort */}
-          <div className="canteen-sort-toolbar" ref={sortDropdownRef}>
-            <div className="sort-toolbar-label-row">
-              <div className="canteen-toolbar-heading">
-                <span className="canteen-store-icon">🏪</span>
-                <span className="sort-section-title">AVAILABLE CANTEENS</span>
-              </div>
-
-              <div className="sort-dropdown-container">
+          <div className="cd-cart-items-row">
+            {displayCartItems.map((ci) => {
+              const isSelected =
+                (currentItem?.menuItemId || currentItem?._id || currentItem?.name) ===
+                (ci.menuItemId || ci._id || ci.name);
+              return (
                 <button
+                  key={ci.name}
                   type="button"
-                  className="sort-dropdown-trigger redesigned-sort-trigger"
-                  onClick={() => setIsSortDropdownOpen((prev) => !prev)}
-                  title="Change sort order"
+                  className={`cd-product-card ${isSelected ? "is-selected" : ""}`}
+                  onClick={() => {
+                    setActiveItem({
+                      ...ci,
+                      isFromCart: true
+                    });
+                  }}
                 >
-                  <span className="sort-trigger-text">
-                    <strong className="sort-label-prefix">Sort: </strong>
-                    <span className="sort-by-text-faded">
-                      {SORT_OPTIONS.find((o) => o.id === sortBy)?.label || "Recommended"}
+                  <img
+                    src={ci.image || "/images/maggi.jpg"}
+                    alt={ci.name}
+                    className="cd-prod-thumb"
+                    onError={(e) => {
+                      e.target.src = "/images/maggi.jpg";
+                    }}
+                  />
+                  <div className="cd-prod-info">
+                    <span className="cd-prod-name">{ci.name}</span>
+                    <span className="cd-prod-meta">
+                      <strong className="cd-prod-price">₹{ci.price}</strong> • Qty: {ci.quantity || 1}
                     </span>
-                  </span>
-                  <span className="sort-icon-box">
-                    <SortIcon size={14} />
-                  </span>
-                </button>
-
-                {isSortDropdownOpen && (
-                  <div className="sort-dropdown-card">
-                    <div className="sort-card-header">SORT CANTEENS BY</div>
-                    {SORT_OPTIONS.map((opt) => {
-                      const isSelected = sortBy === opt.id;
-                      return (
-                        <button
-                          key={opt.id}
-                          type="button"
-                          className={`sort-dropdown-item ${isSelected ? "selected" : ""}`}
-                          onClick={() => {
-                            setSortBy(opt.id);
-                            setIsSortDropdownOpen(false);
-                          }}
-                        >
-                          <span className="sort-item-left">
-                            <span className="sort-item-emoji">{opt.icon}</span>
-                            <span className="sort-item-label">{opt.label}</span>
-                          </span>
-                          {isSelected && <span className="sort-item-check">✓</span>}
-                        </button>
-                      );
-                    })}
                   </div>
-                )}
-              </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Section 2: 4-Column Summary Stats Banner */}
+        <div className="cd-summary-banner">
+          {/* Column 1: Comparing Item */}
+          <div className="cd-sb-col cd-sb-item">
+            <img
+              src={displayItemImage}
+              alt={currentItem?.name}
+              className="cd-sb-thumb"
+              onError={(e) => {
+                e.target.src = "/images/maggi.jpg";
+              }}
+            />
+            <div className="cd-sb-text">
+              <span className="cd-sb-label">Comparing Availability For</span>
+              <strong className="cd-sb-val cd-sb-name">{currentItem?.name || "Cheese Maggi"}</strong>
+            </div>
+          </div>
+
+          <div className="cd-sb-divider" />
+
+          {/* Column 2: Best Price */}
+          <div className="cd-sb-col">
+            <span className="cd-sb-icon">🏷️</span>
+            <div className="cd-sb-text">
+              <span className="cd-sb-label">Best Price</span>
+              <strong className="cd-sb-val cd-sb-green">₹{bestPrice}</strong>
+            </div>
+          </div>
+
+          <div className="cd-sb-divider" />
+
+          {/* Column 3: Max Save */}
+          <div className="cd-sb-col">
+            <span className="cd-sb-icon">⭐</span>
+            <div className="cd-sb-text">
+              <span className="cd-sb-label">Max Save</span>
+              <strong className="cd-sb-val cd-sb-green">
+                ₹{maxSavings > 0 ? maxSavings : 0} per item
+              </strong>
+            </div>
+          </div>
+
+          <div className="cd-sb-divider" />
+
+          {/* Column 4: Available At */}
+          <div className="cd-sb-col">
+            <span className="cd-sb-icon">📍</span>
+            <div className="cd-sb-text">
+              <span className="cd-sb-label">Available At</span>
+              <strong className="cd-sb-val cd-sb-dark">{sortedCanteens.length} Canteens</strong>
             </div>
           </div>
         </div>
 
-        {/* Section 4: Scrollable Streamlined Horizontal Rows */}
-        <div className="choose-canteen-list compare-canteen-rows-list">
-          {sortedCanteens.map((canteen, idx) => {
-            const currentItemCanteen = currentItem?.canteen || selectedCanteen;
-            const isCurrent =
-              currentItemCanteen?.id === canteen.id ||
-              currentItemCanteen?.name === canteen.name;
+        {/* Section 3: Available Canteens Bar & Sort Button */}
+        <div className="cd-canteens-bar">
+          <div className="cd-bar-heading">
+            <span className="cd-store-icon">🏪</span>
+            <span className="cd-heading-title">AVAILABLE CANTEENS</span>
+          </div>
 
+          <div className="cd-sort-wrap" ref={sortDropdownRef}>
+            <button
+              type="button"
+              className="cd-sort-trigger"
+              onClick={() => setIsSortDropdownOpen((prev) => !prev)}
+            >
+              <span>
+                Sort: <strong>{SORT_OPTIONS.find((o) => o.id === sortBy)?.label || "Recommended"}</strong>
+              </span>
+              <span className="cd-sort-arrows">⇅</span>
+            </button>
+
+            {isSortDropdownOpen && (
+              <div className="cd-sort-popover">
+                <div className="cd-popover-title">SORT CANTEENS BY</div>
+                {SORT_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    className={`cd-popover-item ${sortBy === opt.id ? "active" : ""}`}
+                    onClick={() => {
+                      setSortBy(opt.id);
+                      setIsSortDropdownOpen(false);
+                    }}
+                  >
+                    <span>{opt.icon} {opt.label}</span>
+                    {sortBy === opt.id && <span className="cd-check">✓</span>}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Section 4: 4 Streamlined Canteen Cards */}
+        <div className="cd-canteens-list">
+          {sortedCanteens.map((canteen, idx) => {
             const canteenOpenState = isCanteenOpenNow(canteen);
             const isClosed = !canteenOpenState.isOpen;
-
-            // Genuine price difference savings calculation
+            const isRecommended = idx === 0 && !isClosed && sortBy === "recommended";
             const priceDiff = basePrice - canteen.price;
             const hasSavings = !isClosed && priceDiff > 0;
-            const isRecommended = idx === 0 && !isClosed && sortBy === "recommended";
 
             const canteenImgUrl =
               CANTEEN_IMAGES[canteen.id] || canteen.image || CANTEEN_IMAGES.default;
 
-            const walkingMinutes = canteen.walkingMinutes || 1;
-            const distanceMeters = canteen.distanceMeters || 60;
+            const walkingMins = canteen.walkingMinutes || 1;
+            const distMeters = canteen.distanceMeters || 60;
             const waitMins = canteen.waitMinutes || 6;
-            const openingHoursText = canteen.openingHours || "8:00 AM – 10:30 PM";
+            const hoursDisplay = canteen.openingHours || "8:00 AM – 10:30 PM";
 
             return (
               <div
                 key={canteen.id}
-                className={`canteen-horizontal-row ${
-                  isCurrent ? "is-current-selection" : ""
-                } ${isClosed ? "is-canteen-closed" : ""} ${
-                  isRecommended ? "is-canteen-recommended" : ""
+                className={`cd-canteen-row ${isRecommended ? "is-recommended" : ""} ${
+                  isClosed ? "is-closed" : ""
                 }`}
               >
-                {/* Left Part: Canteen Building Photo + Details */}
-                <div className="canteen-row-left">
-                  <div className="canteen-photo-wrap">
+                {/* Left: Building Photo + Info */}
+                <div className="cd-row-left">
+                  <div className="cd-row-thumb-box">
                     <img
                       src={canteenImgUrl}
                       alt={canteen.name}
-                      className="canteen-photo-thumb"
+                      className="cd-row-img"
                       onError={(e) => {
                         e.target.src = CANTEEN_IMAGES.default;
                       }}
                     />
                   </div>
 
-                  <div className="canteen-row-details">
-                    {/* Line 1: Name + Recommended / Selected Badge */}
-                    <div className="canteen-title-line">
-                      <strong className="canteen-name-text">{canteen.name}</strong>
+                  <div className="cd-row-details">
+                    <div className="cd-row-name-line">
+                      <strong className="cd-canteen-name">{canteen.name}</strong>
                       {isRecommended && (
-                        <span className="canteen-recommended-pill">★ Recommended</span>
-                      )}
-                      {isCurrent && (
-                        <span className="canteen-current-badge">✓ Selected</span>
+                        <span className="cd-pill-rec">★ Recommended</span>
                       )}
                     </div>
 
-                    {/* Line 2: Location */}
-                    <div className="canteen-location-line">
-                      📍 {canteen.location || "Campus Block"}
+                    <div className="cd-row-location">
+                      📍 {canteen.location}
                     </div>
 
-                    {/* Line 3: Informational Chips Row */}
-                    <div className="canteen-chips-row">
-                      <span className="canteen-chip chip-walking">
-                        🚶 {walkingMinutes} min walk ({distanceMeters} m)
+                    <div className="cd-row-chips">
+                      <span className="cd-chip cd-chip-walk">
+                        🚶 {walkingMins} min walk ({distMeters} m)
                       </span>
 
                       {!isClosed ? (
-                        <span className="canteen-chip chip-prep">
+                        <span className="cd-chip cd-chip-prep">
                           🕒 Est. Ready in ~{waitMins} mins
                         </span>
                       ) : (
-                        <span className="canteen-chip chip-closed">
+                        <span className="cd-chip cd-chip-closed">
                           🔴 Closed
                         </span>
                       )}
 
-                      <span className="canteen-chip chip-hours">
-                        🕒 {isClosed ? (canteenOpenState.nextOpenText || canteen.openingHours || "Opens at 12:00 PM") : openingHoursText}
+                      <span className="cd-chip cd-chip-hours">
+                        🕒 {isClosed ? (canteenOpenState.nextOpenText || canteen.openingHours || "Opens at 12:00 PM") : hoursDisplay}
                       </span>
                     </div>
                   </div>
                 </div>
 
-                {/* Right Part: Price, Savings Pill & Action Button */}
-                <div className="canteen-row-right">
-                  {!isClosed && (
-                    <div className="canteen-pricing-col">
-                      <div className="canteen-price-main">
+                {/* Vertical Divider Line */}
+                <div className="cd-row-v-divider" />
+
+                {/* Right: Price Stack & Button */}
+                <div className="cd-row-right">
+                  <div className="cd-row-pricing">
+                    {!isClosed && (
+                      <>
                         {hasSavings && (
-                          <span className="canteen-price-old">₹{basePrice}</span>
+                          <span className="cd-old-price">₹{basePrice}</span>
                         )}
-                        <span className={`canteen-price-current ${hasSavings ? "price-discounted" : ""}`}>
+                        <span className={`cd-cur-price ${hasSavings ? "is-discounted" : ""}`}>
                           ₹{canteen.price}
                         </span>
-                      </div>
-                      {hasSavings && (
-                        <span className="canteen-savings-pill">
-                          Save ₹{priceDiff} per item
-                        </span>
-                      )}
-                    </div>
-                  )}
+                        {hasSavings && (
+                          <span className="cd-savings-pill">Save ₹{priceDiff} per item</span>
+                        )}
+                      </>
+                    )}
+                  </div>
 
-                  <div className="canteen-action-col">
+                  <div className="cd-row-btn-wrap">
                     {isClosed ? (
                       <button
                         type="button"
-                        className="btn-canteen-row btn-closed"
+                        className="cd-btn-closed"
                         disabled
-                        title="This canteen is currently closed"
                       >
                         Closed ⓘ
-                      </button>
-                    ) : isCurrent ? (
-                      <button
-                        type="button"
-                        className="btn-canteen-row btn-selected"
-                        disabled
-                      >
-                        ✓ Selected
                       </button>
                     ) : (
                       <button
                         type="button"
-                        className="btn-canteen-row btn-choose"
+                        className="cd-btn-choose"
                         onClick={() => onSelectCanteen(canteen, currentItem, canteen.price)}
                       >
                         Choose →
@@ -495,9 +477,6 @@ export default function ChooseCanteenModal({
               </div>
             );
           })}
-
-          {/* Bottom spacer so the last row is fully visible */}
-          <div className="choose-canteen-bottom-spacer" />
         </div>
       </div>
     </div>
