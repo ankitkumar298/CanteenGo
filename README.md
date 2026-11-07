@@ -296,7 +296,7 @@ npm start
 
 ## 🤝 Contributing & Author
 
-Developed by **[Ankit](https://github.com/ankitkumar298) ,[Nitin] , [Avinash]**.
+Developed by **[Ankit](https://github.com/ankitkumar298) ,Nitin , Avinash**.
 
 - **GitHub Repository:** [https://github.com/ankitkumar298/CanteenGo](https://github.com/ankitkumar298/CanteenGo)
 - **Contact Email:** [contact@canteengo.in](mailto:contact@canteengo.in)
