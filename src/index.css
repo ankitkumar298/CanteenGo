@@ -12297,44 +12297,45 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
 }
 
 /* ==========================================================================
-   Student Floating Bottom Toast Notification (1.5s Auto-dismiss, Not Green)
+   Student Floating Bottom Toast Notification (Matching Screenshot)
+   Warm cream capsule, orange exclamation icon, divider line & smooth animation
    ========================================================================== */
 .student-bottom-toast {
   position: fixed;
-  bottom: 30px;
+  bottom: 28px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 99999;
-  background: #0f172a;
-  color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: #fffbeb;
+  color: #0f172a;
+  border: 1.2px solid #fed7aa;
   border-radius: 9999px;
-  padding: 10px 24px;
-  font-size: 0.92rem;
+  padding: 10px 22px;
+  font-size: 0.94rem;
   font-weight: 700;
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  box-shadow: 0 14px 34px -4px rgba(15, 23, 42, 0.4), 0 4px 12px rgba(0, 0, 0, 0.15);
+  gap: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(234, 88, 12, 0.08);
   pointer-events: none;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   white-space: nowrap;
-  max-width: 90vw;
+  max-width: 92vw;
 }
 
 .student-bottom-toast.toast-enter {
-  animation: toastSlideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: toastSlideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .student-bottom-toast.toast-exit {
-  animation: toastSlideDown 0.22s cubic-bezier(0.7, 0, 0.84, 0) forwards;
+  animation: toastSlideDown 0.24s cubic-bezier(0.7, 0, 0.84, 0) forwards;
 }
 
 @keyframes toastSlideUp {
   from {
     opacity: 0;
-    transform: translate(-50%, 24px) scale(0.95);
+    transform: translate(-50%, 25px) scale(0.96);
   }
   to {
     opacity: 1;
@@ -12349,27 +12350,46 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
   }
   to {
     opacity: 0;
-    transform: translate(-50%, 24px) scale(0.95);
+    transform: translate(-50%, 25px) scale(0.96);
   }
 }
 
-.student-bottom-toast.toast-error {
-  background: #181111;
-  border-color: #ef4444;
-  color: #fee2e2;
-  box-shadow: 0 14px 34px -4px rgba(239, 68, 68, 0.3);
+.student-bottom-toast .toast-exclamation-circle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #ea580c;
 }
 
-.student-bottom-toast .toast-icon {
-  font-size: 1.05rem;
-  line-height: 1;
-  display: inline-flex;
+.student-bottom-toast .toast-divider {
+  width: 1px;
+  height: 18px;
+  background: #cbd5e1;
+  display: inline-block;
   flex-shrink: 0;
 }
 
 .student-bottom-toast .toast-message {
-  line-height: 1.3;
-  color: inherit;
+  line-height: 1.35;
+  color: #0f172a;
+  letter-spacing: -0.01em;
+}
+
+/* Optional toast error variant */
+.student-bottom-toast.toast-error {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #991b1b;
+}
+.student-bottom-toast.toast-error .toast-exclamation-circle {
+  color: #dc2626;
+}
+.student-bottom-toast.toast-error .toast-divider {
+  background: #fca5a5;
+}
+.student-bottom-toast.toast-error .toast-message {
+  color: #991b1b;
 }
 
 /* ==========================================================================

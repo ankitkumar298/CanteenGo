@@ -162,8 +162,7 @@ export default function StudentPage({
         }
       });
 
-      setSuccessMessage(`📍 Changed ${targetItem.name} to ${newCanteen.name} (₹${finalPrice})`);
-      setTimeout(() => setSuccessMessage(""), 3500);
+      setSuccessMessage("Prices and availability may change in real time.");
       return;
     }
 
@@ -172,11 +171,7 @@ export default function StudentPage({
     try {
       localStorage.setItem("canteenGo_selectedCanteen", JSON.stringify(newCanteen));
     } catch {}
-    if (newCanteen.id === "all") {
-      setSuccessMessage("🌐 Showing menu for All Campus Canteens");
-    } else {
-      setSuccessMessage(`📍 Pickup canteen set to ${newCanteen.name}`);
-    }
+    setSuccessMessage("Prices and availability may change in real time.");
     setMenuAnimKey((prev) => prev + 1);
   };
 
@@ -206,7 +201,7 @@ export default function StudentPage({
       setTimeout(() => {
         setToast(null);
       }, 250);
-    }, 1500);
+    }, 2400);
   }, []);
 
   useEffect(() => {
@@ -1387,14 +1382,30 @@ export default function StudentPage({
         </div>
       </div>
 
-      {/* Floating Bottom Toast Alert (1.5s auto-dismiss with slide up / down animation) */}
+      {/* Floating Bottom Toast Alert (Pill capsule with animation matching design) */}
       {toast && (
         <div
           className={`student-bottom-toast ${toast.isExiting ? "toast-exit" : "toast-enter"} toast-${toast.type}`}
+          role="status"
+          aria-live="polite"
         >
-          <span className="toast-icon">
-            {toast.type === "error" ? "⚠️" : "📍"}
+          <span className="toast-exclamation-circle" aria-hidden="true">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
           </span>
+          <span className="toast-divider" aria-hidden="true" />
           <span className="toast-message">{toast.message}</span>
         </div>
       )}
