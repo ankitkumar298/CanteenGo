@@ -162,7 +162,7 @@ export default function StudentPage({
         }
       });
 
-      setSuccessMessage("Prices and availability may change in real time.");
+      setSuccessMessage(`Changed ${targetItem.name} canteen to ${newCanteen.shortName || newCanteen.name}`);
       return;
     }
 
@@ -171,7 +171,11 @@ export default function StudentPage({
     try {
       localStorage.setItem("canteenGo_selectedCanteen", JSON.stringify(newCanteen));
     } catch {}
-    setSuccessMessage("Prices and availability may change in real time.");
+    if (newCanteen.id === "all") {
+      setSuccessMessage("Switched to All Campus Canteens view");
+    } else {
+      setSuccessMessage(`Switched canteen to ${newCanteen.shortName || newCanteen.name}`);
+    }
     setMenuAnimKey((prev) => prev + 1);
   };
 
@@ -333,31 +337,52 @@ export default function StudentPage({
 
   // Increase quantity from card or cart
   const handleIncreaseQuantity = (menuItemId) => {
+    let itemName = "";
+    let nextQty = 1;
     setCart((prevCart) =>
-      prevCart.map((item) =>
-        item.menuItemId === menuItemId
-          ? { ...item, quantity: item.quantity + 1 }
-          : item
-      )
+      prevCart.map((item) => {
+        if (item.menuItemId === menuItemId) {
+          itemName = item.name;
+          nextQty = item.quantity + 1;
+          return { ...item, quantity: item.quantity + 1 };
+        }
+        return item;
+      })
     );
+    if (itemName) {
+      setSuccessMessage(`Updated ${itemName} quantity (×${nextQty})`);
+    }
   };
 
   // Decrease quantity from card or cart
   const handleDecreaseQuantity = (menuItemId) => {
+    let itemName = "";
+    let nextQty = 0;
     setCart((prevCart) =>
       prevCart
         .map((item) => {
           if (item.menuItemId === menuItemId) {
+            itemName = item.name;
+            nextQty = item.quantity - 1;
             return { ...item, quantity: item.quantity - 1 };
           }
           return item;
         })
         .filter((item) => item.quantity > 0)
     );
+    if (itemName) {
+      if (nextQty > 0) {
+        setSuccessMessage(`Updated ${itemName} quantity (×${nextQty})`);
+      } else {
+        setSuccessMessage(`Removed ${itemName} from cart`);
+      }
+    }
   };
 
   const handleRemoveFromCart = (menuItemId) => {
+    const itemToRemove = cart.find((i) => i.menuItemId === menuItemId);
     setCart((prevCart) => prevCart.filter((item) => item.menuItemId !== menuItemId));
+    setSuccessMessage(itemToRemove ? `Removed ${itemToRemove.name} from cart` : "Removed item from cart");
   };
 
   // 1-Click Dynamic Fast-Break Combo: adds multiple real DB items
@@ -1043,7 +1068,10 @@ export default function StudentPage({
                 <button
                   type="button"
                   className="btn-clear-cart"
-                  onClick={() => setCart([])}
+                  onClick={() => {
+                    setCart([]);
+                    setSuccessMessage("Cart cleared successfully");
+                  }}
                 >
                   <TrashIcon size={14} /> Clear
                 </button>
