@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo, useRef } from "react";
 import { CAMPUS_CANTEENS, isCanteenOpenNow } from "../data/canteens";
 import { useAppContext } from "@/context/AppContext";
 
-// 4 high-quality building photos matching the exact campus canteens in the screenshot
+// High quality campus architecture photos matching the reference layout
 const CANTEEN_IMAGES = {
   "foodcourt-34": "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=320&q=80",
   "main-canteen": "https://images.unsplash.com/photo-1541123437800-1bb1317badc2?auto=format&fit=crop&w=320&q=80",
@@ -17,7 +17,6 @@ const SORT_OPTIONS = [
   { id: "nearest", label: "Nearest", icon: "📍" }
 ];
 
-// Fallback cart items matching the exact reference image if cart has fewer items
 const SAMPLE_CART_ITEMS = [
   {
     name: "Cheese Maggi",
@@ -41,6 +40,98 @@ const SAMPLE_CART_ITEMS = [
     image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=120&q=80"
   }
 ];
+
+// Clean vector icons matching the reference screenshot exactly
+function ScaleIcon({ size = 14, className = "" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z" />
+      <path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z" />
+      <path d="M7 21h10" />
+      <path d="M12 3v18" />
+      <path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2" />
+    </svg>
+  );
+}
+
+function CartIconSvg({ size = 15, className = "" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <circle cx="8" cy="21" r="1" />
+      <circle cx="19" cy="21" r="1" />
+      <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" />
+    </svg>
+  );
+}
+
+function TagIconSvg({ size = 16, className = "" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z" />
+      <path d="M7 7h.01" />
+    </svg>
+  );
+}
+
+function StarIconSvg({ size = 16, className = "" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1" className={className}>
+      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+    </svg>
+  );
+}
+
+function PinIconSvg({ size = 16, className = "" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+      <circle cx="12" cy="10" r="3" />
+    </svg>
+  );
+}
+
+function StoreIconSvg({ size = 18, className = "" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7" />
+      <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+      <path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4" />
+      <path d="M2 7h20" />
+      <path d="M22 7a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2" />
+    </svg>
+  );
+}
+
+function WalkingIconSvg({ size = 12, className = "" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <circle cx="12" cy="4" r="2" />
+      <path d="m9 20 3-6-3-3 4-2 3 3 2-1" />
+      <path d="m6 16 3-3" />
+      <path d="m14 15 2 5" />
+    </svg>
+  );
+}
+
+function ClockIconSvg({ size = 12, className = "" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <circle cx="12" cy="12" r="10" />
+      <polyline points="12 6 12 12 16 14" />
+    </svg>
+  );
+}
+
+function CalendarIconSvg({ size = 12, className = "" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
+      <line x1="16" x2="16" y1="2" y2="6" />
+      <line x1="8" x2="8" y1="2" y2="6" />
+      <line x1="3" x2="21" y1="10" y2="10" />
+    </svg>
+  );
+}
 
 export default function ChooseCanteenModal({
   isOpen,
@@ -128,12 +219,11 @@ export default function ChooseCanteenModal({
   const itemQty = Number(currentItem?.quantity ?? 1);
   const displayItemImage = currentItem?.image || "/images/maggi.jpg";
 
-  // Build the list of cart items so that it always shows the clean 3 items matching Image 2
+  // Build the list of cart items matching Image 2
   const displayCartItems = useMemo(() => {
     if (cartItems && cartItems.length >= 2) {
       return cartItems;
     }
-    // If cart has 0 or 1 item, combine with canonical sample items ensuring active item is first
     const primary = currentItem || SAMPLE_CART_ITEMS[0];
     const others = SAMPLE_CART_ITEMS.filter((s) => s.name.toLowerCase() !== primary.name.toLowerCase());
     return [primary, ...others].slice(0, 3);
@@ -198,7 +288,8 @@ export default function ChooseCanteenModal({
         <div className="cd-header">
           <div className="cd-header-left">
             <div className="cd-badge-pill">
-              ⚖️ FOOD AVAILABILITY COMPARISON
+              <ScaleIcon size={13} className="cd-scale-svg" />
+              <span>FOOD AVAILABILITY COMPARISON</span>
             </div>
             <h2 className="cd-title">
               Available at {sortedCanteens.length} Canteens
@@ -223,7 +314,8 @@ export default function ChooseCanteenModal({
         <div className="cd-cart-box">
           <div className="cd-cart-box-top">
             <span className="cd-cart-title">
-              🛒 YOUR CART ITEMS ({displayCartItems.length})
+              <CartIconSvg size={15} className="cd-cart-icon-svg" />
+              <span>YOUR CART ITEMS ({displayCartItems.length})</span>
             </span>
             <span className="cd-cart-hint">
               Select a product to compare availability
@@ -289,7 +381,7 @@ export default function ChooseCanteenModal({
 
           {/* Column 2: Best Price */}
           <div className="cd-sb-col">
-            <span className="cd-sb-icon">🏷️</span>
+            <TagIconSvg size={18} className="cd-sb-icon cd-icon-tag" />
             <div className="cd-sb-text">
               <span className="cd-sb-label">Best Price</span>
               <strong className="cd-sb-val cd-sb-green">₹{bestPrice}</strong>
@@ -300,7 +392,7 @@ export default function ChooseCanteenModal({
 
           {/* Column 3: Max Save */}
           <div className="cd-sb-col">
-            <span className="cd-sb-icon">⭐</span>
+            <StarIconSvg size={18} className="cd-sb-icon cd-icon-star" />
             <div className="cd-sb-text">
               <span className="cd-sb-label">Max Save</span>
               <strong className="cd-sb-val cd-sb-green">
@@ -313,7 +405,7 @@ export default function ChooseCanteenModal({
 
           {/* Column 4: Available At */}
           <div className="cd-sb-col">
-            <span className="cd-sb-icon">📍</span>
+            <PinIconSvg size={18} className="cd-sb-icon cd-icon-pin" />
             <div className="cd-sb-text">
               <span className="cd-sb-label">Available At</span>
               <strong className="cd-sb-val cd-sb-dark">{sortedCanteens.length} Canteens</strong>
@@ -324,7 +416,7 @@ export default function ChooseCanteenModal({
         {/* Section 3: Available Canteens Bar & Sort Button */}
         <div className="cd-canteens-bar">
           <div className="cd-bar-heading">
-            <span className="cd-store-icon">🏪</span>
+            <StoreIconSvg size={18} className="cd-store-svg" />
             <span className="cd-heading-title">AVAILABLE CANTEENS</span>
           </div>
 
@@ -371,6 +463,14 @@ export default function ChooseCanteenModal({
             const priceDiff = basePrice - canteen.price;
             const hasSavings = !isClosed && priceDiff > 0;
 
+            // Persistent selected canteen detection
+            const currentItemCanteenId = currentItem?.canteen?.id || currentItem?.canteenId;
+            const selectedCanteenId = selectedCanteen?.id || selectedCanteen?.canteenId;
+            const isCurrent =
+              (currentItemCanteenId && currentItemCanteenId === canteen.id) ||
+              (!currentItemCanteenId && selectedCanteenId === canteen.id) ||
+              (!currentItemCanteenId && !selectedCanteenId && idx === 0);
+
             const canteenImgUrl =
               CANTEEN_IMAGES[canteen.id] || canteen.image || CANTEEN_IMAGES.default;
 
@@ -384,7 +484,7 @@ export default function ChooseCanteenModal({
                 key={canteen.id}
                 className={`cd-canteen-row ${isRecommended ? "is-recommended" : ""} ${
                   isClosed ? "is-closed" : ""
-                }`}
+                } ${isCurrent ? "is-current" : ""}`}
               >
                 {/* Left: Building Photo + Info */}
                 <div className="cd-row-left">
@@ -402,9 +502,11 @@ export default function ChooseCanteenModal({
                   <div className="cd-row-details">
                     <div className="cd-row-name-line">
                       <strong className="cd-canteen-name">{canteen.name}</strong>
-                      {isRecommended && (
+                      {isCurrent ? (
+                        <span className="cd-pill-selected">✓ Selected</span>
+                      ) : isRecommended ? (
                         <span className="cd-pill-rec">★ Recommended</span>
-                      )}
+                      ) : null}
                     </div>
 
                     <div className="cd-row-location">
@@ -413,21 +515,25 @@ export default function ChooseCanteenModal({
 
                     <div className="cd-row-chips">
                       <span className="cd-chip cd-chip-walk">
-                        🚶 {walkingMins} min walk ({distMeters} m)
+                        <WalkingIconSvg size={11} className="cd-chip-icon" />
+                        <span>{walkingMins} min walk ({distMeters} m)</span>
                       </span>
 
                       {!isClosed ? (
                         <span className="cd-chip cd-chip-prep">
-                          🕒 Est. Ready in ~{waitMins} mins
+                          <ClockIconSvg size={11} className="cd-chip-icon" />
+                          <span>Est. Ready in ~{waitMins} mins</span>
                         </span>
                       ) : (
                         <span className="cd-chip cd-chip-closed">
-                          🔴 Closed
+                          <span className="cd-chip-dot" />
+                          <span>Closed</span>
                         </span>
                       )}
 
                       <span className="cd-chip cd-chip-hours">
-                        🕒 {isClosed ? (canteenOpenState.nextOpenText || canteen.openingHours || "Opens at 12:00 PM") : hoursDisplay}
+                        <CalendarIconSvg size={11} className="cd-chip-icon" />
+                        <span>{isClosed ? (canteenOpenState.nextOpenText || canteen.openingHours || "Opens at 12:00 PM") : hoursDisplay}</span>
                       </span>
                     </div>
                   </div>
@@ -462,6 +568,15 @@ export default function ChooseCanteenModal({
                         disabled
                       >
                         Closed ⓘ
+                      </button>
+                    ) : isCurrent ? (
+                      <button
+                        type="button"
+                        className="cd-btn-selected"
+                        disabled
+                        title="This canteen is currently selected"
+                      >
+                        ✓ Selected
                       </button>
                     ) : (
                       <button
