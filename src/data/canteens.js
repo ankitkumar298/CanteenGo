@@ -122,13 +122,66 @@ export const fetchCanteens = async () => {
 };
 
 /**
- * Calculates dynamic price of an item for a given canteen based on price offset.
- * Minimum price is bounded to ₹5.
+ * Returns exact price set for an item at a specific canteen.
+ * If vendor/canteen has set a custom price in canteenPrices, returns that exact price.
+ * Otherwise returns the item's standard price.
  */
-export const getCanteenItemPrice = (basePrice, canteen) => {
-  const num = Number(basePrice) || 0;
-  const offset = canteen?.priceOffset || 0;
-  return Math.max(5, num + offset);
+export const getItemPriceForCanteen = (item, canteen) => {
+  if (!item) return 0;
+  const canteenId = typeof canteen === "string" ? canteen : canteen?.id || canteen?.canteenId;
+
+  // Exact price set by this canteen vendor
+  if (canteenId && item.canteenPrices && item.canteenPrices[canteenId] !== undefined && item.canteenPrices[canteenId] !== null) {
+    const cp = Number(item.canteenPrices[canteenId]);
+    if (!isNaN(cp) && cp >= 0) return cp;
+  }
+
+  // Standard item price
+  const p = Number(item.price !== undefined ? item.price : item.basePrice || 0);
+  return Math.max(5, p);
+};
+
+/**
+ * Checks if an item is available at a specific canteen.
+ * If this specific canteen marked the item as Sold Out, returns false.
+ * Other canteens remain available.
+ */
+export const isItemAvailableAtCanteen = (item, canteen) => {
+  if (!item) return false;
+  const canteenId = typeof canteen === "string" ? canteen : canteen?.id || canteen?.canteenId;
+
+  // Check if specifically marked sold out at this canteen
+  if (canteenId && Array.isArray(item.soldOutCanteens) && item.soldOutCanteens.includes(canteenId)) {
+    return false;
+  }
+
+  // Check if item is restricted to specific canteens
+  if (
+    canteenId &&
+    canteenId !== "all" &&
+    Array.isArray(item.availableCanteens) &&
+    item.availableCanteens.length > 0 &&
+    !item.availableCanteens.includes("all")
+  ) {
+    if (!item.availableCanteens.includes(canteenId)) {
+      return false;
+    }
+  }
+
+  // Check document-level availability
+  return item.available !== false;
+};
+
+/**
+ * Calculates dynamic price of an item for a given canteen.
+ * Accepts either a food item object or a numeric basePrice.
+ */
+export const getCanteenItemPrice = (itemOrBasePrice, canteen) => {
+  if (itemOrBasePrice && typeof itemOrBasePrice === "object") {
+    return getItemPriceForCanteen(itemOrBasePrice, canteen);
+  }
+  const num = Number(itemOrBasePrice) || 0;
+  return Math.max(5, num);
 };
 
 /**

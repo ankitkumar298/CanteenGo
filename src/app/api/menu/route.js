@@ -162,7 +162,9 @@ export async function POST(request) {
       description: description ? description.trim() : "",
       canteenId: resolvedCanteenId,
       canteenName: resolvedCanteenName,
-      availableCanteens: resolvedAvailableCanteens
+      availableCanteens: resolvedAvailableCanteens,
+      canteenPrices: { [resolvedCanteenId]: numericPrice },
+      soldOutCanteens: available === false ? [resolvedCanteenId] : []
     });
 
     return Response.json(newItem, { status: 201 });

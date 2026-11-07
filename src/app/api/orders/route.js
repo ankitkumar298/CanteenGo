@@ -172,7 +172,9 @@ export async function POST(request) {
         );
       }
 
-      if (!menuItem.available) {
+      const orderCanteenId = item.canteenId || canteenId || "foodcourt-34";
+      const isSoldOutAtCanteen = Array.isArray(menuItem.soldOutCanteens) && menuItem.soldOutCanteens.includes(orderCanteenId);
+      if (!menuItem.available || isSoldOutAtCanteen) {
         return Response.json(
           {
             message: `"${menuItem.name}" abhi out-of-stock / unavailable ho gaya hai. Cart ko preserve rakha gaya hai taaki aap item change ya remove kar sakein.`,

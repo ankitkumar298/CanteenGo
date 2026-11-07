@@ -62,6 +62,14 @@ const menuSchema = new mongoose.Schema(
     availableCanteens: {
       type: [String],
       default: ["foodcourt-34", "nk-foodcourt", "main-canteen", "library-cafe"]
+    },
+    canteenPrices: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {}
+    },
+    soldOutCanteens: {
+      type: [String],
+      default: []
     }
   },
   {

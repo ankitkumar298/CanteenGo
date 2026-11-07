@@ -4,7 +4,7 @@ import StatusBadge from "../components/StatusBadge";
 import UpiModal from "../components/UpiModal";
 import OrderSuccessOverlay from "../components/OrderSuccessOverlay";
 import ChooseCanteenModal from "../components/ChooseCanteenModal";
-import { CAMPUS_CANTEENS, DEFAULT_CANTEEN, getCanteenItemPrice, isCanteenOpenNow, getItemEstimateTime } from "../data/canteens";
+import { CAMPUS_CANTEENS, DEFAULT_CANTEEN, getCanteenItemPrice, isCanteenOpenNow, getItemEstimateTime, getItemPriceForCanteen, isItemAvailableAtCanteen } from "../data/canteens";
 import { useAppContext } from "@/context/AppContext";
 import {
   SearchIcon,
@@ -130,7 +130,7 @@ export default function StudentPage({
       const finalPrice =
         typeof computedPrice === "number"
           ? computedPrice
-          : getCanteenItemPrice(base, newCanteen);
+          : getItemPriceForCanteen(targetItem, newCanteen);
 
       setCart((prevCart) => {
         const existingIndex = prevCart.findIndex(
@@ -304,8 +304,12 @@ export default function StudentPage({
     }
 
     const itemCanteen = selectedCanteen?.name ? selectedCanteen : DEFAULT_CANTEEN;
+    if (!isItemAvailableAtCanteen(item, itemCanteen)) {
+      setErrorMessage(`Sorry, "${item.name}" is currently sold out at ${itemCanteen.shortName || itemCanteen.name}.`);
+      return;
+    }
     const basePrice = item.price;
-    const finalPrice = getCanteenItemPrice(basePrice, itemCanteen);
+    const finalPrice = getItemPriceForCanteen(item, itemCanteen);
 
     setCart((prevCart) => {
       const existingIndex = prevCart.findIndex(
@@ -405,7 +409,7 @@ export default function StudentPage({
       itemsToAdd.forEach(({ item, qty }) => {
         const existingIndex = updatedCart.findIndex((ci) => ci.menuItemId === item._id);
         const basePrice = item.price;
-        const finalPrice = getCanteenItemPrice(basePrice, itemCanteen);
+        const finalPrice = getItemPriceForCanteen(item, itemCanteen);
 
         if (existingIndex > -1) {
           updatedCart[existingIndex].quantity += qty;
@@ -616,10 +620,10 @@ export default function StudentPage({
     i.name.toLowerCase().includes("tea") ||
     i.name.toLowerCase().includes("shake");
 
-  // Drinks are strictly beverages
-  const drinksList = menu.filter((i) => i.available && isBeverage(i));
-  // Snacks are strictly solid food items (never beverage)
-  const snacksList = menu.filter((i) => i.available && !isBeverage(i));
+  // Drinks are strictly beverages available at this canteen
+  const drinksList = menu.filter((i) => isItemAvailableAtCanteen(i, currentCanteen) && isBeverage(i));
+  // Snacks are strictly solid food items available at this canteen (never beverage)
+  const snacksList = menu.filter((i) => isItemAvailableAtCanteen(i, currentCanteen) && !isBeverage(i));
 
   // Combo 1: Primary snack + primary drink (guaranteed 2 distinct items)
   const comboPair1 =
@@ -980,13 +984,13 @@ export default function StudentPage({
                   {filteredMenu.map((item) => {
                     const cartItem = cart.find((ci) => ci.menuItemId === item._id);
                     const quantityInCart = cartItem ? cartItem.quantity : 0;
-                    const itemWithDynamicPrice =
-                      currentCanteen && currentCanteen.id !== "all"
-                        ? {
-                            ...item,
-                            price: getCanteenItemPrice(item.basePrice || item.price, currentCanteen)
-                          }
-                        : item;
+                    const itemPrice = getItemPriceForCanteen(item, currentCanteen);
+                    const isAvailAtCanteen = isItemAvailableAtCanteen(item, currentCanteen);
+                    const itemWithDynamicPrice = {
+                      ...item,
+                      price: itemPrice,
+                      available: isAvailAtCanteen
+                    };
 
                     return (
                       <MenuCard
@@ -1026,13 +1030,13 @@ export default function StudentPage({
                 {filteredMenu.map((item) => {
                   const cartItem = cart.find((ci) => ci.menuItemId === item._id);
                   const quantityInCart = cartItem ? cartItem.quantity : 0;
-                  const itemWithDynamicPrice =
-                    currentCanteen && currentCanteen.id !== "all"
-                      ? {
-                          ...item,
-                          price: getCanteenItemPrice(item.basePrice || item.price, currentCanteen)
-                        }
-                      : item;
+                  const itemPrice = getItemPriceForCanteen(item, currentCanteen);
+                  const isAvailAtCanteen = isItemAvailableAtCanteen(item, currentCanteen);
+                  const itemWithDynamicPrice = {
+                    ...item,
+                    price: itemPrice,
+                    available: isAvailAtCanteen
+                  };
 
                   return (
                     <MenuCard

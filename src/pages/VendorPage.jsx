@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import StatusBadge from "../components/StatusBadge";
-import { CAMPUS_CANTEENS } from "../data/canteens";
+import { CAMPUS_CANTEENS, getItemPriceForCanteen, isItemAvailableAtCanteen } from "../data/canteens";
 import { useAppContext } from "@/context/AppContext";
 import {
   ChefIcon,
@@ -227,17 +227,25 @@ export default function VendorPage({ onExitToHome }) {
 
   const handleToggleAvailability = async (item) => {
     try {
+      const currentAvail = isItemAvailableAtCanteen(item, selectedVendorCanteen);
+      const nextAvail = !currentAvail;
+      const canteenId = selectedVendorCanteen?.id;
+
       const res = await fetch(`/api/menu/${item._id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ available: !item.available })
+        body: JSON.stringify({
+          canteenId: canteenId,
+          canteenAvailable: nextAvail
+        })
       });
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Failed to update item");
 
+      const canteenName = selectedVendorCanteen?.shortName || selectedVendorCanteen?.name || "this canteen";
       setMessage({
-        text: `"${item.name}" is now ${!item.available ? "Available" : "Sold Out"}`,
+        text: `"${item.name}" is now ${nextAvail ? "Available" : "Sold Out"} at ${canteenName}! Other canteens remain unaffected.`,
         type: "success"
       });
       fetchMenu();
@@ -254,10 +262,13 @@ export default function VendorPage({ onExitToHome }) {
     }
 
     try {
+      const canteenId = selectedVendorCanteen?.id;
       const res = await fetch(`/api/menu/${itemId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          canteenId: canteenId,
+          canteenPrice: priceNum,
           price: priceNum,
           category: editCategory
         })
@@ -266,7 +277,8 @@ export default function VendorPage({ onExitToHome }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Failed to update item");
 
-      setMessage({ text: "Menu item updated successfully", type: "success" });
+      const canteenName = selectedVendorCanteen?.shortName || selectedVendorCanteen?.name || "this canteen";
+      setMessage({ text: `Price for "${data.name}" set to ₹${priceNum} at ${canteenName}!`, type: "success" });
       setEditingItemId(null);
       setEditPrice("");
       fetchMenu();
@@ -820,100 +832,105 @@ export default function VendorPage({ onExitToHome }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {displayedMenuItems.map((item) => (
-                    <tr key={item._id}>
-                      <td>
-                        <div className="table-item-with-img">
-                          <img
-                            src={item.image || "/images/samosa.jpg"}
-                            alt={item.name}
-                            className="table-item-img"
-                            onError={(e) => {
-                              e.target.src = "/images/samosa.jpg";
-                            }}
-                          />
-                          <div>
-                            <strong className="table-item-title">{item.name}</strong>
-                            {item.description && (
-                              <div className="table-item-desc">{item.description}</div>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-                      <td>
-                        <span className="table-cat-badge">
-                          {item.category || "Hot Snacks"}
-                        </span>
-                      </td>
-                      <td>
-                        <span className="canteen-tag-pill" style={{ fontSize: "0.74rem", background: "#f8fafc", border: "1px solid #e2e8f0", padding: "4px 8px", borderRadius: "6px", fontWeight: "600", color: "#334155", display: "inline-block", whiteSpace: "nowrap" }}>
-                          {item.canteenName || selectedVendorCanteen?.name || "34 Block Food Court"}
-                        </span>
-                      </td>
-                      <td>
-                        {editingItemId === item._id ? (
-                          <div className="inline-edit-box">
-                            <input
-                              type="number"
-                              min="0"
-                              className="form-input"
-                              style={{ width: "80px", padding: "4px 8px" }}
-                              value={editPrice}
-                              onChange={(e) => setEditPrice(e.target.value)}
-                            />
-                            <button
-                              className="btn btn-success btn-sm"
-                              onClick={() => handleSaveEdit(item._id)}
-                            >
-                              Save
-                            </button>
-                            <button
-                              className="btn btn-secondary btn-sm"
-                              onClick={() => setEditingItemId(null)}
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="price-display-wrap">
-                            <strong className="table-price">₹{item.price}</strong>
-                            <button
-                              type="button"
-                              className="btn-edit-icon"
-                              title="Edit Price"
-                              onClick={() => {
-                                setEditingItemId(item._id);
-                                setEditPrice(item.price);
-                                setEditCategory(item.category || "Hot Snacks");
+                  {displayedMenuItems.map((item) => {
+                    const itemPriceAtCanteen = getItemPriceForCanteen(item, selectedVendorCanteen);
+                    const isAvailAtCanteen = isItemAvailableAtCanteen(item, selectedVendorCanteen);
+
+                    return (
+                      <tr key={item._id}>
+                        <td>
+                          <div className="table-item-with-img">
+                            <img
+                              src={item.image || "/images/samosa.jpg"}
+                              alt={item.name}
+                              className="table-item-img"
+                              onError={(e) => {
+                                e.target.src = "/images/samosa.jpg";
                               }}
+                            />
+                            <div>
+                              <strong className="table-item-title">{item.name}</strong>
+                              {item.description && (
+                                <div className="table-item-desc">{item.description}</div>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <span className="table-cat-badge">
+                            {item.category || "Hot Snacks"}
+                          </span>
+                        </td>
+                        <td>
+                          <span className="canteen-tag-pill" style={{ fontSize: "0.74rem", background: "#f8fafc", border: "1px solid #e2e8f0", padding: "4px 8px", borderRadius: "6px", fontWeight: "600", color: "#334155", display: "inline-block", whiteSpace: "nowrap" }}>
+                            {selectedVendorCanteen?.shortName || item.canteenName || selectedVendorCanteen?.name || "34 Block Food Court"}
+                          </span>
+                        </td>
+                        <td>
+                          {editingItemId === item._id ? (
+                            <div className="inline-edit-box">
+                              <input
+                                type="number"
+                                min="0"
+                                className="form-input"
+                                style={{ width: "80px", padding: "4px 8px" }}
+                                value={editPrice}
+                                onChange={(e) => setEditPrice(e.target.value)}
+                              />
+                              <button
+                                className="btn btn-success btn-sm"
+                                onClick={() => handleSaveEdit(item._id)}
+                              >
+                                Save
+                              </button>
+                              <button
+                                className="btn btn-secondary btn-sm"
+                                onClick={() => setEditingItemId(null)}
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="price-display-wrap">
+                              <strong className="table-price">₹{itemPriceAtCanteen}</strong>
+                              <button
+                                type="button"
+                                className="btn-edit-icon"
+                                title={`Edit Price for ${selectedVendorCanteen?.shortName || "this canteen"}`}
+                                onClick={() => {
+                                  setEditingItemId(item._id);
+                                  setEditPrice(itemPriceAtCanteen);
+                                  setEditCategory(item.category || "Hot Snacks");
+                                }}
+                              >
+                                <EditIcon size={14} />
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                        <td>
+                          <StatusBadge status={isAvailAtCanteen} type="availability" />
+                        </td>
+                        <td>
+                          <div className="table-item-actions">
+                            <button
+                              className={`btn btn-sm ${isAvailAtCanteen ? "btn-secondary" : "btn-success"}`}
+                              onClick={() => handleToggleAvailability(item)}
                             >
-                              <EditIcon size={14} />
+                              {isAvailAtCanteen ? "Mark Sold Out" : "Mark Available"}
+                            </button>
+                            <button
+                              className="btn btn-danger btn-sm"
+                              onClick={() => handleDeleteMenuItem(item._id, item.name)}
+                              title="Delete Item"
+                            >
+                              <TrashIcon size={14} />
                             </button>
                           </div>
-                        )}
-                      </td>
-                      <td>
-                        <StatusBadge status={item.available} type="availability" />
-                      </td>
-                      <td>
-                        <div className="table-item-actions">
-                          <button
-                            className={`btn btn-sm ${item.available ? "btn-secondary" : "btn-success"}`}
-                            onClick={() => handleToggleAvailability(item)}
-                          >
-                            {item.available ? "Mark Sold Out" : "Mark Available"}
-                          </button>
-                          <button
-                            className="btn btn-danger btn-sm"
-                            onClick={() => handleDeleteMenuItem(item._id, item.name)}
-                            title="Delete Item"
-                          >
-                            <TrashIcon size={14} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

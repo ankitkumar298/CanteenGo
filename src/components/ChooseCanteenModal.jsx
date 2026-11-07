@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useRef } from "react";
-import { CAMPUS_CANTEENS, isCanteenOpenNow } from "../data/canteens";
+import { CAMPUS_CANTEENS, isCanteenOpenNow, getItemPriceForCanteen, isItemAvailableAtCanteen } from "../data/canteens";
 import { ClockIcon, CheckCircleIcon, SortIcon, CartIcon } from "./Icons";
 import { useAppContext } from "@/context/AppContext";
 
@@ -119,7 +119,8 @@ export default function ChooseCanteenModal({
           ? stats.waitMinutes
           : canteen.prepMinutes;
       const rushStatus = stats.rushStatus || canteen.rushStatus;
-      const price = Math.max(5, basePrice + (canteen.priceOffset || 0));
+      const price = getItemPriceForCanteen(activeItem, canteen);
+      const isAvailableAtCanteen = isItemAvailableAtCanteen(activeItem, canteen);
 
       // Calculate approximate ready-by time
       const readyDate = new Date(Date.now() + calculatedWait * 60000);
@@ -134,6 +135,7 @@ export default function ChooseCanteenModal({
         waitMinutes: calculatedWait,
         rushStatus,
         price,
+        isAvailable: isAvailableAtCanteen,
         readyByTime
       };
     });
@@ -153,12 +155,18 @@ export default function ChooseCanteenModal({
         b.waitMinutes * 1.5 + b.walkingMinutes * 2 - (b.stockCount || 0) * 0.1;
       return scoreA - scoreB;
     });
-  }, [sortBy, liveStats, basePrice]);
+  }, [sortBy, liveStats, basePrice, activeItem]);
 
   // Comparison bar summary metrics
-  const openCanteenPrices = sortedCanteens.filter(c => isCanteenOpenNow(c).isOpen).map(c => c.price);
-  const bestPrice = openCanteenPrices.length > 0 ? Math.min(...openCanteenPrices) : basePrice;
-  const maxSave = Math.max(0, (Number(activeItem?.price) || basePrice) - bestPrice);
+  const availableCanteenPrices = sortedCanteens
+    .filter((c) => isCanteenOpenNow(c).isOpen && c.isAvailable)
+    .map((c) => c.price);
+  const bestPrice =
+    availableCanteenPrices.length > 0
+      ? Math.min(...availableCanteenPrices)
+      : getItemPriceForCanteen(activeItem, selectedCanteen) || basePrice;
+  const currentItemPrice = getItemPriceForCanteen(activeItem, activeItem?.canteen || selectedCanteen);
+  const maxSave = Math.max(0, currentItemPrice - bestPrice);
 
   if (!isOpen) return null;
 
@@ -209,7 +217,7 @@ export default function ChooseCanteenModal({
                 <span className="switcher-icon-wrap">
                   <CartIcon size={14} className="switcher-cart-icon" />
                 </span>
-                <span className="switcher-title">Check other products in your cart:</span>
+                <span className="switcher-title">Your Cart Items ({cartItems.length})</span>
               </div>
               <div className="switcher-chips-list">
                 {cartItems.map((ci) => {
@@ -241,10 +249,12 @@ export default function ChooseCanteenModal({
                           e.target.src = "/images/samosa.jpg";
                         }}
                       />
-                      <span className="pill-name">{ci.name}</span>
-                      <span className="pill-price">₹{ci.price}</span>
-                      <span className="pill-canteen-hint">
-                        ({ci.canteen?.tag || ci.canteen?.shortName || ci.canteen?.name?.split(" ")[0] || "34 Block"})
+                      <span className="pill-text-wrap">
+                        <span className="pill-name">{ci.name}</span>
+                        <span className="pill-sub-row">
+                          <span className="pill-price">₹{ci.price}</span>
+                          <span className="pill-qty"> · Qty: {ci.quantity || 1}</span>
+                        </span>
                       </span>
                     </button>
                   );
@@ -349,11 +359,11 @@ export default function ChooseCanteenModal({
 
             const canteenOpenState = isCanteenOpenNow(canteen);
             const isClosed = !canteenOpenState.isOpen;
+            const isSoldOut = !canteen.isAvailable;
 
             // Genuine price difference savings calculation
-            const currentItemPrice = Number(activeItem?.price || basePrice);
             const priceDiff = currentItemPrice - canteen.price;
-            const hasSavings = isItemMode && !isCurrent && priceDiff > 0;
+            const hasSavings = isItemMode && !isCurrent && priceDiff > 0 && !isClosed && !isSoldOut;
             const cartQty = Number(activeItem?.quantity) || 1;
             const savingsText =
               cartQty > 1
@@ -363,13 +373,12 @@ export default function ChooseCanteenModal({
             // Whole-cart savings if opened for cart without specific active item
             const currentCartTotal = cartItems.reduce((sum, ci) => sum + (Number(ci.price) * (Number(ci.quantity) || 1)), 0);
             const canteenCartTotal = cartItems.reduce((sum, ci) => {
-              const base = Number(ci.basePrice || ci.price);
-              const cp = Math.max(5, base + (canteen.priceOffset || 0));
+              const cp = getItemPriceForCanteen(ci, canteen);
               return sum + (cp * (Number(ci.quantity) || 1));
             }, 0);
             const totalCartQty = cartItems.reduce((sum, ci) => sum + (Number(ci.quantity) || 1), 0);
             const cartSavings = currentCartTotal - canteenCartTotal;
-            const hasWholeCartSavings = !isItemMode && !isCurrent && cartSavings > 0;
+            const hasWholeCartSavings = !isItemMode && !isCurrent && cartSavings > 0 && !isClosed;
             const cartSavingsText = totalCartQty > 1
               ? `Save ₹${cartSavings} on ${totalCartQty} items`
               : `Save ₹${cartSavings} on cart`;
@@ -379,7 +388,7 @@ export default function ChooseCanteenModal({
                 key={canteen.id}
                 className={`choose-canteen-card ${
                   isCurrent ? "is-active-canteen" : ""
-                } ${isClosed ? "is-closed-card" : ""}`}
+                } ${isClosed ? "is-closed-card" : ""} ${isSoldOut ? "is-item-sold-out is-closed-card" : ""}`}
               >
                 {/* Active Canteen Badge */}
                 {isCurrent && (
@@ -426,6 +435,10 @@ export default function ChooseCanteenModal({
                         {isClosed ? (
                           <span className="canteen-closed-pill">
                             🔴 Closed • {canteenOpenState.nextOpenText || canteen.openingHours || "Closed"}
+                          </span>
+                        ) : isSoldOut ? (
+                          <span className="canteen-closed-pill" style={{ background: "#fee2e2", color: "#dc2626", borderColor: "#fecaca" }}>
+                            ✕ Sold Out
                           </span>
                         ) : (
                           <span
@@ -527,21 +540,23 @@ export default function ChooseCanteenModal({
                     className={`btn-choose-this-canteen ${
                       isCurrent
                         ? "selected"
-                        : isClosed
+                        : isClosed || isSoldOut
                         ? "btn-canteen-closed"
                         : ""
                     }`}
                     onClick={() => {
-                      if (!isCurrent && !isClosed) {
+                      if (!isCurrent && !isClosed && !isSoldOut) {
                         onSelectCanteen(canteen, activeItem, canteen.price);
                       }
                     }}
-                    disabled={isCurrent || isClosed || (isItemMode && !canteen.isAvailable)}
+                    disabled={isCurrent || isClosed || isSoldOut}
                   >
                     {isCurrent
                       ? "✓ Currently Selected"
                       : isClosed
                       ? `✕ Closed (${canteenOpenState.nextOpenText || "Outside Hours"})`
+                      : isSoldOut
+                      ? "✕ Sold Out at this canteen"
                       : isItemMode
                       ? `Choose this canteen (₹${canteen.price})${hasSavings ? ` • ${savingsText}` : ""}`
                       : `Choose this canteen${hasWholeCartSavings ? ` • ${cartSavingsText}` : ""}`}

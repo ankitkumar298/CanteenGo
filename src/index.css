@@ -3015,14 +3015,13 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
 .cart-switcher-pill {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  padding: 6px 14px 6px 6px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 7px 14px 7px 7px;
   cursor: pointer;
   transition: all 0.15s ease;
-  white-space: nowrap;
   flex-shrink: 0;
   font-family: inherit;
   box-shadow: none;
@@ -3040,26 +3039,46 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
 }
 
 .cart-switcher-pill .pill-thumb {
-  width: 38px;
-  height: 38px;
+  width: 40px;
+  height: 40px;
   border-radius: 8px;
   object-fit: cover;
   border: 1px solid #e2e8f0;
   flex-shrink: 0;
 }
 
+.cart-switcher-pill .pill-text-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  white-space: nowrap;
+}
+
 .cart-switcher-pill .pill-name {
   font-size: 0.82rem;
   font-weight: 700;
   color: #17243A;
-  display: block;
+  line-height: 1.2;
+}
+
+.cart-switcher-pill .pill-sub-row {
+  display: flex;
+  align-items: center;
+  gap: 0;
 }
 
 .cart-switcher-pill .pill-price {
   font-size: 0.76rem;
   font-weight: 700;
   color: #F45B0B;
-  display: block;
+  line-height: 1.2;
+}
+
+.cart-switcher-pill .pill-qty {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: #64748b;
+  line-height: 1.2;
 }
 
 .cart-switcher-pill .pill-canteen-hint {
@@ -3072,6 +3091,10 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
 
 .cart-switcher-pill.active .pill-price {
   color: #F45B0B !important;
+}
+
+.cart-switcher-pill.active .pill-qty {
+  color: #64748b !important;
 }
 
 /* Simple Plain Canteen Name under Item Name in Cart */
@@ -3649,6 +3672,17 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
 .btn-choose-this-canteen:disabled:not(.selected)::after {
   content: "Closed ⓘ";
   color: #94a3b8;
+}
+
+/* Specific Sold Out state when item is out of stock at this canteen */
+.choose-canteen-card.is-item-sold-out .btn-choose-this-canteen {
+  background: #fef2f2 !important;
+  border: 1px solid #fecaca !important;
+}
+
+.choose-canteen-card.is-item-sold-out .btn-choose-this-canteen::after {
+  content: "Sold Out ✕" !important;
+  color: #ef4444 !important;
 }
 
 /* Responsive Stacking for Small Devices (< 680px) */

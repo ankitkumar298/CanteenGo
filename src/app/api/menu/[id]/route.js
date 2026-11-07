@@ -15,14 +15,21 @@ export async function PUT(request, context) {
     const data = await request.json();
     const updateData = {};
 
-    if (data.name !== undefined) {
-      if (data.name.trim() === "") {
-        return Response.json({ message: "Item name cannot be empty" }, { status: 400 });
-      }
-      updateData.name = data.name.trim();
+    const existing = await Menu.findById(id);
+    if (!existing) {
+      return Response.json({ message: "Menu item not found" }, { status: 404 });
     }
 
-    if (data.price !== undefined) {
+    // Per-canteen price update
+    if (data.canteenId && (data.canteenPrice !== undefined || data.price !== undefined)) {
+      const p = Number(data.canteenPrice !== undefined ? data.canteenPrice : data.price);
+      if (!isNaN(p) && p >= 0) {
+        const cp = { ...(existing.canteenPrices || {}) };
+        cp[data.canteenId] = p;
+        updateData.canteenPrices = cp;
+        updateData.price = p;
+      }
+    } else if (data.price !== undefined) {
       const numericPrice = Number(data.price);
       if (isNaN(numericPrice) || numericPrice < 0) {
         return Response.json({ message: "Price must be a valid positive number" }, { status: 400 });
@@ -30,8 +37,28 @@ export async function PUT(request, context) {
       updateData.price = numericPrice;
     }
 
-    if (data.available !== undefined) {
+    // Per-canteen availability toggle (e.g. NK Food Court marking sold out)
+    if (data.canteenId && data.canteenAvailable !== undefined) {
+      let soldOut = Array.isArray(existing.soldOutCanteens) ? [...existing.soldOutCanteens] : [];
+      if (data.canteenAvailable === false) {
+        if (!soldOut.includes(data.canteenId)) {
+          soldOut.push(data.canteenId);
+        }
+      } else {
+        soldOut = soldOut.filter((c) => c !== data.canteenId);
+      }
+      updateData.soldOutCanteens = soldOut;
+      updateData.available = true; // Keep global document active for other canteens
+    } else if (data.available !== undefined) {
       updateData.available = Boolean(data.available);
+    }
+
+    if (data.canteenPrices !== undefined && typeof data.canteenPrices === "object") {
+      updateData.canteenPrices = data.canteenPrices;
+    }
+
+    if (data.soldOutCanteens !== undefined && Array.isArray(data.soldOutCanteens)) {
+      updateData.soldOutCanteens = data.soldOutCanteens;
     }
 
     if (data.category !== undefined) {
