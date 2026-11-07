@@ -48,21 +48,17 @@ export async function GET(request) {
       studentAccountConditions.push({ studentEmail: email.toLowerCase().trim() });
     }
 
-    if (phone && name && name.trim()) {
-      const cleanPhone = phone.replace(/\D/g, "");
-      studentAccountConditions.push({
-        $and: [
-          { studentName: new RegExp(`^${name.trim()}$`, "i") },
-          { $or: [{ studentPhone: cleanPhone }, { studentPhone: phone }] }
-        ]
-      });
-    } else if (phone) {
+    if (phone) {
       const cleanPhone = phone.replace(/\D/g, "");
       studentAccountConditions.push({
         $or: [{ studentPhone: cleanPhone }, { studentPhone: phone }]
       });
-    } else if (name && name.trim()) {
-      studentAccountConditions.push({ studentName: new RegExp(`^${name.trim()}$`, "i") });
+    }
+
+    if (name && name.trim()) {
+      studentAccountConditions.push({
+        studentName: new RegExp(name.trim(), "i")
+      });
     }
 
     if (studentAccountConditions.length > 0) {

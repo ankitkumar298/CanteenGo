@@ -110,9 +110,11 @@ export default function YourOrdersPage({
 
       if (studentProfile?.phone) {
         url += `&phone=${encodeURIComponent(studentProfile.phone)}`;
-      } else if (studentProfile?.email) {
+      }
+      if (studentProfile?.email) {
         url += `&email=${encodeURIComponent(studentProfile.email)}`;
-      } else if (studentProfile?.name) {
+      }
+      if (studentProfile?.name) {
         url += `&name=${encodeURIComponent(studentProfile.name)}`;
       }
 
@@ -195,16 +197,20 @@ export default function YourOrdersPage({
       const profileName = String(studentProfile.name || "").trim().toLowerCase();
       const orderName = String(o.studentName || "").trim().toLowerCase();
       const hasName = Boolean(profileName && orderName);
-      const isNameMatch = hasName && profileName === orderName;
+      const isNameMatch = hasName && (
+        profileName === orderName ||
+        orderName.includes(profileName) ||
+        profileName.includes(orderName)
+      );
 
       // Email match with valid email format
       if (isEmailMatch && profileEmail.includes("@")) return true;
-      // Phone AND Name match (requires both to avoid test phone collisions)
-      if (isPhoneMatch && isNameMatch) return true;
-      // Phone AND Email match
-      if (isPhoneMatch && isEmailMatch) return true;
-      // Email AND Name match
-      if (isEmailMatch && isNameMatch) return true;
+
+      // Phone match (e.g. 9876543210)
+      if (isPhoneMatch) return true;
+
+      // Name match (e.g. "Ankit", "Ankit Test")
+      if (isNameMatch) return true;
     }
 
     return false;
