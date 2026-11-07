@@ -143,34 +143,75 @@ export default function YourOrdersPage({
     fetchOrders(true);
   };
 
-  // Requirement 9: Show student orders, with fallback to all orders so list view is always active
+  // Strict isolation: only show orders placed on this device or by this student account
+  const savedIds = (() => {
+    try {
+      return JSON.parse(localStorage.getItem("canteenGo_myOrderIds") || "[]");
+    } catch {
+      return [];
+    }
+  })();
+
+  const savedLastToken = (() => {
+    try {
+      return localStorage.getItem("canteenGo_lastToken") || "";
+    } catch {
+      return "";
+    }
+  })();
+
   const matchedOrders = orders.filter((o) => {
-    if (!studentProfile || (!studentProfile.phone && !studentProfile.name && !studentProfile.email)) {
-      try {
-        const savedIds = JSON.parse(localStorage.getItem("canteenGo_myOrderIds") || "[]");
-        if (savedIds.includes(o._id)) return true;
-      } catch {}
-      return false;
+    if (!o) return false;
+    const orderIdStr = String(o._id || "");
+
+    // 1. Order placed on this browser/device
+    if (savedIds && savedIds.length > 0 && savedIds.some((id) => String(id) === orderIdStr)) {
+      return true;
+    }
+    if (savedLastToken && (o.tokenNumber === savedLastToken || orderIdStr === savedLastToken)) {
+      return true;
     }
 
-    const cleanProfilePhone = String(studentProfile.phone || "").replace(/\D/g, "");
-    const cleanOrderPhone = String(o.studentPhone || "").replace(/\D/g, "");
+    // 2. Strict student account match
+    if (studentProfile) {
+      if (
+        studentProfile.studentId &&
+        o.studentId &&
+        String(studentProfile.studentId).trim() === String(o.studentId).trim()
+      ) {
+        return true;
+      }
 
-    const isPhoneMatch = cleanProfilePhone && cleanOrderPhone && cleanProfilePhone === cleanOrderPhone;
-    const isEmailMatch =
-      studentProfile.email &&
-      o.studentEmail &&
-      studentProfile.email.toLowerCase().trim() === o.studentEmail.toLowerCase().trim();
-    const isNameMatch =
-      studentProfile.name &&
-      o.studentName &&
-      studentProfile.name.toLowerCase().trim() === o.studentName.toLowerCase().trim();
+      const cleanProfilePhone = String(studentProfile.phone || "").replace(/\D/g, "");
+      const cleanOrderPhone = String(o.studentPhone || "").replace(/\D/g, "");
+      const hasPhone = Boolean(cleanProfilePhone && cleanOrderPhone && cleanProfilePhone.length >= 7);
+      const isPhoneMatch = hasPhone && cleanProfilePhone === cleanOrderPhone;
 
-    return Boolean(isPhoneMatch || isEmailMatch || isNameMatch);
+      const profileEmail = String(studentProfile.email || "").trim().toLowerCase();
+      const orderEmail = String(o.studentEmail || "").trim().toLowerCase();
+      const hasEmail = Boolean(profileEmail && orderEmail);
+      const isEmailMatch = hasEmail && profileEmail === orderEmail;
+
+      const profileName = String(studentProfile.name || "").trim().toLowerCase();
+      const orderName = String(o.studentName || "").trim().toLowerCase();
+      const hasName = Boolean(profileName && orderName);
+      const isNameMatch = hasName && profileName === orderName;
+
+      // Email match with valid email format
+      if (isEmailMatch && profileEmail.includes("@")) return true;
+      // Phone AND Name match (requires both to avoid test phone collisions)
+      if (isPhoneMatch && isNameMatch) return true;
+      // Phone AND Email match
+      if (isPhoneMatch && isEmailMatch) return true;
+      // Email AND Name match
+      if (isEmailMatch && isNameMatch) return true;
+    }
+
+    return false;
   });
 
-  // If specific matched orders exist for this student, display them; otherwise fallback to recent orders
-  const myOrders = matchedOrders.length > 0 ? matchedOrders : orders;
+  // Strict personal orders only — never dump campus strangers' orders
+  const myOrders = matchedOrders;
 
   // Requirement 8: Search filter by Token, Items, Student, or Canteen
   const searchedOrders = myOrders.filter((o) => {

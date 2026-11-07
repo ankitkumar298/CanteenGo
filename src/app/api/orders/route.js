@@ -43,19 +43,30 @@ export async function GET(request) {
     let query = {};
     const conditions = [];
 
-    if (phone) {
+    const studentAccountConditions = [];
+    if (email && email.trim()) {
+      studentAccountConditions.push({ studentEmail: email.toLowerCase().trim() });
+    }
+
+    if (phone && name && name.trim()) {
       const cleanPhone = phone.replace(/\D/g, "");
-      conditions.push({
+      studentAccountConditions.push({
+        $and: [
+          { studentName: new RegExp(`^${name.trim()}$`, "i") },
+          { $or: [{ studentPhone: cleanPhone }, { studentPhone: phone }] }
+        ]
+      });
+    } else if (phone) {
+      const cleanPhone = phone.replace(/\D/g, "");
+      studentAccountConditions.push({
         $or: [{ studentPhone: cleanPhone }, { studentPhone: phone }]
       });
+    } else if (name && name.trim()) {
+      studentAccountConditions.push({ studentName: new RegExp(`^${name.trim()}$`, "i") });
     }
 
-    if (email) {
-      conditions.push({ studentEmail: email.toLowerCase().trim() });
-    }
-
-    if (name && name.trim()) {
-      conditions.push({ studentName: new RegExp(`^${name.trim()}$`, "i") });
+    if (studentAccountConditions.length > 0) {
+      conditions.push({ $or: studentAccountConditions });
     }
 
     if (ids) {

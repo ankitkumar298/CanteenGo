@@ -41,13 +41,7 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
   const prevTrackedStatusRef = useRef(null);
 
   // Search & Filter state
-  const [searchToken, setSearchToken] = useState(() => {
-    try {
-      return localStorage.getItem("canteenGo_lastToken") || "";
-    } catch {
-      return "";
-    }
-  });
+  const [searchToken, setSearchToken] = useState("");
 
   const [filterStage, setFilterStage] = useState("all"); // "all", "ready", "preparing", "pending"
   const [paperTokenInput, setPaperTokenInput] = useState("");
@@ -69,13 +63,63 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
     }
   })();
 
+  const savedMyOrderIds = (() => {
+    try {
+      return JSON.parse(localStorage.getItem("canteenGo_myOrderIds") || "[]");
+    } catch {
+      return [];
+    }
+  })();
+
   const isMyOrder = (order) => {
     if (!order) return false;
-    if (savedLastToken && (order.tokenNumber === savedLastToken || order._id === savedLastToken)) return true;
-    if (studentProfile?.phone && order.studentPhone && String(order.studentPhone).trim() === String(studentProfile.phone).trim()) return true;
-    if (studentProfile?.email && order.studentEmail && order.studentEmail.toLowerCase() === studentProfile.email.toLowerCase()) return true;
-    if (studentProfile?.name && order.studentName && order.studentName.trim().toLowerCase() === studentProfile.name.trim().toLowerCase()) return true;
-    if (searchToken && order.tokenNumber?.toUpperCase() === searchToken.trim().toUpperCase()) return true;
+    const orderIdStr = String(order._id || "");
+
+    // 1. Matched by device localStorage (order placed from this browser)
+    if (savedMyOrderIds && savedMyOrderIds.length > 0) {
+      if (savedMyOrderIds.some((id) => String(id) === orderIdStr)) {
+        return true;
+      }
+    }
+    if (savedLastToken && (order.tokenNumber === savedLastToken || orderIdStr === savedLastToken)) {
+      return true;
+    }
+
+    // 2. Matched by authenticated student account
+    if (studentProfile) {
+      if (
+        studentProfile.studentId &&
+        order.studentId &&
+        String(studentProfile.studentId).trim() === String(order.studentId).trim()
+      ) {
+        return true;
+      }
+
+      const cleanProfilePhone = String(studentProfile.phone || "").replace(/\D/g, "");
+      const cleanOrderPhone = String(order.studentPhone || "").replace(/\D/g, "");
+      const hasPhone = Boolean(cleanProfilePhone && cleanOrderPhone && cleanProfilePhone.length >= 7);
+      const isPhoneMatch = hasPhone && cleanProfilePhone === cleanOrderPhone;
+
+      const profileEmail = String(studentProfile.email || "").trim().toLowerCase();
+      const orderEmail = String(order.studentEmail || "").trim().toLowerCase();
+      const hasEmail = Boolean(profileEmail && orderEmail);
+      const isEmailMatch = hasEmail && profileEmail === orderEmail;
+
+      const profileName = String(studentProfile.name || "").trim().toLowerCase();
+      const orderName = String(order.studentName || "").trim().toLowerCase();
+      const hasName = Boolean(profileName && orderName);
+      const isNameMatch = hasName && profileName === orderName;
+
+      // Email match with valid email format (e.g. user@college.edu)
+      if (isEmailMatch && profileEmail.includes("@")) return true;
+      // Phone AND Name match (requires both to avoid generic test phone collisions)
+      if (isPhoneMatch && isNameMatch) return true;
+      // Phone AND Email match
+      if (isPhoneMatch && isEmailMatch) return true;
+      // Email AND Name match
+      if (isEmailMatch && isNameMatch) return true;
+    }
+
     return false;
   };
 
@@ -1230,32 +1274,7 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
   // =========================================================================
   // CAMPUS LIVE QUEUE (STUDENT VIEW) - Matching Exact Design
   // =========================================================================
-  const studentMatchedOrders = orders.filter((o) => {
-    if (!o) return false;
-    if (searchToken.trim()) {
-      const q = searchToken.trim().toLowerCase();
-      if (
-        o.tokenNumber?.toLowerCase() === q ||
-        o.tokenNumber?.toLowerCase() === `t-${q}` ||
-        o.tokenNumber?.toLowerCase().replace("t-", "") === q
-      ) {
-        return true;
-      }
-    }
-    if (studentProfile?.phone && o.studentPhone && String(o.studentPhone).trim() === String(studentProfile.phone).trim()) {
-      return true;
-    }
-    if (savedLastToken && (o.tokenNumber === savedLastToken || o._id === savedLastToken)) {
-      return true;
-    }
-    if (studentProfile?.email && o.studentEmail && o.studentEmail.toLowerCase() === studentProfile.email.toLowerCase()) {
-      return true;
-    }
-    if (studentProfile?.name && o.studentName && o.studentName.trim().toLowerCase() === studentProfile.name.trim().toLowerCase()) {
-      return true;
-    }
-    return false;
-  });
+  const studentMatchedOrders = orders.filter((o) => isMyOrder(o));
 
   const activeStudentOrders = studentMatchedOrders.filter((o) =>
     ["Pending", "Preparing", "Ready"].includes(o.orderStatus)
@@ -1282,7 +1301,9 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
 
   // Canteen-specific active student orders (Only orders belonging to the currently selected canteen!)
   const canteenActiveStudentOrders = useMemo(() => {
-    return activeStudentOrders.filter((o) => matchesCanteen(o, selectedBoardCanteen));
+    const forThisCanteen = activeStudentOrders.filter((o) => matchesCanteen(o, selectedBoardCanteen));
+    if (forThisCanteen.length > 0) return forThisCanteen;
+    return activeStudentOrders;
   }, [activeStudentOrders, selectedBoardCanteen]);
 
   const currentStudentOrder = useMemo(() => {
