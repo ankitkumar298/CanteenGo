@@ -2846,60 +2846,112 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
   transform: rotate(90deg);
 }
 
-/* Comparison Summary Banner in Modal */
+/* Comparison Summary Bar with 4 Metric Columns */
 .selected-item-preview-bar {
   display: flex;
   align-items: center;
-  gap: 12px;
-  background: #fffdf5;
+  background: #fefce8;
   border: 1px solid #fef08a;
   border-radius: 12px;
-  padding: 8px 14px;
+  padding: 10px 0;
   box-shadow: none;
+  gap: 0;
+}
+
+.preview-col {
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+}
+
+.preview-col-item {
+  flex: 1;
+  gap: 10px;
+  min-width: 0;
+}
+
+.preview-col-metric {
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  border-left: 1px solid #fde68a;
+  padding: 0 18px;
+  white-space: nowrap;
 }
 
 .preview-item-thumb {
-  width: 38px;
-  height: 38px;
+  width: 36px;
+  height: 36px;
   border-radius: 8px;
   object-fit: cover;
-  border: 1px solid #fde047;
+  border: 1px solid #e2e8f0;
   flex-shrink: 0;
 }
 
 .preview-item-info {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 0;
+  min-width: 0;
 }
 
 .preview-item-label {
-  font-size: 0;
-}
-
-.preview-item-label::before {
-  content: "Comparing Availability For";
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   font-weight: 500;
   color: #64748b;
-  text-transform: none;
-  letter-spacing: normal;
 }
 
 .preview-item-name {
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   font-weight: 800;
   color: #17243A;
 }
 
-.preview-item-meta {
-  font-size: 0.75rem;
-  color: #64748b;
-  font-weight: 500;
+.preview-metric-icon {
+  font-size: 0.85rem;
+  line-height: 1;
 }
 
-.preview-item-meta strong {
-  color: #17243A;
+.preview-metric-icon.metric-green {
+  color: #159447;
+}
+
+.preview-metric-icon.metric-star {
+  color: #f59e0b;
+  font-size: 0.95rem;
+}
+
+.preview-metric-icon.metric-orange {
+  color: #F45B0B;
+}
+
+.preview-metric-label {
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: #64748b;
+}
+
+.preview-metric-value {
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.preview-metric-value.metric-green {
+  color: #159447;
+}
+
+.preview-metric-value.metric-orange {
+  color: #F45B0B;
+}
+
+/* Strikethrough Original Price */
+.canteen-price-original {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  text-decoration: line-through;
+  font-weight: 500;
+  line-height: 1;
 }
 
 /* Cart Item Switcher Box inside Modal */
@@ -3519,18 +3571,17 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
 }
 
 .choose-canteen-card:has(.canteen-saving-pill) .canteen-price-val {
-  color: #159447;
+  color: #17243A;
 }
 
 .canteen-saving-pill {
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   font-weight: 700;
   color: #159447;
-  background: #dcfce7;
-  border: 1px solid #86efac;
-  padding: 1px 6px;
-  border-radius: 4px;
-  margin-top: 3px;
+  background: none;
+  border: none;
+  padding: 0;
+  margin-top: 1px;
   white-space: nowrap;
 }
 
@@ -3606,6 +3657,19 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
     width: 100%;
     max-height: 94vh;
     border-radius: 16px 16px 0 0;
+  }
+  .selected-item-preview-bar {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px 12px;
+  }
+  .preview-col-item {
+    width: 100%;
+  }
+  .preview-col-metric {
+    border-left: none;
+    border-top: 1px solid #fde68a;
+    padding: 6px 12px 0;
   }
   .choose-canteen-card {
     flex-direction: column;

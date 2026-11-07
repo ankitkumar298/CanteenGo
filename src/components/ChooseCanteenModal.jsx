@@ -155,6 +155,11 @@ export default function ChooseCanteenModal({
     });
   }, [sortBy, liveStats, basePrice]);
 
+  // Comparison bar summary metrics
+  const openCanteenPrices = sortedCanteens.filter(c => isCanteenOpenNow(c).isOpen).map(c => c.price);
+  const bestPrice = openCanteenPrices.length > 0 ? Math.min(...openCanteenPrices) : basePrice;
+  const maxSave = Math.max(0, (Number(activeItem?.price) || basePrice) - bestPrice);
+
   if (!isOpen) return null;
 
   return (
@@ -248,27 +253,35 @@ export default function ChooseCanteenModal({
             </div>
           )}
 
-          {/* Dynamic Item Banner (ONLY when an item was selected) */}
+          {/* Comparison Summary Bar with Metrics */}
           {isItemMode && (
             <div className="selected-item-preview-bar">
-              <img
-                src={displayItemImage}
-                alt={activeItem?.name}
-                className="preview-item-thumb"
-                onError={() => setImgError(true)}
-              />
-              <div className="preview-item-info">
-                <span className="preview-item-label">
-                  {activeItem?.isFromCart ? "CART ITEM CANTEEN SELECTION" : "CANTEEN COMPARISON"}
-                </span>
-                <strong className="preview-item-name">{activeItem?.name}</strong>
-                <div className="preview-item-meta">
-                  <span>Base Price: ₹{basePrice}</span>
-                  {activeItem?.quantity && <span> • Qty in Cart: {activeItem?.quantity}</span>}
-                  {activeItem?.canteen && (
-                    <span> • Currently: <strong>{activeItem.canteen.name}</strong></span>
-                  )}
+              <div className="preview-col preview-col-item">
+                <img
+                  src={displayItemImage}
+                  alt={activeItem?.name}
+                  className="preview-item-thumb"
+                  onError={() => setImgError(true)}
+                />
+                <div className="preview-item-info">
+                  <span className="preview-item-label">Comparing Availability For</span>
+                  <strong className="preview-item-name">{activeItem?.name}</strong>
                 </div>
+              </div>
+              <div className="preview-col preview-col-metric">
+                <span className="preview-metric-icon metric-green">◉</span>
+                <span className="preview-metric-label">Best Price</span>
+                <strong className="preview-metric-value metric-green">₹{bestPrice}</strong>
+              </div>
+              <div className="preview-col preview-col-metric">
+                <span className="preview-metric-icon metric-star">★</span>
+                <span className="preview-metric-label">Max Save</span>
+                <strong className="preview-metric-value metric-orange">₹{maxSave} per item</strong>
+              </div>
+              <div className="preview-col preview-col-metric">
+                <span className="preview-metric-icon metric-orange">◉</span>
+                <span className="preview-metric-label">Available At</span>
+                <strong className="preview-metric-value metric-orange">{sortedCanteens.length} Canteens</strong>
               </div>
             </div>
           )}
@@ -467,16 +480,19 @@ export default function ChooseCanteenModal({
                       </div>
                     )}
 
-                    {/* Row: Price (if item mode) with genuine Price Difference Savings & Stock Availability */}
+                    {/* Row: Price with strikethrough original & Savings */}
                     {isItemMode ? (
                       <div className="canteen-item-stats-row">
                         <div className="canteen-price-group">
+                          {hasSavings && (
+                            <span className="canteen-price-original">₹{currentItemPrice}</span>
+                          )}
                           <div className="canteen-price-val">
                             ₹{canteen.price}
                           </div>
                           {hasSavings && (
-                            <span className="canteen-saving-pill" title="Genuine savings over current selection">
-                              🏷️ {savingsText}
+                            <span className="canteen-saving-pill">
+                              {savingsText}
                             </span>
                           )}
                         </div>
