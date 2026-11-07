@@ -1475,17 +1475,20 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
             const cId = canteen.id || canteen.canteenId;
             const isSelected = cId === selectedBoardCanteenId;
 
-            // Map short clean labels matching screenshot
+            // Map short clean labels
             let label = canteen.shortName || canteen.name;
             if (cId.includes("34")) label = "Food Court (34 Block)";
-            else if (cId.includes("nk") || label.toLowerCase().includes("nk")) label = "Main Canteen";
+            else if (cId.includes("nk") || label.toLowerCase().includes("nk")) label = "NK Food Court";
+            else if (cId.includes("main") || label.toLowerCase().includes("main")) label = "Main Canteen";
             else if (cId.includes("sac") || label.toLowerCase().includes("activity")) label = "SAC Canteen";
             else if (cId.includes("sport") || label.toLowerCase().includes("sport")) label = "Sports Canteen";
+            else if (cId.includes("library") || label.toLowerCase().includes("library")) label = "Library Cafe";
 
             let icon = <StoreIcon size={16} />;
             if (cId.includes("34")) icon = <UtensilsIcon size={16} />;
-            else if (cId.includes("nk") || label.toLowerCase().includes("main")) icon = <StoreIcon size={16} />;
-            else if (cId.includes("sac") || label.toLowerCase().includes("sac")) icon = <CupIcon size={16} />;
+            else if (cId.includes("nk") || label.toLowerCase().includes("nk")) icon = <StoreIcon size={16} />;
+            else if (cId.includes("main") || label.toLowerCase().includes("main")) icon = <StoreIcon size={16} />;
+            else if (cId.includes("sac") || label.toLowerCase().includes("sac") || cId.includes("library") || label.toLowerCase().includes("cafe")) icon = <CupIcon size={16} />;
             else if (cId.includes("sport") || label.toLowerCase().includes("sport")) icon = <RunningIcon size={16} />;
 
             return (
