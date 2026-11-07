@@ -1,7 +1,17 @@
 import { useEffect, useState, useMemo, useRef } from "react";
 import { CAMPUS_CANTEENS, isCanteenOpenNow } from "../data/canteens";
-import { ClockIcon, CheckCircleIcon, SortIcon, CartIcon } from "./Icons";
+import { SortIcon } from "./Icons";
 import { useAppContext } from "@/context/AppContext";
+
+const CANTEEN_IMAGES = {
+  "foodcourt-34": "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=300&q=80",
+  "main-canteen": "https://images.unsplash.com/photo-1541123437800-1bb1317badc2?auto=format&fit=crop&w=300&q=80",
+  "nk-foodcourt": "https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&w=300&q=80",
+  "library-cafe": "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=300&q=80",
+  "sac-canteen": "https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&w=300&q=80",
+  "sports-complex": "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=300&q=80",
+  default: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=300&q=80"
+};
 
 const SORT_OPTIONS = [
   { id: "recommended", label: "Recommended", icon: "⭐" },
@@ -21,13 +31,11 @@ export default function ChooseCanteenModal({
   const { canteens: ctxCanteens } = useAppContext();
   const canteensList = propCanteens || (ctxCanteens && ctxCanteens.length > 0 ? ctxCanteens : CAMPUS_CANTEENS);
 
-  const [imgError, setImgError] = useState(false);
   const [activeItem, setActiveItem] = useState(targetItem);
   const [sortBy, setSortBy] = useState("recommended");
   const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
   const sortDropdownRef = useRef(null);
   const [liveStats, setLiveStats] = useState({});
-  const [loadingStats, setLoadingStats] = useState(false);
 
   useEffect(() => {
     const handleOutsideClick = (e) => {
@@ -44,9 +52,12 @@ export default function ChooseCanteenModal({
   }, [isSortDropdownOpen]);
 
   useEffect(() => {
-    setImgError(false);
-    setActiveItem(targetItem);
-  }, [targetItem]);
+    if (targetItem) {
+      setActiveItem(targetItem);
+    } else if (cartItems && cartItems.length > 0) {
+      setActiveItem(cartItems[0]);
+    }
+  }, [targetItem, cartItems]);
 
   // Fetch real-time live kitchen stats from backend API
   useEffect(() => {
@@ -57,7 +68,6 @@ export default function ChooseCanteenModal({
 
   const fetchLiveStats = async () => {
     try {
-      setLoadingStats(true);
       const res = await fetch("/api/canteens/stats");
       if (res.ok) {
         const data = await res.json();
@@ -68,9 +78,7 @@ export default function ChooseCanteenModal({
         setLiveStats(map);
       }
     } catch {
-      // Fallback to static values if network is unavailable
-    } finally {
-      setLoadingStats(false);
+      // Fallback gracefully to default canteen stats
     }
   };
 
@@ -90,51 +98,40 @@ export default function ChooseCanteenModal({
     };
   }, [isOpen, onClose]);
 
-  const isItemMode = Boolean(activeItem && activeItem.name);
-  const displayItemImage =
-    !imgError && activeItem?.image ? activeItem.image : "/images/samosa.jpg";
-  const basePrice = activeItem?.basePrice ?? activeItem?.price ?? 0;
+  const currentItem = activeItem || (cartItems && cartItems.length > 0 ? cartItems[0] : null);
+  const basePrice = Number(currentItem?.basePrice ?? currentItem?.price ?? 35);
+  const itemQty = Number(currentItem?.quantity ?? 1);
+  const displayItemImage = currentItem?.image || "/images/samosa.jpg";
+
+  // List of cart items to display in the selector strip
+  const itemsInCart = useMemo(() => {
+    if (cartItems && cartItems.length > 0) {
+      return cartItems;
+    }
+    if (currentItem) {
+      return [currentItem];
+    }
+    return [];
+  }, [cartItems, currentItem]);
 
   // Compute live data and dynamic sorting for canteens
   const sortedCanteens = useMemo(() => {
-    // Filter out "all" placeholder — an item can only be picked up from a real campus canteen
     let candidateCanteens = canteensList.filter((c) => c.id !== "all" && c.name !== "All Canteens");
-
-    // Filter canteens strictly to those where this item is offered
-    if (isItemMode && activeItem) {
-      const avail = activeItem.availableCanteens;
-      if (Array.isArray(avail) && avail.length > 0 && !avail.includes("all")) {
-        candidateCanteens = candidateCanteens.filter((c) => avail.includes(c.id || c.canteenId));
-      } else if (activeItem.canteenId && activeItem.canteenId !== "all") {
-        candidateCanteens = candidateCanteens.filter((c) => (c.id || c.canteenId) === activeItem.canteenId);
-      }
-    }
 
     const list = candidateCanteens.map((canteen) => {
       const stats = liveStats[canteen.name] || {};
-      const ordersAhead =
-        typeof stats.ordersAhead === "number" ? stats.ordersAhead : 0;
       const calculatedWait =
         typeof stats.waitMinutes === "number"
           ? stats.waitMinutes
-          : canteen.prepMinutes;
+          : canteen.prepMinutes || 6;
       const rushStatus = stats.rushStatus || canteen.rushStatus;
       const price = Math.max(5, basePrice + (canteen.priceOffset || 0));
 
-      // Calculate approximate ready-by time
-      const readyDate = new Date(Date.now() + calculatedWait * 60000);
-      const readyByTime = readyDate.toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit"
-      });
-
       return {
         ...canteen,
-        ordersAhead,
         waitMinutes: calculatedWait,
         rushStatus,
-        price,
-        readyByTime
+        price
       };
     });
 
@@ -142,25 +139,32 @@ export default function ChooseCanteenModal({
       return [...list].sort((a, b) => a.price - b.price);
     }
     if (sortBy === "nearest") {
-      return [...list].sort((a, b) => a.distanceMeters - b.distanceMeters);
+      return [...list].sort((a, b) => (a.distanceMeters || 100) - (b.distanceMeters || 100));
     }
 
-    // Default: "recommended" (Balanced algorithm: low wait time + near location + high stock)
+    // Default: "recommended" (Open first, then lowest wait + price)
     return [...list].sort((a, b) => {
-      const scoreA =
-        a.waitMinutes * 1.5 + a.walkingMinutes * 2 - (a.stockCount || 0) * 0.1;
-      const scoreB =
-        b.waitMinutes * 1.5 + b.walkingMinutes * 2 - (b.stockCount || 0) * 0.1;
+      const openA = isCanteenOpenNow(a).isOpen ? 0 : 1;
+      const openB = isCanteenOpenNow(b).isOpen ? 0 : 1;
+      if (openA !== openB) return openA - openB;
+
+      const scoreA = a.waitMinutes * 1.5 + (a.distanceMeters || 100) * 0.05 + a.price;
+      const scoreB = b.waitMinutes * 1.5 + (b.distanceMeters || 100) * 0.05 + b.price;
       return scoreA - scoreB;
     });
-  }, [sortBy, liveStats, basePrice]);
+  }, [canteensList, sortBy, liveStats, basePrice]);
+
+  // Calculate summary metrics
+  const openCanteens = sortedCanteens.filter((c) => isCanteenOpenNow(c).isOpen);
+  const bestPrice = openCanteens.length > 0 ? Math.min(...openCanteens.map((c) => c.price)) : basePrice;
+  const maxSavings = Math.max(0, basePrice - bestPrice);
 
   if (!isOpen) return null;
 
   return (
     <div className="choose-canteen-overlay" onClick={onClose}>
       <div
-        className="choose-canteen-modal light-theme-modal"
+        className="choose-canteen-modal light-theme-modal redesigned-comparison-modal"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
@@ -171,19 +175,15 @@ export default function ChooseCanteenModal({
           <div className="choose-canteen-header">
             <div>
               <div className="canteen-modal-tag-pill">
-                {isItemMode ? "FOOD AVAILABILITY COMPARISON" : "CAMPUS PICKUP HUBS"}
+                ⚖️ FOOD AVAILABILITY COMPARISON
               </div>
               <h3 className="choose-canteen-title">
-                {isItemMode
-                  ? `Available at ${sortedCanteens.length} Canteen${sortedCanteens.length > 1 ? "s" : ""}`
-                  : "Choose Campus Canteen"}
+                Available at {sortedCanteens.length} Canteen{sortedCanteens.length > 1 ? "s" : ""}
               </h3>
               <p className="choose-canteen-subtitle">
-                {isItemMode
-                  ? activeItem?.isFromCart
-                    ? `Showing live availability for your cart item: ${activeItem?.name}`
-                    : `Compare kitchen prep speed and distance for ${activeItem?.name}`
-                  : "Select where you want to order and pick up your hot food"}
+                Live availability and best options for:{" "}
+                <strong className="active-item-title-highlight">{currentItem?.name || "Product"}</strong>{" "}
+                (Qty: {itemQty})
               </p>
             </div>
 
@@ -197,32 +197,36 @@ export default function ChooseCanteenModal({
             </button>
           </div>
 
-          {/* Switch Between Products in Cart */}
-          {cartItems && cartItems.length > 1 && (
-            <div className="cart-item-switcher-box">
-              <div className="switcher-title-row">
-                <span className="switcher-icon-wrap">
-                  <CartIcon size={14} className="switcher-cart-icon" />
+          {/* Section 1: Cart Items Selection Row */}
+          {itemsInCart.length > 0 && (
+            <div className="compare-cart-items-container">
+              <div className="compare-cart-header">
+                <span className="cart-header-title">
+                  🛒 YOUR CART ITEMS ({itemsInCart.length})
                 </span>
-                <span className="switcher-title">Check other products in your cart:</span>
+                <span className="cart-header-hint">
+                  Select a product to compare availability
+                </span>
               </div>
-              <div className="switcher-chips-list">
-                {cartItems.map((ci) => {
-                  const isSelected = (activeItem?.menuItemId || activeItem?.name) === (ci.menuItemId || ci.name);
+
+              <div className="compare-cart-cards-row">
+                {itemsInCart.map((ci) => {
+                  const isSelected =
+                    (currentItem?.menuItemId || currentItem?._id || currentItem?.name) ===
+                    (ci.menuItemId || ci._id || ci.name);
                   return (
                     <button
-                      key={ci.menuItemId || ci.name}
+                      key={ci.menuItemId || ci._id || ci.name}
                       type="button"
-                      className={`cart-switcher-pill ${isSelected ? "active" : ""}`}
+                      className={`compare-cart-card ${isSelected ? "selected" : ""}`}
                       onClick={() => {
-                        setImgError(false);
                         setActiveItem({
-                          menuItemId: ci.menuItemId,
+                          menuItemId: ci.menuItemId || ci._id,
                           name: ci.name,
                           basePrice: ci.basePrice || ci.price,
                           price: ci.price,
                           image: ci.image,
-                          quantity: ci.quantity,
+                          quantity: ci.quantity || 1,
                           canteen: ci.canteen || selectedCanteen,
                           isFromCart: true
                         });
@@ -231,16 +235,17 @@ export default function ChooseCanteenModal({
                       <img
                         src={ci.image || "/images/samosa.jpg"}
                         alt={ci.name}
-                        className="pill-thumb"
+                        className="compare-card-thumb"
                         onError={(e) => {
                           e.target.src = "/images/samosa.jpg";
                         }}
                       />
-                      <span className="pill-name">{ci.name}</span>
-                      <span className="pill-price">₹{ci.price}</span>
-                      <span className="pill-canteen-hint">
-                        ({ci.canteen?.tag || ci.canteen?.shortName || ci.canteen?.name?.split(" ")[0] || "34 Block"})
-                      </span>
+                      <div className="compare-card-info">
+                        <span className="compare-card-name">{ci.name}</span>
+                        <span className="compare-card-meta">
+                          <span className="compare-card-price">₹{ci.price}</span> • Qty: {ci.quantity || 1}
+                        </span>
+                      </div>
                     </button>
                   );
                 })}
@@ -248,40 +253,66 @@ export default function ChooseCanteenModal({
             </div>
           )}
 
-          {/* Dynamic Item Banner (ONLY when an item was selected) */}
-          {isItemMode && (
-            <div className="selected-item-preview-bar">
+          {/* Section 2: 4-Column Summary Stats Banner */}
+          <div className="compare-summary-banner">
+            {/* Col 1: Product Name */}
+            <div className="cs-col cs-col-product">
               <img
                 src={displayItemImage}
-                alt={activeItem?.name}
-                className="preview-item-thumb"
-                onError={() => setImgError(true)}
+                alt={currentItem?.name}
+                className="cs-product-thumb"
+                onError={(e) => {
+                  e.target.src = "/images/samosa.jpg";
+                }}
               />
-              <div className="preview-item-info">
-                <span className="preview-item-label">
-                  {activeItem?.isFromCart ? "CART ITEM CANTEEN SELECTION" : "CANTEEN COMPARISON"}
-                </span>
-                <strong className="preview-item-name">{activeItem?.name}</strong>
-                <div className="preview-item-meta">
-                  <span>Base Price: ₹{basePrice}</span>
-                  {activeItem?.quantity && <span> • Qty in Cart: {activeItem?.quantity}</span>}
-                  {activeItem?.canteen && (
-                    <span> • Currently: <strong>{activeItem.canteen.name}</strong></span>
-                  )}
-                </div>
+              <div className="cs-text-wrap">
+                <span className="cs-label">Comparing Availability For</span>
+                <strong className="cs-value cs-val-name">{currentItem?.name || "Selected Item"}</strong>
               </div>
             </div>
-          )}
 
-          {/* COMPACT SORT TOOLBAR WITH FLOATING DROPDOWN CARD */}
+            {/* Col 2: Best Price */}
+            <div className="cs-col">
+              <span className="cs-icon">🏷️</span>
+              <div className="cs-text-wrap">
+                <span className="cs-label">Best Price</span>
+                <strong className="cs-value cs-val-green">₹{bestPrice}</strong>
+              </div>
+            </div>
+
+            {/* Col 3: Max Save */}
+            <div className="cs-col">
+              <span className="cs-icon">⭐</span>
+              <div className="cs-text-wrap">
+                <span className="cs-label">Max Save</span>
+                <strong className="cs-value cs-val-green">
+                  {maxSavings > 0 ? `₹${maxSavings} per item` : "₹0"}
+                </strong>
+              </div>
+            </div>
+
+            {/* Col 4: Available At */}
+            <div className="cs-col">
+              <span className="cs-icon">📍</span>
+              <div className="cs-text-wrap">
+                <span className="cs-label">Available At</span>
+                <strong className="cs-value cs-val-dark">{sortedCanteens.length} Canteens</strong>
+              </div>
+            </div>
+          </div>
+
+          {/* Section 3: Available Canteens Header & Sort */}
           <div className="canteen-sort-toolbar" ref={sortDropdownRef}>
             <div className="sort-toolbar-label-row">
-              <span className="sort-section-title">Available Canteens</span>
+              <div className="canteen-toolbar-heading">
+                <span className="canteen-store-icon">🏪</span>
+                <span className="sort-section-title">AVAILABLE CANTEENS</span>
+              </div>
 
               <div className="sort-dropdown-container">
                 <button
                   type="button"
-                  className="sort-dropdown-trigger"
+                  className="sort-dropdown-trigger redesigned-sort-trigger"
                   onClick={() => setIsSortDropdownOpen((prev) => !prev)}
                   title="Change sort order"
                 >
@@ -292,7 +323,7 @@ export default function ChooseCanteenModal({
                     </span>
                   </span>
                   <span className="sort-icon-box">
-                    <SortIcon size={16} />
+                    <SortIcon size={14} />
                   </span>
                 </button>
 
@@ -326,10 +357,10 @@ export default function ChooseCanteenModal({
           </div>
         </div>
 
-        {/* Scrollable List of Canteens */}
-        <div className="choose-canteen-list">
-          {sortedCanteens.map((canteen) => {
-            const currentItemCanteen = activeItem?.canteen || selectedCanteen;
+        {/* Section 4: Scrollable Streamlined Horizontal Rows */}
+        <div className="choose-canteen-list compare-canteen-rows-list">
+          {sortedCanteens.map((canteen, idx) => {
+            const currentItemCanteen = currentItem?.canteen || selectedCanteen;
             const isCurrent =
               currentItemCanteen?.id === canteen.id ||
               currentItemCanteen?.name === canteen.name;
@@ -338,204 +369,134 @@ export default function ChooseCanteenModal({
             const isClosed = !canteenOpenState.isOpen;
 
             // Genuine price difference savings calculation
-            const currentItemPrice = Number(activeItem?.price || basePrice);
-            const priceDiff = currentItemPrice - canteen.price;
-            const hasSavings = isItemMode && !isCurrent && priceDiff > 0;
-            const cartQty = Number(activeItem?.quantity) || 1;
-            const savingsText =
-              cartQty > 1
-                ? `Save ₹${priceDiff * cartQty} on ${cartQty} items`
-                : `Save ₹${priceDiff} per item`;
+            const priceDiff = basePrice - canteen.price;
+            const hasSavings = !isClosed && priceDiff > 0;
+            const isRecommended = idx === 0 && !isClosed && sortBy === "recommended";
 
-            // Whole-cart savings if opened for cart without specific active item
-            const currentCartTotal = cartItems.reduce((sum, ci) => sum + (Number(ci.price) * (Number(ci.quantity) || 1)), 0);
-            const canteenCartTotal = cartItems.reduce((sum, ci) => {
-              const base = Number(ci.basePrice || ci.price);
-              const cp = Math.max(5, base + (canteen.priceOffset || 0));
-              return sum + (cp * (Number(ci.quantity) || 1));
-            }, 0);
-            const totalCartQty = cartItems.reduce((sum, ci) => sum + (Number(ci.quantity) || 1), 0);
-            const cartSavings = currentCartTotal - canteenCartTotal;
-            const hasWholeCartSavings = !isItemMode && !isCurrent && cartSavings > 0;
-            const cartSavingsText = totalCartQty > 1
-              ? `Save ₹${cartSavings} on ${totalCartQty} items`
-              : `Save ₹${cartSavings} on cart`;
+            const canteenImgUrl =
+              CANTEEN_IMAGES[canteen.id] || canteen.image || CANTEEN_IMAGES.default;
+
+            const walkingMinutes = canteen.walkingMinutes || 1;
+            const distanceMeters = canteen.distanceMeters || 60;
+            const waitMins = canteen.waitMinutes || 6;
+            const openingHoursText = canteen.openingHours || "8:00 AM – 10:30 PM";
 
             return (
               <div
                 key={canteen.id}
-                className={`choose-canteen-card ${
-                  isCurrent ? "is-active-canteen" : ""
-                } ${isClosed ? "is-closed-card" : ""}`}
+                className={`canteen-horizontal-row ${
+                  isCurrent ? "is-current-selection" : ""
+                } ${isClosed ? "is-canteen-closed" : ""} ${
+                  isRecommended ? "is-canteen-recommended" : ""
+                }`}
               >
-                {/* Active Canteen Badge */}
-                {isCurrent && (
-                  <div className="current-canteen-ribbon">
-                    <CheckCircleIcon size={14} />
-                    <span>{isItemMode ? "SELECTED FOR THIS ITEM" : "CURRENT PICKUP CANTEEN"}</span>
-                  </div>
-                )}
-
-                <div className="choose-canteen-body">
-                  {/* Left Avatar / Image */}
-                  <div className="choose-canteen-thumb-wrap">
-                    {isItemMode ? (
-                      <img
-                        src={displayItemImage}
-                        alt={targetItem?.name || "Item"}
-                        className="choose-canteen-thumb"
-                        onError={() => setImgError(true)}
-                      />
-                    ) : (
-                      <div
-                        className="canteen-hub-avatar"
-                        style={{
-                          background: `linear-gradient(135deg, ${canteen.themeBg || "#ea580c"}22, ${canteen.themeBg || "#ea580c"}44)`,
-                          borderColor: canteen.themeBg || "#ea580c"
-                        }}
-                      >
-                        <span className="hub-emoji">{canteen.icon || "🏢"}</span>
-                        <span
-                          className="hub-tag"
-                          style={{ color: canteen.themeBg || "#ea580c" }}
-                        >
-                          {canteen.tag}
-                        </span>
-                      </div>
-                    )}
+                {/* Left Part: Canteen Building Photo + Details */}
+                <div className="canteen-row-left">
+                  <div className="canteen-photo-wrap">
+                    <img
+                      src={canteenImgUrl}
+                      alt={canteen.name}
+                      className="canteen-photo-thumb"
+                      onError={(e) => {
+                        e.target.src = CANTEEN_IMAGES.default;
+                      }}
+                    />
                   </div>
 
-                  <div className="choose-canteen-info">
-                    {/* Top Row: Canteen Name + Status/Closed Badge */}
-                    <div className="canteen-name-row">
-                      <h4 className="canteen-name">{canteen.name}</h4>
-                      <div className="canteen-status-pills-wrap">
-                        {isClosed ? (
-                          <span className="canteen-closed-pill">
-                            🔴 Closed • {canteenOpenState.nextOpenText || canteen.openingHours || "Closed"}
-                          </span>
-                        ) : (
-                          <span
-                            className={`canteen-rush-pill ${
-                              canteen.rushStatus === "Less busy"
-                                ? "rush-less"
-                                : canteen.rushStatus === "Moderate"
-                                ? "rush-moderate"
-                                : "rush-busy"
-                            }`}
-                          >
-                            {canteen.rushStatus}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Location & Directions */}
-                    <div className="canteen-meta-location">
-                      📍 <strong>{canteen.location}</strong> • {canteen.directions}
-                    </div>
-
-                    {/* Walking distance & Operating hours */}
-                    <div className="canteen-meta-row-sub">
-                      <span className="canteen-walking-pill">
-                        {canteen.walkingText}
-                      </span>
-                      {canteen.openingHours && (
-                        <span className="canteen-hours-sub">
-                          ⏰ {canteen.openingHours}
-                        </span>
+                  <div className="canteen-row-details">
+                    {/* Line 1: Name + Recommended / Selected Badge */}
+                    <div className="canteen-title-line">
+                      <strong className="canteen-name-text">{canteen.name}</strong>
+                      {isRecommended && (
+                        <span className="canteen-recommended-pill">★ Recommended</span>
+                      )}
+                      {isCurrent && (
+                        <span className="canteen-current-badge">✓ Selected</span>
                       )}
                     </div>
 
-                    {/* Live Kitchen Preparation Details */}
-                    {!isClosed && (
-                      <div className="canteen-live-eta-box">
-                        <div className="eta-badge-row">
-                          <ClockIcon size={14} />
-                          <strong>
-                            Est. Ready in ~{canteen.waitMinutes} mins
-                          </strong>
-                          <span className="eta-ready-by">
-                            (Approx. {canteen.readyByTime})
-                          </span>
-                        </div>
-                        <div className="eta-breakdown-sub">
-                          <span>{canteen.ordersAhead} orders ahead in queue</span>
-                          <span>•</span>
-                          <span>{canteen.counterDetails}</span>
-                        </div>
-                      </div>
-                    )}
+                    {/* Line 2: Location */}
+                    <div className="canteen-location-line">
+                      📍 {canteen.location || "Campus Block"}
+                    </div>
 
-                    {/* Row: Price (if item mode) with genuine Price Difference Savings & Stock Availability */}
-                    {isItemMode ? (
-                      <div className="canteen-item-stats-row">
-                        <div className="canteen-price-group">
-                          <div className="canteen-price-val">
-                            ₹{canteen.price}
-                          </div>
-                          {hasSavings && (
-                            <span className="canteen-saving-pill" title="Genuine savings over current selection">
-                              🏷️ {savingsText}
-                            </span>
-                          )}
-                        </div>
-                        <div className="canteen-stock-row">
-                          {isClosed ? (
-                            <span className="stock-closed">Closed for ordering</span>
-                          ) : canteen.isAvailable ? (
-                            <span className="stock-green">
-                              ✓ {canteen.stockCount} in stock
-                            </span>
-                          ) : (
-                            <span className="stock-red">✕ Out of stock</span>
-                          )}
-                        </div>
-                      </div>
-                    ) : hasWholeCartSavings ? (
-                      <div className="canteen-item-stats-row">
-                        <div className="canteen-price-group">
-                          <span className="canteen-saving-pill" title="Genuine savings for your cart items">
-                            🏷️ {cartSavingsText}
-                          </span>
-                        </div>
-                      </div>
-                    ) : null}
+                    {/* Line 3: Informational Chips Row */}
+                    <div className="canteen-chips-row">
+                      <span className="canteen-chip chip-walking">
+                        🚶 {walkingMinutes} min walk ({distanceMeters} m)
+                      </span>
+
+                      {!isClosed ? (
+                        <span className="canteen-chip chip-prep">
+                          🕒 Est. Ready in ~{waitMins} mins
+                        </span>
+                      ) : (
+                        <span className="canteen-chip chip-closed">
+                          🔴 Closed
+                        </span>
+                      )}
+
+                      <span className="canteen-chip chip-hours">
+                        🕒 {isClosed ? (canteenOpenState.nextOpenText || canteen.openingHours || "Opens at 12:00 PM") : openingHoursText}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
-                {/* Footer Action Button */}
-                <div className="choose-canteen-footer">
-                  <button
-                    type="button"
-                    className={`btn-choose-this-canteen ${
-                      isCurrent
-                        ? "selected"
-                        : isClosed
-                        ? "btn-canteen-closed"
-                        : ""
-                    }`}
-                    onClick={() => {
-                      if (!isCurrent && !isClosed) {
-                        onSelectCanteen(canteen, activeItem, canteen.price);
-                      }
-                    }}
-                    disabled={isCurrent || isClosed || (isItemMode && !canteen.isAvailable)}
-                  >
-                    {isCurrent
-                      ? "✓ Currently Selected"
-                      : isClosed
-                      ? `✕ Closed (${canteenOpenState.nextOpenText || "Outside Hours"})`
-                      : isItemMode
-                      ? `Choose this canteen (₹${canteen.price})${hasSavings ? ` • ${savingsText}` : ""}`
-                      : `Choose this canteen${hasWholeCartSavings ? ` • ${cartSavingsText}` : ""}`}
-                  </button>
+                {/* Right Part: Price, Savings Pill & Action Button */}
+                <div className="canteen-row-right">
+                  {!isClosed && (
+                    <div className="canteen-pricing-col">
+                      <div className="canteen-price-main">
+                        {hasSavings && (
+                          <span className="canteen-price-old">₹{basePrice}</span>
+                        )}
+                        <span className={`canteen-price-current ${hasSavings ? "price-discounted" : ""}`}>
+                          ₹{canteen.price}
+                        </span>
+                      </div>
+                      {hasSavings && (
+                        <span className="canteen-savings-pill">
+                          Save ₹{priceDiff} per item
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="canteen-action-col">
+                    {isClosed ? (
+                      <button
+                        type="button"
+                        className="btn-canteen-row btn-closed"
+                        disabled
+                        title="This canteen is currently closed"
+                      >
+                        Closed ⓘ
+                      </button>
+                    ) : isCurrent ? (
+                      <button
+                        type="button"
+                        className="btn-canteen-row btn-selected"
+                        disabled
+                      >
+                        ✓ Selected
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="btn-canteen-row btn-choose"
+                        onClick={() => onSelectCanteen(canteen, currentItem, canteen.price)}
+                      >
+                        Choose →
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             );
           })}
 
-          {/* Bottom spacer so the last card & action button are 100% visible and accessible */}
+          {/* Bottom spacer so the last row is fully visible */}
           <div className="choose-canteen-bottom-spacer" />
         </div>
       </div>

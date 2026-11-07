@@ -3546,6 +3546,481 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
   transform: none !important;
 }
 
+/* ==========================================================================
+   REDESIGNED FOOD AVAILABILITY COMPARISON MODAL (MATCHING IMAGE 2 EXACTLY)
+   ========================================================================== */
+.choose-canteen-modal.light-theme-modal.redesigned-comparison-modal {
+  max-width: 860px;
+}
+
+.active-item-title-highlight {
+  color: #0f172a;
+  font-weight: 800;
+}
+
+/* SECTION 1: Cart Items Selection Container */
+.compare-cart-items-container {
+  background: #ffffff;
+  border: 1px solid #fed7aa;
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin-top: 4px;
+}
+
+.compare-cart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.cart-header-title {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: 0.04em;
+}
+
+.cart-header-hint {
+  font-size: 0.76rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.compare-cart-cards-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: thin;
+}
+
+.compare-cart-cards-row::-webkit-scrollbar {
+  height: 4px;
+}
+
+.compare-cart-cards-row::-webkit-scrollbar-thumb {
+  background: #fed7aa;
+  border-radius: 999px;
+}
+
+.compare-cart-card {
+  flex: 1;
+  min-width: 170px;
+  max-width: 240px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: inherit;
+}
+
+.compare-cart-card:hover {
+  border-color: #fdba74;
+  transform: translateY(-1px);
+}
+
+.compare-cart-card.selected {
+  border: 1.5px solid #ea580c;
+  background: #fff7ed;
+  box-shadow: 0 2px 8px rgba(234, 88, 12, 0.12);
+}
+
+.compare-card-thumb {
+  width: 42px;
+  height: 42px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid #e2e8f0;
+  flex-shrink: 0;
+}
+
+.compare-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.compare-card-name {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.compare-card-meta {
+  font-size: 0.74rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.compare-card-price {
+  color: #ea580c;
+  font-weight: 700;
+}
+
+/* SECTION 2: 4-Column Summary Stats Banner */
+.compare-summary-banner {
+  display: grid;
+  grid-template-columns: 1.35fr 1fr 1.25fr 1fr;
+  align-items: center;
+  gap: 12px;
+  background: #ffffff;
+  border: 1px solid #fed7aa;
+  border-radius: 12px;
+  padding: 10px 16px;
+  margin-top: 4px;
+}
+
+.cs-col {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.cs-col-product {
+  gap: 10px;
+}
+
+.cs-product-thumb {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid #fed7aa;
+  flex-shrink: 0;
+}
+
+.cs-icon {
+  font-size: 1.15rem;
+  flex-shrink: 0;
+}
+
+.cs-text-wrap {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.cs-label {
+  font-size: 0.68rem;
+  color: #64748b;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.cs-value {
+  font-size: 0.92rem;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.cs-val-name {
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cs-val-green {
+  color: #16a34a;
+  font-size: 1.05rem;
+}
+
+.cs-val-dark {
+  color: #0f172a;
+}
+
+/* SECTION 3: Available Canteens Bar */
+.canteen-toolbar-heading {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.canteen-store-icon {
+  font-size: 1.05rem;
+}
+
+.redesigned-sort-trigger {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 8px !important;
+  padding: 4px 10px !important;
+}
+
+/* SECTION 4: Streamlined Horizontal Canteen Rows */
+.compare-canteen-rows-list {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 12px 22px 28px 22px;
+}
+
+.canteen-horizontal-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: #ffffff;
+  border: 1px solid #fed7aa;
+  border-radius: 14px;
+  padding: 10px 14px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.canteen-horizontal-row:hover {
+  box-shadow: 0 4px 16px rgba(234, 88, 12, 0.08);
+  border-color: #fb923c;
+  transform: translateY(-1px);
+}
+
+.canteen-horizontal-row.is-canteen-recommended {
+  background: #fffdf9;
+  border-color: #fed7aa;
+}
+
+.canteen-horizontal-row.is-canteen-closed {
+  background: #ffffff;
+  border-color: #e2e8f0;
+}
+
+.canteen-horizontal-row.is-current-selection {
+  border: 1.5px solid #0284c7;
+  background: #f0f9ff;
+}
+
+.canteen-row-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex: 1;
+}
+
+.canteen-photo-wrap {
+  width: 80px;
+  height: 56px;
+  border-radius: 10px;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.canteen-photo-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.canteen-row-details {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.canteen-title-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.canteen-name-text {
+  font-size: 0.94rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.canteen-recommended-pill {
+  background: #dcfce7;
+  color: #16a34a;
+  border: 1px solid #bbf7d0;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+
+.canteen-current-badge {
+  background: #e0f2fe;
+  color: #0284c7;
+  border: 1px solid #bae6fd;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+
+.canteen-location-line {
+  font-size: 0.76rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.canteen-chips-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+.canteen-chip {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 6px;
+  line-height: 1.2;
+  display: inline-flex;
+  align-items: center;
+}
+
+.chip-walking {
+  background: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
+.chip-prep {
+  background: #fff7ed;
+  color: #ea580c;
+  border: 1px solid #fed7aa;
+}
+
+.chip-closed {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+  font-weight: 700;
+}
+
+.chip-hours {
+  color: #64748b;
+  background: transparent;
+  padding: 0 4px;
+}
+
+.canteen-row-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.canteen-pricing-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  min-width: 95px;
+}
+
+.canteen-price-main {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.canteen-price-old {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  text-decoration: line-through;
+  font-weight: 600;
+}
+
+.canteen-price-current {
+  font-size: 1.25rem;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.canteen-price-current.price-discounted {
+  color: #16a34a;
+}
+
+.canteen-savings-pill {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #15803d;
+  background: #dcfce7;
+  border: 1px solid #bbf7d0;
+  padding: 1px 7px;
+  border-radius: 999px;
+  margin-top: 2px;
+}
+
+.canteen-action-col {
+  display: flex;
+  align-items: center;
+}
+
+.btn-canteen-row {
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  border-radius: 8px;
+  padding: 8px 18px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 98px;
+  text-align: center;
+}
+
+.btn-canteen-row.btn-choose {
+  background: #ea580c;
+  color: #ffffff;
+}
+
+.btn-canteen-row.btn-choose:hover {
+  background: #c2410c;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(234, 88, 12, 0.25);
+}
+
+.btn-canteen-row.btn-selected {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #86efac;
+  cursor: default;
+}
+
+.btn-canteen-row.btn-closed {
+  background: #e2e8f0;
+  color: #64748b;
+  cursor: not-allowed;
+}
+
+@media (max-width: 680px) {
+  .compare-summary-banner {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .canteen-horizontal-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .canteen-row-right {
+    justify-content: space-between;
+    width: 100%;
+  }
+}
+
 /* Cart Canteen Closed Warning Banner and Badges */
 .cart-canteen-closed-banner {
   background: #fff1f2;
