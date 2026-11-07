@@ -381,12 +381,17 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
   color: #9a3412;
   font-size: 0.74rem;
   font-weight: 800;
-  padding: 3px 10px;
+  padding: 4px 10px;
   border-radius: 9999px;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   white-space: nowrap;
+}
+
+.student-hero-badges .hero-badge-icon {
+  flex-shrink: 0;
+  color: #ea580c;
 }
 
 .student-hero-actions {
@@ -408,6 +413,14 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
   box-shadow: 0 4px 14px rgba(234, 88, 12, 0.32);
   transition: all 0.2s ease;
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.hero-btn-order svg {
+  flex-shrink: 0;
 }
 
 .hero-btn-order:hover {
@@ -426,6 +439,15 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.hero-btn-canteen svg {
+  flex-shrink: 0;
+  color: #ea580c;
 }
 
 .hero-btn-canteen:hover {

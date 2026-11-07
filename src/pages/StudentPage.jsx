@@ -19,7 +19,11 @@ import {
   QrIcon,
   QueueIcon,
   ReceiptIcon,
-  LocationPinIcon
+  LocationPinIcon,
+  ZapIcon,
+  UsersIcon,
+  TicketIcon,
+  ArrowRightIcon
 } from "../components/Icons";
 
 export default function StudentPage({
@@ -714,9 +718,18 @@ export default function StudentPage({
               Pre-order your favourite meals, skip the long queue, and pick up fresh food from your campus canteen.
             </p>
             <div className="student-hero-badges">
-              <span className="hero-pill">⚡ Order in Seconds</span>
-              <span className="hero-pill">👥 Live Queue</span>
-              <span className="hero-pill">📱 Digital Token</span>
+              <span className="hero-pill">
+                <ZapIcon size={14} className="hero-badge-icon" />
+                <span>Order in Seconds</span>
+              </span>
+              <span className="hero-pill">
+                <UsersIcon size={14} className="hero-badge-icon" />
+                <span>Live Queue</span>
+              </span>
+              <span className="hero-pill">
+                <TicketIcon size={14} className="hero-badge-icon" />
+                <span>Digital Token</span>
+              </span>
             </div>
             <div className="student-hero-actions">
               <button
@@ -727,14 +740,17 @@ export default function StudentPage({
                   if (el) el.scrollIntoView({ behavior: "smooth" });
                 }}
               >
-                🛒 Order Now →
+                <CartIcon size={18} />
+                <span>Order Now</span>
+                <ArrowRightIcon size={15} />
               </button>
               <button
                 type="button"
                 className="hero-btn-canteen"
                 onClick={() => setIsCanteenModalOpen(true)}
               >
-                📍 Choose Canteen
+                <LocationPinIcon size={18} />
+                <span>Choose Canteen</span>
               </button>
             </div>
           </div>
