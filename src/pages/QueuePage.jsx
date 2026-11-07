@@ -31,7 +31,6 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(true);
-  const [refreshCountdown, setRefreshCountdown] = useState(10);
   const [lastRefreshed, setLastRefreshed] = useState(new Date().toLocaleTimeString());
   const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString());
   const [activeCanteenFilter, setActiveCanteenFilter] = useState(() => {
@@ -186,14 +185,8 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
   useEffect(() => {
     if (!autoRefresh) return;
     const interval = setInterval(() => {
-      setRefreshCountdown((prev) => {
-        if (prev <= 1) {
-          fetchQueueOrders(false);
-          return 10;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+      fetchQueueOrders(false);
+    }, 10000);
     return () => clearInterval(interval);
   }, [autoRefresh, activeCanteenFilter]);
 
@@ -1346,7 +1339,8 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
 
   // Detect when user has scrolled to the bottom of the page
   const [isAtBottom, setIsAtBottom] = useState(false);
-  const bottomSentinelRef = useRef(null);
+  const [isTokensDrawerOpen, setIsTokensDrawerOpen] = useState(false);
+  const [userManuallyClosed, setUserManuallyClosed] = useState(false);
   const tokenScrollRef = useRef(null);
 
   const scrollTokens = (direction) => {
@@ -1357,37 +1351,38 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
   };
 
   useEffect(() => {
-    const checkBottom = () => {
-      const scrollPos = window.innerHeight + window.scrollY;
-      const docHeight = document.documentElement.scrollHeight;
-      // When within 110px of bottom, consider at bottom
-      const atBottom = scrollPos >= docHeight - 110;
-      setIsAtBottom((prev) => (prev !== atBottom ? atBottom : prev));
+    let ticking = false;
+
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const scrollPos = window.innerHeight + window.scrollY;
+          const docHeight = document.documentElement.scrollHeight;
+
+          // Hysteresis buffer to completely eliminate layout oscillation / flicker:
+          // Open when user is near bottom (within 90px)
+          // Close only when user has scrolled back up (more than 280px from bottom)
+          if (scrollPos >= docHeight - 90) {
+            setIsAtBottom(true);
+            setIsTokensDrawerOpen(true);
+          } else if (scrollPos < docHeight - 280) {
+            setIsAtBottom(false);
+            setIsTokensDrawerOpen(false);
+            setUserManuallyClosed(false); // reset manual close state when leaving bottom
+          }
+          ticking = false;
+        });
+        ticking = true;
+      }
     };
 
-    checkBottom();
-    window.addEventListener("scroll", checkBottom, { passive: true });
-    window.addEventListener("resize", checkBottom, { passive: true });
-
-    let observer;
-    if (typeof IntersectionObserver !== "undefined" && bottomSentinelRef.current) {
-      observer = new IntersectionObserver(
-        ([entry]) => {
-          if (entry.isIntersecting) {
-            setIsAtBottom(true);
-          } else {
-            checkBottom();
-          }
-        },
-        { rootMargin: "0px 0px 60px 0px" }
-      );
-      observer.observe(bottomSentinelRef.current);
-    }
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("resize", handleScroll, { passive: true });
+    handleScroll();
 
     return () => {
-      window.removeEventListener("scroll", checkBottom);
-      window.removeEventListener("resize", checkBottom);
-      if (observer) observer.disconnect();
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", handleScroll);
     };
   }, []);
 
@@ -1441,14 +1436,11 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
           <button
             type="button"
             className="cq-sync-time"
-            onClick={() => {
-              fetchQueueOrders(true);
-              setRefreshCountdown(10);
-            }}
+            onClick={() => fetchQueueOrders(true)}
             title="Click to refresh live queue"
           >
             <RefreshIcon size={14} className={loading ? "spin-refresh" : ""} />
-            <span>Auto refresh in {refreshCountdown}s</span>
+            <span>Auto refresh in 10s</span>
           </button>
           <div className="cq-sync-divider"></div>
           <div className="cq-sync-dot-badge">
@@ -1733,9 +1725,9 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
       {/* 5. BOTTOM HIGHLIGHT STRIP: YOUR ORDER (Dynamic: Compact when sticky, Full tokens strip when at bottom) */}
       {currentStudentOrder ? (
         <div className={`cq-your-order-card ${isAtBottom ? "at-bottom" : "sticky-compact"}`}>
-          {/* Top Token Navigation Strip (Appears when user reaches bottom of the page) */}
-          {isAtBottom && canteenActiveStudentOrders.length > 0 && (
-            <div className="cq-yo-tokens-strip">
+          {/* Top Token Navigation Strip (Smooth shutter drawer with hysteresis and manual close) */}
+          {canteenActiveStudentOrders.length > 0 && (
+            <div className={`cq-yo-tokens-strip ${isTokensDrawerOpen && !userManuallyClosed ? "is-open" : "is-closed"}`}>
               <div className="cq-yo-strip-left">
                 {/* Orange Stack Icon */}
                 <div className="cq-yo-stack-icon" aria-hidden="true">
@@ -1803,6 +1795,15 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
                 >
                   ›
                 </button>
+                <button
+                  type="button"
+                  className="cq-yo-close-btn"
+                  onClick={() => setUserManuallyClosed(true)}
+                  title="Close tokens shutter"
+                  aria-label="Close tokens shutter"
+                >
+                  ✕
+                </button>
               </div>
             </div>
           )}
@@ -1835,6 +1836,20 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
                         ({(canteenActiveStudentOrders.findIndex((o) => o._id === currentStudentOrder?._id) + 1)}/{canteenActiveStudentOrders.length})
                       </span>
                       <span className="cq-yo-next-arrow">›</span>
+                    </button>
+                  )}
+                  {canteenActiveStudentOrders.length > 0 && (!isTokensDrawerOpen || userManuallyClosed) && (
+                    <button
+                      type="button"
+                      className="cq-yo-toggle-open-btn"
+                      onClick={() => {
+                        setIsTokensDrawerOpen(true);
+                        setUserManuallyClosed(false);
+                      }}
+                      title="View all tokens"
+                    >
+                      <span>Tokens ({canteenActiveStudentOrders.length})</span>
+                      <span className="toggle-arrow">▲</span>
                     </button>
                   )}
                 </div>
@@ -1990,8 +2005,6 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
           </div>
         </div>
       )}
-      {/* Bottom Sentinel to detect when user reaches the end of the page */}
-      <div ref={bottomSentinelRef} style={{ height: "1px", width: "100%", pointerEvents: "none" }} />
     </div>
   );
 }

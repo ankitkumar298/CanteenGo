@@ -12262,17 +12262,43 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
 }
 
-/* 1. Top Tokens Strip (Appears when scrolled to bottom) */
+/* 1. Top Tokens Strip (Smooth shutter drawer) */
 .cq-yo-tokens-strip {
   display: flex;
   align-items: center;
   justify-content: flex-start;
   gap: 14px;
-  padding: 12px 22px 10px 22px;
   background: #ffffff;
   border-bottom: 1px solid #f1f5f9;
   position: relative;
-  animation: stripFadeDown 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  padding: 0 22px;
+  pointer-events: none;
+  transform: translateY(-6px);
+  transition: max-height 0.32s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 0.24s ease,
+              padding 0.32s ease,
+              transform 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: max-height, opacity, transform;
+}
+
+.cq-yo-tokens-strip.is-open {
+  max-height: 140px;
+  opacity: 1;
+  padding: 12px 22px 10px 22px;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.cq-yo-tokens-strip.is-closed {
+  max-height: 0;
+  opacity: 0;
+  padding: 0 22px;
+  pointer-events: none;
+  border-bottom: none;
+  transform: translateY(-6px);
 }
 
 @keyframes stripFadeDown {
@@ -12354,6 +12380,55 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
   display: flex;
   align-items: center;
   flex-shrink: 0;
+}
+
+.cq-yo-close-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1.5px solid #e2e8f0;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 0.8rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  margin-left: 8px;
+  flex-shrink: 0;
+  padding: 0;
+  line-height: 1;
+}
+
+.cq-yo-close-btn:hover {
+  background: #fee2e2;
+  color: #ef4444;
+  border-color: #fca5a5;
+  transform: scale(1.06);
+}
+
+.cq-yo-toggle-open-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #fff7ed;
+  color: #ea580c;
+  border: 1px solid #fed7aa;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-size: 0.76rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  margin-left: 6px;
+}
+
+.cq-yo-toggle-open-btn:hover {
+  background: #ea580c;
+  color: #ffffff;
+  border-color: #ea580c;
 }
 
 /* Tokens Carousel */
