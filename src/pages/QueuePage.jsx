@@ -13,7 +13,15 @@ import {
   FlameIcon,
   ShieldCheckIcon,
   AlertTriangleIcon,
-  CartIcon
+  CartIcon,
+  UsersIcon,
+  UtensilsIcon,
+  StoreIcon,
+  CupIcon,
+  RunningIcon,
+  LayersIcon,
+  HourglassIcon,
+  CheckSquareIcon
 } from "../components/Icons";
 
 export default function QueuePage({ setActiveTab, isVendorView = false, onVendorAction, selectedCanteen = null }) {
@@ -23,6 +31,7 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(true);
+  const [refreshCountdown, setRefreshCountdown] = useState(10);
   const [lastRefreshed, setLastRefreshed] = useState(new Date().toLocaleTimeString());
   const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString());
   const [activeCanteenFilter, setActiveCanteenFilter] = useState(() => {
@@ -177,8 +186,14 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
   useEffect(() => {
     if (!autoRefresh) return;
     const interval = setInterval(() => {
-      fetchQueueOrders(false);
-    }, 4000);
+      setRefreshCountdown((prev) => {
+        if (prev <= 1) {
+          fetchQueueOrders(false);
+          return 10;
+        }
+        return prev - 1;
+      });
+    }, 1000);
     return () => clearInterval(interval);
   }, [autoRefresh, activeCanteenFilter]);
 
@@ -1285,13 +1300,16 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
 
   const [selectedStudentOrderId, setSelectedStudentOrderId] = useState(null);
 
-  // Selected Canteen for the Live Queue Display
+  // Selected Canteen for the Live Queue Display (defaults to "all" to match screenshot)
   const [selectedBoardCanteenId, setSelectedBoardCanteenId] = useState(() => {
     if (selectedCanteen?.id) return selectedCanteen.id;
-    return canteensList[0]?.id || canteensList[0]?.canteenId || "foodcourt-34";
+    return "all";
   });
 
   const selectedBoardCanteen = useMemo(() => {
+    if (selectedBoardCanteenId === "all") {
+      return { id: "all", name: "All Canteens", shortName: "All Canteens" };
+    }
     return (
       canteensList.find((c) => (c.id || c.canteenId) === selectedBoardCanteenId) ||
       canteensList[0] ||
@@ -1299,10 +1317,11 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
     );
   }, [canteensList, selectedBoardCanteenId]);
 
-  // Canteen-specific active student orders (Strictly only orders belonging to the currently selected canteen!)
+  // Canteen-specific active student orders
   const canteenActiveStudentOrders = useMemo(() => {
+    if (selectedBoardCanteenId === "all") return activeStudentOrders;
     return activeStudentOrders.filter((o) => matchesCanteen(o, selectedBoardCanteen));
-  }, [activeStudentOrders, selectedBoardCanteen]);
+  }, [activeStudentOrders, selectedBoardCanteen, selectedBoardCanteenId]);
 
   const currentStudentOrder = useMemo(() => {
     if (selectedStudentOrderId) {
@@ -1372,10 +1391,11 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
     };
   }, []);
 
-  // Filter orders for the selected canteen
+  // Filter orders for the selected canteen (or all campus)
   const boardOrders = useMemo(() => {
+    if (selectedBoardCanteenId === "all") return orders;
     return orders.filter((o) => matchesCanteen(o, selectedBoardCanteen));
-  }, [orders, selectedBoardCanteen]);
+  }, [orders, selectedBoardCanteen, selectedBoardCanteenId]);
 
   const boardPreparingOrders = useMemo(() => {
     return boardOrders.filter((o) => o.orderStatus === "Preparing");
@@ -1406,12 +1426,13 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
       <div className="cq-header">
         <div className="cq-header-left">
           <div className="cq-header-icon-box">
-            🛎️
+            <UsersIcon size={24} />
           </div>
+          <div className="cq-header-divider"></div>
           <div>
             <h2 className="cq-header-title">Campus Live Queue</h2>
             <p className="cq-header-sub">
-              Public live counter monitor • Orders update in real-time as kitchen advances tokens
+              Real-time order queue and waiting time across campus canteens
             </p>
           </div>
         </div>
@@ -1420,15 +1441,19 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
           <button
             type="button"
             className="cq-sync-time"
-            onClick={() => fetchQueueOrders(true)}
+            onClick={() => {
+              fetchQueueOrders(true);
+              setRefreshCountdown(10);
+            }}
             title="Click to refresh live queue"
           >
             <RefreshIcon size={14} className={loading ? "spin-refresh" : ""} />
-            <span>Last Updated: {lastRefreshed}</span>
+            <span>Auto refresh in {refreshCountdown}s</span>
           </button>
+          <div className="cq-sync-divider"></div>
           <div className="cq-sync-dot-badge">
             <span className="cq-pulse-green"></span>
-            <span>Live Sync</span>
+            <span>Live</span>
           </div>
         </div>
       </div>
@@ -1437,9 +1462,32 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
       <div className="cq-canteen-bar">
         <span className="cq-canteen-label">Select Canteen:</span>
         <div className="cq-canteen-chips">
+          <button
+            type="button"
+            className={`cq-canteen-chip ${selectedBoardCanteenId === "all" ? "active" : ""}`}
+            onClick={() => setSelectedBoardCanteenId("all")}
+          >
+            <LayersIcon size={16} />
+            <span>All Canteens</span>
+          </button>
+
           {canteensList.map((canteen) => {
             const cId = canteen.id || canteen.canteenId;
             const isSelected = cId === selectedBoardCanteenId;
+
+            // Map short clean labels matching screenshot
+            let label = canteen.shortName || canteen.name;
+            if (cId.includes("34")) label = "Food Court (34 Block)";
+            else if (cId.includes("nk") || label.toLowerCase().includes("nk")) label = "Main Canteen";
+            else if (cId.includes("sac") || label.toLowerCase().includes("activity")) label = "SAC Canteen";
+            else if (cId.includes("sport") || label.toLowerCase().includes("sport")) label = "Sports Canteen";
+
+            let icon = <StoreIcon size={16} />;
+            if (cId.includes("34")) icon = <UtensilsIcon size={16} />;
+            else if (cId.includes("nk") || label.toLowerCase().includes("main")) icon = <StoreIcon size={16} />;
+            else if (cId.includes("sac") || label.toLowerCase().includes("sac")) icon = <CupIcon size={16} />;
+            else if (cId.includes("sport") || label.toLowerCase().includes("sport")) icon = <RunningIcon size={16} />;
+
             return (
               <button
                 key={cId}
@@ -1447,9 +1495,8 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
                 className={`cq-canteen-chip ${isSelected ? "active" : ""}`}
                 onClick={() => setSelectedBoardCanteenId(cId)}
               >
-                <span>{canteen.icon || "🏢"}</span>
-                <span>{canteen.shortName || canteen.name}</span>
-                {isSelected && <span className="chip-check">✓</span>}
+                {icon}
+                <span>{label}</span>
               </button>
             );
           })}
@@ -1458,43 +1505,47 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
 
       {/* 3. METRICS STRIP (4 METRICS IN A ROW) */}
       <div className="cq-metrics-card">
-        {/* Waiting in Queue */}
+        {/* Metric 1: Orders in Queue */}
         <div className="cq-metric-item">
-          <span className="cq-metric-icon">👥</span>
+          <div className="cq-metric-icon-box purple">
+            <UsersIcon size={20} />
+          </div>
           <div className="cq-metric-content">
-            <span className="cq-metric-title">Waiting in Queue</span>
+            <span className="cq-metric-title">Orders in Queue</span>
             <span className="cq-metric-num">{boardWaitingCount}</span>
-            <span className="cq-metric-sub">Orders in line</span>
           </div>
         </div>
 
-        {/* Now Cooking */}
+        {/* Metric 2: Now Preparing */}
         <div className="cq-metric-item">
-          <span className="cq-metric-icon">👨‍🍳</span>
+          <div className="cq-metric-icon-box amber">
+            <HourglassIcon size={20} />
+          </div>
           <div className="cq-metric-content">
-            <span className="cq-metric-title">Now Cooking</span>
+            <span className="cq-metric-title">Now Preparing</span>
             <span className="cq-metric-num">{boardPreparingCount}</span>
-            <span className="cq-metric-sub">Active on stove</span>
           </div>
         </div>
 
-        {/* Ready at Counter */}
+        {/* Metric 3: Ready for Pickup */}
         <div className="cq-metric-item">
-          <span className="cq-metric-icon">✅</span>
+          <div className="cq-metric-icon-box green">
+            <CheckSquareIcon size={20} />
+          </div>
           <div className="cq-metric-content">
-            <span className="cq-metric-title title-green">Ready at Counter</span>
+            <span className="cq-metric-title">Ready for Pickup</span>
             <span className="cq-metric-num num-green">{boardReadyCount}</span>
-            <span className="cq-metric-sub">Waiting for pickup</span>
           </div>
         </div>
 
-        {/* Estimated Queue Wait */}
+        {/* Metric 4: Avg. Wait Time */}
         <div className="cq-metric-item">
-          <span className="cq-metric-icon">🕒</span>
+          <div className="cq-metric-icon-box slate">
+            <ClockIcon size={20} />
+          </div>
           <div className="cq-metric-content">
-            <span className="cq-metric-title">Estimated Queue Wait</span>
-            <span className="cq-metric-num">~{boardEstWaitMinutes} min</span>
-            <span className="cq-metric-sub">From current kitchen load</span>
+            <span className="cq-metric-title">Avg. Wait Time</span>
+            <span className="cq-metric-num">~{boardEstWaitMinutes || 18} min</span>
           </div>
         </div>
       </div>
