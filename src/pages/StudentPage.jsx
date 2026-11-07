@@ -237,7 +237,11 @@ export default function StudentPage({
 
   useEffect(() => {
     const handleOutsideClick = (e) => {
-      if (canteenDropdownRef.current && !canteenDropdownRef.current.contains(e.target)) {
+      if (
+        canteenDropdownRef.current &&
+        !canteenDropdownRef.current.contains(e.target) &&
+        !e.target.closest(".hero-btn-canteen")
+      ) {
         setIsCanteenDropdownOpen(false);
       }
     };
@@ -746,8 +750,23 @@ export default function StudentPage({
               </button>
               <button
                 type="button"
-                className="hero-btn-canteen"
-                onClick={() => setIsCanteenModalOpen(true)}
+                className={`hero-btn-canteen ${isCanteenDropdownOpen ? "active" : ""}`}
+                onClick={() => {
+                  setIsCanteenDropdownOpen((prev) => !prev);
+                  const el = canteenDropdownRef.current || document.querySelector(".custom-canteen-dropdown-wrap");
+                  if (el) {
+                    const rect = el.getBoundingClientRect();
+                    const isFullyVisible = (
+                      rect.top >= 0 &&
+                      rect.bottom <= (window.innerHeight || document.documentElement.clientHeight)
+                    );
+                    if (!isFullyVisible) {
+                      el.scrollIntoView({ behavior: "smooth", block: "center" });
+                    }
+                    const triggerBtn = el.querySelector(".custom-canteen-trigger");
+                    if (triggerBtn) triggerBtn.focus();
+                  }
+                }}
               >
                 <LocationPinIcon size={18} />
                 <span>Choose Canteen</span>
@@ -868,7 +887,7 @@ export default function StudentPage({
                           setMenuAnimKey((prev) => prev + 1);
                         }}
                       >
-                        <span className="canteen-opt-icon">🌐</span>
+                        <span className="canteen-opt-icon"></span>
                         <span className="canteen-opt-name">All Canteens</span>
                         {currentCanteen.id === "all" && <span className="canteen-check-mark">✓</span>}
                       </button>
@@ -889,7 +908,7 @@ export default function StudentPage({
                               setMenuAnimKey((prev) => prev + 1);
                             }}
                           >
-                            <span className="canteen-opt-icon">{canteen.icon || "🏢"}</span>
+                            <span className="canteen-opt-icon">{canteen.icon || ""}</span>
                             <span className="canteen-opt-name">{canteen.shortName || canteen.name}</span>
                             {isSelected && <span className="canteen-check-mark">✓</span>}
                           </button>
