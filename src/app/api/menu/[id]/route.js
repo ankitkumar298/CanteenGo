@@ -20,14 +20,21 @@ export async function PUT(request, context) {
       return Response.json({ message: "Menu item not found" }, { status: 404 });
     }
 
-    // Per-canteen price update
+    // Per-canteen price update: ONLY updates this specific canteen's price in canteenPrices!
     if (data.canteenId && (data.canteenPrice !== undefined || data.price !== undefined)) {
       const p = Number(data.canteenPrice !== undefined ? data.canteenPrice : data.price);
       if (!isNaN(p) && p >= 0) {
         const cp = { ...(existing.canteenPrices || {}) };
+        const defaultPrice = existing.basePrice || existing.price || p;
+        const allCanteenIds = ["foodcourt-34", "nk-foodcourt", "main-canteen", "library-cafe"];
+        allCanteenIds.forEach((cid) => {
+          if (cp[cid] === undefined) {
+            cp[cid] = defaultPrice;
+          }
+        });
         cp[data.canteenId] = p;
         updateData.canteenPrices = cp;
-        updateData.price = p;
+        // Do NOT overwrite updateData.price so other canteens retain their own prices!
       }
     } else if (data.price !== undefined) {
       const numericPrice = Number(data.price);
@@ -35,6 +42,7 @@ export async function PUT(request, context) {
         return Response.json({ message: "Price must be a valid positive number" }, { status: 400 });
       }
       updateData.price = numericPrice;
+      updateData.basePrice = numericPrice;
     }
 
     // Per-canteen availability toggle (e.g. NK Food Court marking sold out)

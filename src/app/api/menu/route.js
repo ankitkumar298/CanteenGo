@@ -111,6 +111,16 @@ export async function GET(request) {
         updates.rating = 4.5;
         updates.ratingCount = 12;
       }
+      if (!item.canteenPrices || Object.keys(item.canteenPrices).length === 0) {
+        const base = item.basePrice || (match ? match.price : item.price) || 20;
+        updates.canteenPrices = {
+          "foodcourt-34": base,
+          "nk-foodcourt": base,
+          "main-canteen": base,
+          "library-cafe": base
+        };
+        updates.basePrice = base;
+      }
 
       if (Object.keys(updates).length > 0) {
         await Menu.findByIdAndUpdate(item._id, updates);
