@@ -139,6 +139,17 @@ export default function NotificationBell({ studentProfile }) {
                   time: new Date().toISOString(),
                   read: false
                 });
+              } else if (order.orderStatus === "Missed Pickup") {
+                newAlerts.push({
+                  id: `missed_${id}_${Date.now()}`,
+                  type: "missed",
+                  icon: "⚠️",
+                  title: `Missed Pickup: Token ${token}`,
+                  message: `Token ${token} was called at ${counter} but was not collected in time. Please reschedule pickup from Your Orders.`,
+                  token: token,
+                  time: new Date().toISOString(),
+                  read: false
+                });
               } else if (order.orderStatus === "Completed") {
                 newAlerts.push({
                   id: `complete_${id}_${Date.now()}`,
@@ -314,3 +325,4 @@ export default function NotificationBell({ studentProfile }) {
     </div>
   );
 }
+

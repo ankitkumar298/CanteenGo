@@ -6183,6 +6183,11 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
   border-left: 3px solid #dc2626;
 }
 
+.notif-item.type-missed {
+  background: #fffbeb;
+  border-left: 3px solid #f59e0b;
+}
+
 .notif-icon-circle {
   width: 36px;
   height: 36px;
@@ -6209,6 +6214,10 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
 
 .notif-icon-circle.type-declined {
   background: #fee2e2;
+}
+
+.notif-icon-circle.type-missed {
+  background: #fef3c7;
 }
 
 .notif-body {
