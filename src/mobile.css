@@ -1,22 +1,12 @@
 /* ==========================================================================
-   CANTEENGO - MOBILE & TABLET RESPONSIVE STYLESHEET (Step 1: Vendor Console)
-   Optimized for touchscreens, mobile viewports (360px - 768px), and iPad/tablets.
+   CANTEENGO - MOBILE REDESIGN FOR VENDOR CONSOLE
+   Designed specifically for mobile viewports (360px - 768px).
+   Delivers a fast, native-feeling, high-contrast kitchen operator experience.
    ========================================================================== */
 
 /* --------------------------------------------------------------------------
-   1. KEYFRAME ANIMATIONS FOR MOBILE TOUCH & INTERACTION
+   1. KEYFRAME ANIMATIONS & MOBILE UTILITIES
    -------------------------------------------------------------------------- */
-@keyframes mobileFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 @keyframes mobileSheetSlideUp {
   from {
     opacity: 0;
@@ -28,20 +18,33 @@
   }
 }
 
-@keyframes pulseGlow {
+@keyframes kdsCardPopIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes livePulseDot {
   0%, 100% {
-    box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.4);
+    transform: scale(1);
+    opacity: 1;
   }
   50% {
-    box-shadow: 0 0 0 6px rgba(22, 163, 74, 0);
+    transform: scale(1.4);
+    opacity: 0.7;
   }
 }
 
 /* --------------------------------------------------------------------------
-   2. GLOBAL MOBILE INPUT & TOUCH RULES
+   2. GLOBAL MOBILE FORM & TOUCH INPUT RULES
    -------------------------------------------------------------------------- */
 @media (max-width: 768px) {
-  /* Prevent iOS automatic zoom on focus while preserving touch precision */
+  /* Prevent iOS automatic input zoom */
   input[type="text"],
   input[type="number"],
   input[type="email"],
@@ -51,138 +54,270 @@
     font-size: 16px !important;
   }
 
-  /* Universal touch button active feedback */
+  /* Universal tap response */
   button:active,
   .btn:active,
   .status-chip:active,
-  .btn-view-toggle:active {
-    transform: scale(0.97);
-    transition: transform 0.1s ease;
+  .btn-view-toggle:active,
+  .btn-kds-accept:active,
+  .btn-kds-ready:active,
+  .btn-kds-decline:active {
+    transform: scale(0.97) !important;
+    transition: transform 0.08s ease !important;
   }
 }
 
 /* --------------------------------------------------------------------------
-   3. TABLETS & LARGE PHONES (max-width: 900px)
-   -------------------------------------------------------------------------- */
-@media (max-width: 900px) {
-  /* Live Kiosk Board 3-column swimlanes collapse to single stacked columns */
-  .vendor-kiosk-lanes-grid {
-    grid-template-columns: 1fr !important;
-    gap: 16px !important;
-  }
-
-  .vendor-kiosk-board-header {
-    flex-direction: column !important;
-    align-items: flex-start !important;
-    gap: 12px !important;
-  }
-
-  .kiosk-controls-right {
-    width: 100% !important;
-    justify-content: space-between !important;
-  }
-
-  /* Vendor Form Grid collapse from 4 columns to 2 */
-  .form-grid-4 {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 12px !important;
-  }
-}
-
-/* --------------------------------------------------------------------------
-   4. MOBILE VIEWPORTS (max-width: 768px)
+   3. VENDOR DASHBOARD MOBILE REDESIGN (< 768px)
    -------------------------------------------------------------------------- */
 @media (max-width: 768px) {
-  /* Vendor Top Canteen Role Bar */
+  /* Container Padding */
+  body {
+    overflow-x: hidden !important;
+  }
+
+  /* ------------------------------------------------------------------------
+     A. COMPACT APP BAR (Replace clunky 150px desktop banner with 50px app bar)
+     ------------------------------------------------------------------------ */
   .vendor-canteen-switch-bar {
-    flex-direction: column !important;
-    align-items: stretch !important;
-    gap: 12px !important;
-    padding: 12px 14px !important;
+    padding: 10px 14px !important;
     border-radius: 14px !important;
+    background: #0f172a !important;
+    color: #ffffff !important;
+    border: none !important;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.12) !important;
+    margin-bottom: 12px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    flex-wrap: nowrap !important;
   }
 
   .vendor-canteen-info {
-    width: 100% !important;
-    justify-content: flex-start !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    flex: 1 !important;
+    min-width: 0 !important;
   }
 
-  .vendor-canteen-selector {
-    width: 100% !important;
+  .vendor-canteen-icon-box {
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 10px !important;
+    font-size: 1.15rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
   }
 
-  .vendor-canteen-select {
-    width: 100% !important;
-    font-size: 0.88rem !important;
+  .vendor-canteen-text {
+    min-width: 0 !important;
   }
 
-  /* Vendor Primary Navigation Tabs Ribbon */
-  .vendor-tabs-bar {
+  /* Hide redundant desktop pills to save vertical space */
+  .vendor-canteen-top-badge {
+    display: none !important;
+  }
+
+  .vendor-canteen-name {
+    font-size: 0.95rem !important;
+    font-weight: 800 !important;
+    color: #ffffff !important;
+    margin: 0 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .vendor-canteen-sub {
+    font-size: 0.72rem !important;
+    color: #94a3b8 !important;
+    margin: 2px 0 0 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .vendor-canteen-right-actions {
+    display: flex !important;
+    align-items: center !important;
+    flex-shrink: 0 !important;
+  }
+
+  .vendor-terminal-status {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    color: #4ade80 !important;
+    padding: 4px 8px !important;
+    border-radius: 20px !important;
+    font-size: 0.72rem !important;
+    font-weight: 700 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+  }
+
+  .vendor-terminal-status span:last-child {
+    display: none !important; /* Hide long text on mobile, keep only live pulse */
+  }
+
+  .vendor-terminal-status::after {
+    content: "LIVE";
+    display: inline-block;
+    letter-spacing: 0.05em;
+  }
+
+  .terminal-live-dot {
+    width: 6px !important;
+    height: 6px !important;
+    background: #4ade80 !important;
+    border-radius: 50% !important;
+    animation: livePulseDot 1.5s infinite ease-in-out !important;
+  }
+
+  /* ------------------------------------------------------------------------
+     B. MICRO-METRICS KPI RIBBON (Replace 300px box grid with 50px pill carousel)
+     ------------------------------------------------------------------------ */
+  .stats-bar {
     display: flex !important;
     overflow-x: auto !important;
     white-space: nowrap !important;
     -webkit-overflow-scrolling: touch !important;
     scrollbar-width: none !important;
-    padding: 6px !important;
-    gap: 6px !important;
-    margin-bottom: 16px !important;
+    gap: 8px !important;
+    margin-bottom: 14px !important;
+    padding: 2px 0 !important;
   }
 
-  .vendor-tabs-bar::-webkit-scrollbar {
+  .stats-bar::-webkit-scrollbar {
     display: none !important;
   }
 
-  .vendor-tab-btn {
+  .stat-card {
     flex: 0 0 auto !important;
     padding: 8px 14px !important;
-    font-size: 0.84rem !important;
-    border-radius: 10px !important;
+    border-radius: 24px !important;
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
   }
 
-  /* Vendor Quick KPI Stats Grid: 2 per row */
-  .vendor-stats-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 10px !important;
-    margin-bottom: 16px !important;
+  .stat-icon {
+    width: 24px !important;
+    height: 24px !important;
+    border-radius: 50% !important;
+    font-size: 0.75rem !important;
+    border: none !important;
   }
 
-  .stat-card {
-    padding: 12px 14px !important;
+  .stat-label {
+    font-size: 0.7rem !important;
+    font-weight: 700 !important;
+    color: #64748b !important;
+    margin: 0 !important;
+  }
+
+  .stat-value {
+    font-size: 0.95rem !important;
+    font-weight: 800 !important;
+    color: #0f172a !important;
+    line-height: 1 !important;
+  }
+
+  /* ------------------------------------------------------------------------
+     C. SEGMENTED NAVIGATION TABS (Native iOS / Android Segmented Control)
+     ------------------------------------------------------------------------ */
+  .vendor-tabs-nav {
+    display: flex !important;
+    background: #f1f5f9 !important;
+    padding: 4px !important;
     border-radius: 12px !important;
-  }
-
-  .stat-card-value {
-    font-size: 1.45rem !important;
-  }
-
-  .stat-card-label {
-    font-size: 0.72rem !important;
-  }
-
-  /* Controls Bar: Search wrap full width, toggles side by side */
-  .vendor-orders-controls-bar {
-    flex-direction: column !important;
-    align-items: stretch !important;
-    gap: 10px !important;
+    gap: 4px !important;
     margin-bottom: 14px !important;
+  }
+
+  .vendor-tab-btn {
+    flex: 1 !important;
+    padding: 8px 6px !important;
+    font-size: 0.78rem !important;
+    font-weight: 700 !important;
+    border-radius: 9px !important;
+    border: none !important;
+    background: transparent !important;
+    color: #64748b !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 5px !important;
+    box-shadow: none !important;
+    transition: all 0.15s ease !important;
+    white-space: nowrap !important;
+  }
+
+  .vendor-tab-btn span {
+    font-size: 0.78rem !important;
+  }
+
+  .vendor-tab-btn.active {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+  }
+
+  /* ------------------------------------------------------------------------
+     D. ORDER CONTROLS & SEARCH BAR
+     ------------------------------------------------------------------------ */
+  .vendor-orders-controls-bar {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+    margin-bottom: 12px !important;
   }
 
   .vendor-search-wrap {
     width: 100% !important;
     max-width: 100% !important;
+    position: relative !important;
   }
 
   .vendor-search-input {
     width: 100% !important;
-    padding-left: 36px !important;
-    padding-right: 32px !important;
-    height: 40px !important;
+    height: 42px !important;
+    border-radius: 12px !important;
+    background: #ffffff !important;
+    border: 1.5px solid #e2e8f0 !important;
+    padding: 0 34px !important;
+    font-size: 16px !important; /* Prevents auto zoom */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03) !important;
   }
 
-  /* View toggle group: Orders vs Sales button full width row */
+  .vendor-search-wrap .search-icon {
+    left: 12px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+  }
+
+  .vendor-clear-search-btn {
+    right: 10px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    width: 24px !important;
+    height: 24px !important;
+    border-radius: 50% !important;
+    background: #f1f5f9 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  /* Second line of controls: Orders/Sales toggle + Refresh button */
   .vendor-orders-controls-bar > div:last-child {
     display: flex !important;
-    justify-content: space-between !important;
     width: 100% !important;
     gap: 8px !important;
   }
@@ -190,27 +325,43 @@
   .vendor-view-toggle-group {
     flex: 1 !important;
     display: flex !important;
-    justify-content: stretch !important;
+    background: #f1f5f9 !important;
+    padding: 3px !important;
+    border-radius: 10px !important;
+    gap: 3px !important;
   }
 
   .btn-view-toggle {
     flex: 1 !important;
-    text-align: center !important;
+    padding: 7px 10px !important;
+    font-size: 0.8rem !important;
+    font-weight: 700 !important;
+    border-radius: 8px !important;
+    border: none !important;
+    display: flex !important;
+    align-items: center !important;
     justify-content: center !important;
-    padding: 8px 10px !important;
-    font-size: 0.82rem !important;
+    gap: 4px !important;
   }
 
-  /* Status Filter Chips: Horizontal Swipeable Ribbon */
+  .btn-view-toggle.active {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.07) !important;
+  }
+
+  /* ------------------------------------------------------------------------
+     E. STATUS FILTER PILLS (Smooth Touch Swipe Ribbon)
+     ------------------------------------------------------------------------ */
   .vendor-status-chips {
     display: flex !important;
     overflow-x: auto !important;
     white-space: nowrap !important;
     -webkit-overflow-scrolling: touch !important;
     scrollbar-width: none !important;
-    padding-bottom: 6px !important;
+    padding: 2px 0 8px 0 !important;
     gap: 6px !important;
-    margin-bottom: 16px !important;
+    margin-bottom: 12px !important;
   }
 
   .vendor-status-chips::-webkit-scrollbar {
@@ -221,56 +372,262 @@
     flex: 0 0 auto !important;
     padding: 6px 12px !important;
     font-size: 0.78rem !important;
+    font-weight: 700 !important;
     border-radius: 20px !important;
+    border: 1px solid #e2e8f0 !important;
+    background: #ffffff !important;
+    color: #64748b !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
   }
 
-  /* KDS Kitchen Cards Grid: 1 Full-width Column on Mobile */
+  .status-chip.active {
+    background: #0f172a !important;
+    color: #ffffff !important;
+    border-color: #0f172a !important;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.18) !important;
+  }
+
+  .status-chip.active .status-chip-count {
+    background: rgba(255, 255, 255, 0.25) !important;
+    color: #ffffff !important;
+  }
+
+  .status-chip-count {
+    padding: 1px 6px !important;
+    border-radius: 10px !important;
+    font-size: 0.7rem !important;
+    background: #f1f5f9 !important;
+    color: #475569 !important;
+  }
+
+  /* ------------------------------------------------------------------------
+     F. KDS KITCHEN CARDS (Modern Mobile Touch Cards)
+     ------------------------------------------------------------------------ */
   .vendor-kds-grid {
     grid-template-columns: 1fr !important;
-    gap: 14px !important;
+    gap: 12px !important;
   }
 
   .kds-card {
-    border-radius: 14px !important;
-    animation: mobileFadeIn 0.25s ease !important;
+    border-radius: 16px !important;
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04) !important;
+    overflow: hidden !important;
+    animation: kdsCardPopIn 0.2s ease-out !important;
+  }
+
+  /* Status accent top ribbon for mobile */
+  .kds-card.status-pending {
+    border-top: 3.5px solid #ea580c !important;
+  }
+
+  .kds-card.status-preparing {
+    border-top: 3.5px solid #0284c7 !important;
+  }
+
+  .kds-card.status-ready {
+    border-top: 3.5px solid #16a34a !important;
+  }
+
+  .kds-card.status-cancelled {
+    border-top: 3.5px solid #dc2626 !important;
+    opacity: 0.8 !important;
   }
 
   .kds-card-header {
-    padding: 12px 14px !important;
+    padding: 10px 14px !important;
+    background: #ffffff !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
   }
 
   .kds-token-badge {
-    font-size: 1.3rem !important;
-    padding: 4px 10px !important;
+    font-size: 1.35rem !important;
+    font-weight: 900 !important;
+    color: #0f172a !important;
+    letter-spacing: -0.02em !important;
+  }
+
+  .kds-time-ago {
+    font-size: 0.72rem !important;
+    color: #64748b !important;
+    display: block !important;
   }
 
   .kds-card-body {
     padding: 12px 14px !important;
   }
 
-  .kds-card-footer {
-    padding: 10px 14px 14px !important;
-    flex-direction: column !important;
+  .kds-student-info {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    margin-bottom: 10px !important;
+    font-size: 0.84rem !important;
+  }
+
+  .kds-student-name {
+    font-weight: 700 !important;
+    color: #0f172a !important;
+  }
+
+  .kds-student-phone {
+    font-size: 0.78rem !important;
+    color: #64748b !important;
+  }
+
+  .kds-items-list {
+    background: #f8fafc !important;
+    border: 1px solid #f1f5f9 !important;
+    border-radius: 12px !important;
+    padding: 8px 10px !important;
+    margin-bottom: 10px !important;
+  }
+
+  .kds-item-row {
+    padding: 6px 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    border-bottom: 1px dashed #e2e8f0 !important;
+  }
+
+  .kds-item-row:last-child {
+    border-bottom: none !important;
+  }
+
+  .kds-item-left {
+    display: flex !important;
+    align-items: center !important;
     gap: 8px !important;
   }
 
-  .kds-card-footer .btn-action-step,
-  .kds-card-footer .btn-kiosk-call {
+  .kds-item-img {
+    width: 28px !important;
+    height: 28px !important;
+    border-radius: 6px !important;
+    object-fit: cover !important;
+  }
+
+  .kds-item-name {
+    font-size: 0.85rem !important;
+    font-weight: 700 !important;
+    color: #1e293b !important;
+  }
+
+  .kds-item-qty {
+    background: #0f172a !important;
+    color: #ffffff !important;
+    font-size: 0.74rem !important;
+    font-weight: 800 !important;
+    padding: 2px 7px !important;
+    border-radius: 6px !important;
+  }
+
+  /* Customer Remarks Banner */
+  .kds-remarks-box {
+    background: #fffbeb !important;
+    border: 1px solid #fef3c7 !important;
+    color: #92400e !important;
+    padding: 6px 10px !important;
+    border-radius: 8px !important;
+    font-size: 0.76rem !important;
+    margin-bottom: 8px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+  }
+
+  /* Card Footer & Action Buttons */
+  .kds-card-footer {
+    padding: 10px 14px 14px !important;
+    background: #ffffff !important;
+    border-top: 1px solid #f1f5f9 !important;
+  }
+
+  .kds-billing-row {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    margin-bottom: 10px !important;
+  }
+
+  .kds-total-amount {
+    font-size: 1.15rem !important;
+    font-weight: 900 !important;
+    color: #0f172a !important;
+  }
+
+  /* Actions Buttons: Full Width, Thumb-Friendly Height */
+  .kds-actions-grid {
+    display: flex !important;
+    gap: 8px !important;
+  }
+
+  .kds-actions-grid.two-cols {
+    display: flex !important;
+  }
+
+  .btn-kds-accept,
+  .btn-kds-ready,
+  .btn-kds-handover {
+    flex: 2 !important;
+    min-height: 44px !important;
+    border-radius: 12px !important;
+    font-size: 0.9rem !important;
+    font-weight: 800 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+  }
+
+  .btn-kds-accept {
+    background: #16a34a !important;
+    color: #ffffff !important;
+    border: none !important;
+    box-shadow: 0 3px 10px rgba(22, 163, 74, 0.25) !important;
+  }
+
+  .btn-kds-ready {
+    background: #0284c7 !important;
+    color: #ffffff !important;
+    border: none !important;
+    box-shadow: 0 3px 10px rgba(2, 132, 199, 0.25) !important;
     width: 100% !important;
-    min-height: 42px !important;
-    font-size: 0.88rem !important;
+  }
+
+  .btn-kds-decline {
+    flex: 1 !important;
+    min-height: 44px !important;
+    border-radius: 12px !important;
+    font-size: 0.85rem !important;
+    font-weight: 700 !important;
+    background: #fef2f2 !important;
+    color: #dc2626 !important;
+    border: 1px solid #fca5a5 !important;
+    display: flex !important;
+    align-items: center !important;
     justify-content: center !important;
   }
 
-  /* Add Item Form: 1-Column Stacking on Mobile */
+  /* ------------------------------------------------------------------------
+     G. MENU INVENTORY & ADD ITEM FORM MOBILE STYLES
+     ------------------------------------------------------------------------ */
+  .add-item-card {
+    padding: 16px !important;
+    border-radius: 16px !important;
+    margin-bottom: 14px !important;
+  }
+
   .form-grid-4 {
     grid-template-columns: 1fr !important;
     gap: 10px !important;
-  }
-
-  .add-item-card {
-    padding: 16px !important;
-    border-radius: 14px !important;
   }
 
   .image-input-upload-row {
@@ -280,60 +637,43 @@
 
   .btn-upload-image {
     width: 100% !important;
+    height: 42px !important;
     justify-content: center !important;
-    height: 40px !important;
   }
 
-  /* Preset photo chips horizontal scroll */
   .preset-photo-chips {
     overflow-x: auto !important;
     white-space: nowrap !important;
-    padding-bottom: 4px !important;
     scrollbar-width: none !important;
-  }
-
-  .preset-photo-chips::-webkit-scrollbar {
-    display: none !important;
-  }
-
-  /* Form action buttons */
-  .form-actions-bar {
-    flex-direction: column !important;
-    align-items: stretch !important;
-    gap: 12px !important;
+    padding-bottom: 4px !important;
   }
 
   .btn-submit-item {
     width: 100% !important;
-    height: 44px !important;
+    height: 46px !important;
     font-size: 0.95rem !important;
-    justify-content: center !important;
+    font-weight: 800 !important;
+    border-radius: 12px !important;
   }
 
-  /* Menu Table Card Mobile Optimizations */
+  /* Menu Table Toolbar */
   .card-header {
-    flex-direction: column !important;
-    align-items: stretch !important;
-    gap: 12px !important;
-    padding: 14px !important;
+    padding: 12px 14px !important;
   }
 
   .card-header > div:last-child {
+    display: flex !important;
     flex-direction: column !important;
-    align-items: stretch !important;
+    width: 100% !important;
     gap: 8px !important;
   }
 
   .card-header input.form-input {
     width: 100% !important;
+    height: 40px !important;
   }
 
-  .card-header .btn-secondary {
-    width: 100% !important;
-    justify-content: center !important;
-  }
-
-  /* Bulk action buttons 50/50 split */
+  /* Bulk Stock Buttons Mobile Split */
   .card-header > div:last-child > div:first-child {
     display: flex !important;
     width: 100% !important;
@@ -342,82 +682,32 @@
 
   .card-header > div:last-child > div:first-child button {
     flex: 1 !important;
+    height: 38px !important;
+    font-size: 0.8rem !important;
     justify-content: center !important;
-    height: 36px !important;
+    border-radius: 8px !important;
   }
 
-  /* Category Filter Chips Horizontal Swipe */
-  .card > div:nth-child(2) {
-    flex-direction: column !important;
-    align-items: stretch !important;
-    gap: 10px !important;
-    padding: 10px 14px !important;
-  }
-
-  .card > div:nth-child(2) > div:first-child,
-  .card > div:nth-child(2) > div:last-child {
-    overflow-x: auto !important;
-    white-space: nowrap !important;
-    -webkit-overflow-scrolling: touch !important;
-    scrollbar-width: none !important;
-    padding-bottom: 4px !important;
-  }
-
-  /* Table Container Horizontal Scrolling with indicator */
+  /* Horizontal Scrollable Table */
   .table-container {
     overflow-x: auto !important;
     -webkit-overflow-scrolling: touch !important;
-    position: relative !important;
-    margin: 0 !important;
-  }
-
-  .order-table {
-    min-width: 620px !important;
+    border-radius: 0 0 14px 14px !important;
   }
 
   .order-table th,
   .order-table td {
-    padding: 10px 12px !important;
-    font-size: 0.82rem !important;
+    padding: 10px !important;
+    font-size: 0.8rem !important;
   }
 
-  /* In-Page Sales Breakdown View on Mobile */
-  .vendor-sales-view-card {
-    padding: 16px 14px !important;
-    border-radius: 14px !important;
-  }
-
-  .vendor-sales-view-card > div:first-child {
-    flex-direction: column !important;
-    align-items: stretch !important;
-    gap: 12px !important;
-  }
-
-  .vendor-sales-view-card > div:first-child > div:last-child {
-    width: 100% !important;
-    display: flex !important;
-    justify-content: stretch !important;
-  }
-
-  .vendor-sales-view-card > div:first-child > div:last-child button {
-    flex: 1 !important;
-    padding: 7px 8px !important;
-    font-size: 0.78rem !important;
-    text-align: center !important;
-  }
-
-  /* In-Page Sales KPI summary cards: 2x2 grid */
-  .vendor-sales-view-card > div:nth-child(2) {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 10px !important;
-  }
-
-  /* --------------------------------------------------------------------------
-     5. MOBILE MODALS & BOTTOM SHEETS (< 640px)
-     -------------------------------------------------------------------------- */
+  /* ------------------------------------------------------------------------
+     H. MOBILE MODALS & BOTTOM SHEETS (< 640px)
+     ------------------------------------------------------------------------ */
   .modal-backdrop {
     padding: 0 !important;
     align-items: flex-end !important;
+    background: rgba(15, 23, 42, 0.7) !important;
   }
 
   .modal-card,
@@ -426,39 +716,19 @@
   .decline-modal-card {
     width: 100% !important;
     max-width: 100% !important;
-    border-radius: 20px 20px 0 0 !important;
-    max-height: 88vh !important;
+    border-radius: 24px 24px 0 0 !important;
+    max-height: 90vh !important;
     overflow-y: auto !important;
     padding: 20px 16px !important;
-    animation: mobileSheetSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    animation: mobileSheetSlideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.25) !important;
   }
 
-  /* Full-width action buttons in modals */
   .modal-card button[type="submit"],
   .modal-card .btn-primary,
   .modal-card .btn-danger {
-    min-height: 44px !important;
-    font-size: 0.92rem !important;
-  }
-}
-
-/* --------------------------------------------------------------------------
-   6. EXTRA SMALL SCREENS (max-width: 420px - iPhone SE & compact Androids)
-   -------------------------------------------------------------------------- */
-@media (max-width: 420px) {
-  .vendor-stats-grid {
-    grid-template-columns: 1fr !important;
-  }
-
-  .vendor-sales-view-card > div:nth-child(2) {
-    grid-template-columns: 1fr !important;
-  }
-
-  .kds-token-badge {
-    font-size: 1.15rem !important;
-  }
-
-  .stat-card-value {
-    font-size: 1.3rem !important;
+    min-height: 46px !important;
+    font-size: 0.95rem !important;
+    border-radius: 12px !important;
   }
 }
