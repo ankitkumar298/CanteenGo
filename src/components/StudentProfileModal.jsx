@@ -3,19 +3,14 @@
 import { useState, useEffect } from "react";
 import {
   GraduationCapIcon,
-  KeyIcon,
-  UserPlusIcon,
   PhoneIcon,
   MailIcon,
-  LockIcon,
   UserIcon,
   IdCardIcon,
-  ArrowRightIcon,
   CheckCircleIcon,
   ShieldCheckIcon,
-  EyeIcon,
-  EyeOffIcon,
-  LogOutIcon
+  LogOutIcon,
+  EditIcon
 } from "./Icons";
 
 export default function StudentProfileModal({
@@ -26,32 +21,27 @@ export default function StudentProfileModal({
   onBackToHome,
   onLogout
 }) {
-  // Mode: "login", "signup", or "view" (if already logged in)
-  const [authMode, setAuthMode] = useState("login");
+  // Mode: "view" (view details) or "edit" (update details)
+  const [mode, setMode] = useState("view");
 
-  // Remember Me State (Persisted)
-  const [rememberMe, setRememberMe] = useState(true);
+  // Form fields for editing/updating
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [studentId, setStudentId] = useState("");
 
-  // Login Form States
-  const [loginIdentifier, setLoginIdentifier] = useState("");
-  const [loginPassword, setLoginPassword] = useState("");
-  const [showLoginPassword, setShowLoginPassword] = useState(false);
-
-  // Sign Up Form States
-  const [signupName, setSignupName] = useState("");
-  const [signupPhone, setSignupPhone] = useState("");
-  const [signupEmail, setSignupEmail] = useState("");
-  const [signupStudentId, setSignupStudentId] = useState("");
-  const [signupPassword, setSignupPassword] = useState("");
-  const [signupConfirmPassword, setSignupConfirmPassword] = useState("");
-  const [showSignupPassword, setShowSignupPassword] = useState(false);
-
-  // Status & Alerts
+  // Alerts & loading
   const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleGoHome = () => {
+  const handleClose = () => {
+    if (onClose) {
+      onClose();
+    }
+  };
+
+  const handleReturnHome = () => {
     if (onBackToHome) {
       onBackToHome();
     } else if (onClose) {
@@ -59,203 +49,97 @@ export default function StudentProfileModal({
     }
   };
 
-  // Browser Back Button & Escape key support to return to Home
+  // Close modal on Escape key & hide bottom nav pill
   useEffect(() => {
     if (!isOpen) return;
 
-    // Push a history state so pressing browser 'Back' button returns to Home
-    try {
-      window.history.pushState({ studentAuthOpen: true }, "");
-    } catch {}
-
-    const handlePopState = () => {
-      handleGoHome();
-    };
+    document.body.style.overflow = "hidden";
+    document.body.classList.add("profile-modal-open");
 
     const handleKeyDown = (e) => {
       if (e.key === "Escape") {
-        handleGoHome();
+        handleClose();
       }
     };
 
-    window.addEventListener("popstate", handlePopState);
     window.addEventListener("keydown", handleKeyDown);
-
     return () => {
-      window.removeEventListener("popstate", handlePopState);
+      document.body.style.overflow = "";
+      document.body.classList.remove("profile-modal-open");
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [isOpen]);
 
+  // Sync state whenever modal opens or initialProfile changes
   useEffect(() => {
     if (isOpen) {
       setError("");
       setSuccessMsg("");
+      setName(initialProfile?.name || "");
+      setPhone(initialProfile?.phone || "");
+      setEmail(initialProfile?.email || "");
+      setStudentId(initialProfile?.studentId || "");
+
       if (initialProfile?.name && initialProfile?.phone) {
-        setAuthMode("view");
+        setMode("view");
       } else {
-        setAuthMode("login");
-        setLoginIdentifier("");
-        setLoginPassword("");
+        setMode("edit");
       }
     }
   }, [isOpen, initialProfile]);
 
   if (!isOpen) return null;
 
-  // Handle Login Submit
-  const handleLogin = async (e) => {
+  // Handle Update Details Submit
+  const handleUpdateSubmit = (e) => {
     e.preventDefault();
     setError("");
     setSuccessMsg("");
 
-    const identifierClean = loginIdentifier.trim();
-    if (!identifierClean) {
-      setError("Please enter your registered mobile number or email.");
-      return;
-    }
-    if (!loginPassword.trim()) {
-      setError("Please enter your password.");
-      return;
-    }
-
-    try {
-      setLoading(true);
-      const res = await fetch("/api/auth/student/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          identifier: identifierClean,
-          password: loginPassword
-        })
-      });
-
-      const data = await res.json();
-
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || "Login failed. Please verify your credentials.");
-      }
-
-      // Persist JWT token
-      if (data.token) {
-        try {
-          localStorage.setItem("canteenGo_studentToken", data.token);
-        } catch {}
-      }
-
-      const profileData = {
-        _id: data.student._id,
-        name: data.student.name,
-        phone: data.student.phone,
-        email: data.student.email || "",
-        studentId: data.student.studentId || "",
-        token: data.token || ""
-      };
-
-      try {
-        localStorage.setItem("canteenGo_studentProfile", JSON.stringify(profileData));
-        if (rememberMe) {
-          localStorage.setItem("canteenGo_rememberMe", "true");
-          localStorage.setItem("canteenGo_savedIdentifier", identifierClean);
-        } else {
-          localStorage.setItem("canteenGo_rememberMe", "false");
-          localStorage.removeItem("canteenGo_savedIdentifier");
-        }
-      } catch {}
-
-      setSuccessMsg("Logged in successfully! Loading your session...");
-      setTimeout(() => {
-        onSave(profileData);
-      }, 350);
-    } catch (err) {
-      setError(err.message || "Failed to log in.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Handle Sign Up Submit
-  const handleSignUp = async (e) => {
-    e.preventDefault();
-    setError("");
-    setSuccessMsg("");
-
-    if (!signupName.trim()) {
+    const cleanName = name.trim();
+    if (!cleanName) {
       setError("Please enter your full name.");
       return;
     }
 
-    const cleanPhone = signupPhone.replace(/\D/g, "");
+    const cleanPhone = phone.replace(/\D/g, "");
     if (!cleanPhone || cleanPhone.length < 10) {
       setError("Please enter a valid 10-digit mobile number.");
       return;
     }
 
-    if (!signupPassword || signupPassword.length < 4) {
-      setError("Password must be at least 4 characters.");
-      return;
-    }
-
-    if (signupPassword !== signupConfirmPassword) {
-      setError("Passwords do not match. Please re-enter.");
-      return;
-    }
-
     try {
       setLoading(true);
-      const res = await fetch("/api/auth/student/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: signupName.trim(),
-          phone: cleanPhone,
-          email: signupEmail.trim(),
-          studentId: signupStudentId.trim(),
-          password: signupPassword
-        })
-      });
 
-      const data = await res.json();
-
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || "Registration failed.");
-      }
-
-      // Persist JWT token
-      if (data.token) {
-        try {
-          localStorage.setItem("canteenGo_studentToken", data.token);
-        } catch {}
-      }
-
-      const profileData = {
-        _id: data.student._id,
-        name: data.student.name,
-        phone: data.student.phone,
-        email: data.student.email || "",
-        studentId: data.student.studentId || "",
-        token: data.token || ""
+      const updatedProfile = {
+        ...(initialProfile || {}),
+        name: cleanName,
+        phone: cleanPhone,
+        email: email.trim(),
+        studentId: studentId.trim()
       };
 
       try {
-        localStorage.setItem("canteenGo_studentProfile", JSON.stringify(profileData));
+        localStorage.setItem("canteenGo_studentProfile", JSON.stringify(updatedProfile));
         localStorage.setItem("canteenGo_rememberMe", "true");
         localStorage.setItem("canteenGo_savedIdentifier", cleanPhone);
       } catch {}
 
-      setSuccessMsg("Account created! Logging you in...");
+      setSuccessMsg("Details updated successfully!");
+
       setTimeout(() => {
-        onSave(profileData);
-      }, 400);
+        if (onSave) onSave(updatedProfile);
+        setMode("view");
+        setLoading(false);
+      }, 350);
     } catch (err) {
-      setError(err.message || "Failed to create account.");
-    } finally {
+      setError(err?.message || "Failed to update details. Please try again.");
       setLoading(false);
     }
   };
 
   return (
-    <div className="modal-backdrop" onClick={handleGoHome}>
+    <div className="modal-backdrop" onClick={handleClose}>
       <div
         className="modal-card student-profile-card student-auth-modal"
         onClick={(e) => e.stopPropagation()}
@@ -265,19 +149,10 @@ export default function StudentProfileModal({
           <button
             type="button"
             className="btn-modal-back-home"
-            onClick={handleGoHome}
-            title="Return to CanteenGo Home"
+            onClick={handleReturnHome}
+            title="Return to CanteenGo Main Menu"
           >
             ← Back to Home
-          </button>
-          <button
-            type="button"
-            className="modal-close-btn"
-            onClick={handleGoHome}
-            title="Close and return to Home"
-            aria-label="Close"
-          >
-            ✕
           </button>
         </div>
 
@@ -288,355 +163,27 @@ export default function StudentProfileModal({
           </div>
           <div style={{ flex: 1 }}>
             <h3 className="modal-title">
-              {authMode === "view"
-                ? "Student Profile"
-                : authMode === "signup"
-                ? "Create Student Account"
-                : "Student Login"}
+              {mode === "view" ? "Student Profile" : "Update Student Details"}
             </h3>
             <p className="modal-subtitle">
-              {authMode === "view"
+              {mode === "view"
                 ? "Your active canteenGo account details & tokens."
-                : authMode === "signup"
-                ? "Register to order meals and track live kitchen tokens."
-                : "Log in with your registered mobile number & password."}
+                : "Edit your name, mobile number, and student information."}
             </p>
             <span className="auth-jwt-chip">
-              <ShieldCheckIcon size={12} /> Secure JWT Session
+              <ShieldCheckIcon size={12} /> {mode === "view" ? "Active Student Profile" : "Edit Details"}
             </span>
           </div>
         </div>
-
-        {/* Segmented Tab Switcher (Visible in Login & Signup modes) */}
-        {authMode !== "view" && (
-          <div className="auth-tab-switcher">
-            <button
-              type="button"
-              className={`auth-tab-btn ${authMode === "login" ? "active" : ""}`}
-              onClick={() => {
-                setError("");
-                setSuccessMsg("");
-                setAuthMode("login");
-              }}
-            >
-              <KeyIcon size={15} />
-              <span>Log In</span>
-            </button>
-            <button
-              type="button"
-              className={`auth-tab-btn ${authMode === "signup" ? "active" : ""}`}
-              onClick={() => {
-                setError("");
-                setSuccessMsg("");
-                setAuthMode("signup");
-              }}
-            >
-              <UserPlusIcon size={15} />
-              <span>Sign Up</span>
-            </button>
-          </div>
-        )}
 
         {/* Dynamic Alerts */}
         {error && <div className="alert alert-error auth-alert">{error}</div>}
         {successMsg && <div className="alert alert-success auth-alert">{successMsg}</div>}
 
         {/* =========================================================================
-            TAB 1: STUDENT LOGIN FORM
+            MODE 1: VIEW DETAILS
             ========================================================================= */}
-        {authMode === "login" && (
-          <form onSubmit={handleLogin} className="student-profile-form">
-            <div className="form-group">
-              <label className="form-label">
-                Mobile Number or Email <span className="required-star">*</span>
-              </label>
-              <div className="auth-input-wrapper">
-                <span className="auth-input-icon">
-                  <PhoneIcon size={18} />
-                </span>
-                <input
-                  type="text"
-                  className="form-input auth-form-input"
-                  placeholder="Enter mobile number or college email"
-                  value={loginIdentifier}
-                  onChange={(e) => {
-                    setError("");
-                    setLoginIdentifier(e.target.value);
-                  }}
-                  autoFocus
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">
-                Password <span className="required-star">*</span>
-              </label>
-              <div className="auth-input-wrapper">
-                <span className="auth-input-icon">
-                  <LockIcon size={18} />
-                </span>
-                <input
-                  type={showLoginPassword ? "text" : "password"}
-                  className="form-input auth-form-input"
-                  placeholder="Enter your student password"
-                  value={loginPassword}
-                  onChange={(e) => {
-                    setError("");
-                    setLoginPassword(e.target.value);
-                  }}
-                  required
-                />
-                <button
-                  type="button"
-                  className="btn-toggle-eye"
-                  onClick={() => setShowLoginPassword(!showLoginPassword)}
-                  title={showLoginPassword ? "Hide password" : "Show password"}
-                  aria-label={showLoginPassword ? "Hide password" : "Show password"}
-                >
-                  {showLoginPassword ? <EyeOffIcon size={17} /> : <EyeIcon size={17} />}
-                </button>
-              </div>
-            </div>
-
-            {/* Remember Me Option */}
-            <div className="auth-options-row">
-              <label className="remember-me-label">
-                <input
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  className="remember-me-checkbox"
-                />
-                <span className="remember-me-custom"></span>
-                <span className="remember-me-text">Remember me on this device</span>
-              </label>
-            </div>
-
-            {/* Security Note */}
-            <div className="profile-security-note">
-              <div className="security-note-icon">
-                <ShieldCheckIcon size={17} />
-              </div>
-              <small>
-                Session is securely authenticated with JSON Web Token (JWT) linked to your student credentials.
-              </small>
-            </div>
-
-            {/* Submit Button */}
-            <div className="profile-modal-actions">
-              <button
-                type="submit"
-                className="btn btn-primary btn-save-profile w-full"
-                disabled={loading}
-              >
-                <CheckCircleIcon size={17} />
-                <span>{loading ? "Logging in..." : "Log In to Canteen"}</span>
-                <ArrowRightIcon size={15} className="btn-arrow-icon" />
-              </button>
-            </div>
-
-            {/* Switch Prompt */}
-            <div className="auth-switch-prompt">
-              <span>New to canteenGo?</span>
-              <button
-                type="button"
-                className="btn-link-action"
-                onClick={() => {
-                  setError("");
-                  setSuccessMsg("");
-                  setAuthMode("signup");
-                }}
-              >
-                Create an Account (Sign Up)
-              </button>
-            </div>
-          </form>
-        )}
-
-        {/* =========================================================================
-            TAB 2: STUDENT SIGN UP FORM
-            ========================================================================= */}
-        {authMode === "signup" && (
-          <form onSubmit={handleSignUp} className="student-profile-form">
-            <div className="form-group">
-              <label className="form-label">
-                Full Name <span className="required-star">*</span>
-              </label>
-              <div className="auth-input-wrapper">
-                <span className="auth-input-icon">
-                  <UserIcon size={18} />
-                </span>
-                <input
-                  type="text"
-                  className="form-input auth-form-input"
-                  placeholder="e.g. Ankit Sharma"
-                  value={signupName}
-                  onChange={(e) => {
-                    setError("");
-                    setSignupName(e.target.value);
-                  }}
-                  autoFocus
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="form-row-2col">
-              <div className="form-group">
-                <label className="form-label">
-                  Mobile Number <span className="required-star">*</span>
-                </label>
-                <div className="auth-input-wrapper">
-                  <span className="auth-input-icon">
-                    <PhoneIcon size={18} />
-                  </span>
-                  <input
-                    type="tel"
-                    maxLength="10"
-                    className="form-input auth-form-input"
-                    placeholder="10-digit mobile"
-                    value={signupPhone}
-                    onChange={(e) => {
-                      setError("");
-                      setSignupPhone(e.target.value.replace(/\D/g, ""));
-                    }}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Roll No. / ID (Optional)</label>
-                <div className="auth-input-wrapper">
-                  <span className="auth-input-icon">
-                    <IdCardIcon size={18} />
-                  </span>
-                  <input
-                    type="text"
-                    className="form-input auth-form-input"
-                    placeholder="e.g. 21CS042"
-                    value={signupStudentId}
-                    onChange={(e) => setSignupStudentId(e.target.value)}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">College Email (Optional)</label>
-              <div className="auth-input-wrapper">
-                <span className="auth-input-icon">
-                  <MailIcon size={18} />
-                </span>
-                <input
-                  type="email"
-                  className="form-input auth-form-input"
-                  placeholder="e.g. student@college.edu"
-                  value={signupEmail}
-                  onChange={(e) => setSignupEmail(e.target.value)}
-                />
-              </div>
-            </div>
-
-            <div className="form-row-2col">
-              <div className="form-group">
-                <label className="form-label">
-                  Create Password <span className="required-star">*</span>
-                </label>
-                <div className="auth-input-wrapper">
-                  <span className="auth-input-icon">
-                    <LockIcon size={18} />
-                  </span>
-                  <input
-                    type={showSignupPassword ? "text" : "password"}
-                    className="form-input auth-form-input"
-                    placeholder="Min 4 chars"
-                    value={signupPassword}
-                    onChange={(e) => {
-                      setError("");
-                      setSignupPassword(e.target.value);
-                    }}
-                    required
-                  />
-                  <button
-                    type="button"
-                    className="btn-toggle-eye"
-                    onClick={() => setShowSignupPassword(!showSignupPassword)}
-                    title={showSignupPassword ? "Hide password" : "Show password"}
-                    aria-label={showSignupPassword ? "Hide password" : "Show password"}
-                  >
-                    {showSignupPassword ? <EyeOffIcon size={17} /> : <EyeIcon size={17} />}
-                  </button>
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">
-                  Confirm Password <span className="required-star">*</span>
-                </label>
-                <div className="auth-input-wrapper">
-                  <span className="auth-input-icon">
-                    <LockIcon size={18} />
-                  </span>
-                  <input
-                    type={showSignupPassword ? "text" : "password"}
-                    className="form-input auth-form-input"
-                    placeholder="Re-enter password"
-                    value={signupConfirmPassword}
-                    onChange={(e) => {
-                      setError("");
-                      setSignupConfirmPassword(e.target.value);
-                    }}
-                    required
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="profile-security-note">
-              <div className="security-note-icon">
-                <GraduationCapIcon size={17} />
-              </div>
-              <small>
-                Your account is encrypted and assigned an authenticated JWT session for campus dining and token tracking.
-              </small>
-            </div>
-
-            <div className="profile-modal-actions">
-              <button
-                type="submit"
-                className="btn btn-primary btn-save-profile w-full"
-                disabled={loading}
-              >
-                <CheckCircleIcon size={17} />
-                <span>{loading ? "Creating Account..." : "Create Account & Continue"}</span>
-                <ArrowRightIcon size={15} className="btn-arrow-icon" />
-              </button>
-            </div>
-
-            <div className="auth-switch-prompt">
-              <span>Already registered?</span>
-              <button
-                type="button"
-                className="btn-link-action"
-                onClick={() => {
-                  setError("");
-                  setSuccessMsg("");
-                  setAuthMode("login");
-                }}
-              >
-                Log In to your Account
-              </button>
-            </div>
-          </form>
-        )}
-
-        {/* =========================================================================
-            VIEW MODE: LOGGED IN STUDENT DETAILS
-            ========================================================================= */}
-        {authMode === "view" && initialProfile && (
+        {mode === "view" && initialProfile && (
           <div className="student-profile-view">
             <div className="profile-details-card">
               <div className="profile-detail-row">
@@ -684,16 +231,144 @@ export default function StudentProfileModal({
 
               <button
                 type="button"
-                className="btn btn-secondary"
+                className="btn btn-secondary btn-edit-profile"
                 onClick={() => {
-                  setAuthMode("login");
+                  setError("");
+                  setSuccessMsg("");
+                  setName(initialProfile.name || "");
+                  setPhone(initialProfile.phone || "");
+                  setEmail(initialProfile.email || "");
+                  setStudentId(initialProfile.studentId || "");
+                  setMode("edit");
                 }}
+                title="Edit your student details"
               >
-                <KeyIcon size={15} />
-                <span>Switch / Re-login</span>
+                <EditIcon size={16} />
+                <span>Edit Details</span>
               </button>
             </div>
           </div>
+        )}
+
+        {/* =========================================================================
+            MODE 2: UPDATE DETAILS FORM
+            ========================================================================= */}
+        {mode === "edit" && (
+          <form onSubmit={handleUpdateSubmit} className="student-profile-form">
+            <div className="form-group">
+              <label className="form-label">
+                Full Name <span className="required-star">*</span>
+              </label>
+              <div className="auth-input-wrapper">
+                <span className="auth-input-icon">
+                  <UserIcon size={18} />
+                </span>
+                <input
+                  type="text"
+                  className="form-input auth-form-input"
+                  placeholder="e.g. Ankit Sharma"
+                  value={name}
+                  onChange={(e) => {
+                    setError("");
+                    setName(e.target.value);
+                  }}
+                  autoFocus
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="form-row-2col">
+              <div className="form-group">
+                <label className="form-label">
+                  Mobile Number <span className="required-star">*</span>
+                </label>
+                <div className="auth-input-wrapper">
+                  <span className="auth-input-icon">
+                    <PhoneIcon size={18} />
+                  </span>
+                  <input
+                    type="tel"
+                    maxLength="10"
+                    className="form-input auth-form-input"
+                    placeholder="10-digit mobile number"
+                    value={phone}
+                    onChange={(e) => {
+                      setError("");
+                      setPhone(e.target.value.replace(/\D/g, ""));
+                    }}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Roll No. / Student ID (Optional)</label>
+                <div className="auth-input-wrapper">
+                  <span className="auth-input-icon">
+                    <IdCardIcon size={18} />
+                  </span>
+                  <input
+                    type="text"
+                    className="form-input auth-form-input"
+                    placeholder="e.g. 21CS042"
+                    value={studentId}
+                    onChange={(e) => setStudentId(e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Email Address (Optional)</label>
+              <div className="auth-input-wrapper">
+                <span className="auth-input-icon">
+                  <MailIcon size={18} />
+                </span>
+                <input
+                  type="email"
+                  className="form-input auth-form-input"
+                  placeholder="e.g. student@college.edu"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="profile-security-note">
+              <div className="security-note-icon">
+                <GraduationCapIcon size={17} />
+              </div>
+              <small>
+                Your updated details will be used for your canteen token calling, SMS receipts, and order tracking.
+              </small>
+            </div>
+
+            <div className="profile-edit-actions">
+              {initialProfile?.name && (
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  onClick={() => {
+                    setError("");
+                    setSuccessMsg("");
+                    setMode("view");
+                  }}
+                  disabled={loading}
+                >
+                  Cancel
+                </button>
+              )}
+              <button
+                type="submit"
+                className="btn btn-primary btn-save-profile"
+                disabled={loading}
+              >
+                <CheckCircleIcon size={16} />
+                <span>{loading ? "Updating Details..." : "Update Details"}</span>
+              </button>
+            </div>
+          </form>
         )}
       </div>
     </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   CartIcon,
   PlusIcon,
@@ -10,7 +10,7 @@ import {
   LocationPinIcon,
   ClockIcon
 } from "./Icons";
-import { getItemEstimateTime, isCanteenOpenNow } from "../data/canteens";
+import { getItemEstimateTime, isCanteenOpenNow, isItemAvailableAtCanteen } from "../data/canteens";
 
 export default function MobileStudentCartSheet({
   isOpen,
@@ -34,7 +34,10 @@ export default function MobileStudentCartSheet({
   isCartCanteenClosed = false,
   cartClosedCanteens = [],
   onOpenCanteenModal,
-  liveStatsMap = {}
+  liveStatsMap = {},
+  canteensList = [],
+  menuItems = [],
+  onChangeCanteen
 }) {
   const sheetRef = useRef(null);
 
@@ -113,37 +116,16 @@ export default function MobileStudentCartSheet({
             </div>
           ) : (
             <>
-              {/* Pickup Canteen Banner */}
-              <div className="mobile-cart-canteen-pill">
-                <div className="mobile-canteen-left">
-                  <LocationPinIcon size={18} className="mobile-canteen-pin" />
-                  <div className="mobile-canteen-details">
-                    <span className="mobile-canteen-label">PICKUP HUB</span>
-                    <strong className="mobile-canteen-name">
-                      {selectedCanteen?.shortName || selectedCanteen?.name || "Campus Canteen"}
-                    </strong>
-                    <span className="mobile-canteen-counter">
-                      {selectedCanteen?.counter || "Counter 1"}
-                      {selectedCanteen?.walkingMinutes && ` • 🚶 ${selectedCanteen.walkingMinutes} min walk`}
-                    </span>
-                  </div>
-                </div>
-                {onOpenCanteenModal && (
-                  <button
-                    type="button"
-                    className="mobile-canteen-change-btn"
-                    onClick={() => onOpenCanteenModal(cart[0])}
-                  >
-                    Change
-                  </button>
-                )}
-              </div>
-
-              {/* Items List */}
+              {/* Items List (Designed for single and multiple items) */}
               <div className="mobile-cart-items-list">
                 {cart.map((item) => {
                   const estTime = getItemEstimateTime(item, item.canteen || selectedCanteen, liveStatsMap);
                   const isClosed = !isCanteenOpenNow(item.canteen || selectedCanteen).isOpen;
+                  const itemCanteenName =
+                    item.canteen?.name ||
+                    selectedCanteen?.name ||
+                    currentCanteen?.name ||
+                    "Campus Canteen";
 
                   return (
                     <div key={item.menuItemId} className="mobile-cart-item-row">
@@ -159,18 +141,45 @@ export default function MobileStudentCartSheet({
                       <div className="mobile-cart-item-info">
                         <div className="mobile-cart-item-name-row">
                           <strong className="mobile-cart-item-name">{item.name}</strong>
-                          {isClosed && (
-                            <span className="mobile-closed-tag">Closed</span>
-                          )}
-                        </div>
-
-                        <div className="mobile-cart-item-meta">
-                          <span className="mobile-cart-item-price">₹{item.price}</span>
                           {estTime && (
                             <span className="mobile-cart-prep-time">
                               <ClockIcon size={11} /> {estTime}
                             </span>
                           )}
+                        </div>
+
+                        {/* Canteen link under item name - opens Choose Canteen modal */}
+                        <button
+                          type="button"
+                          className="mobile-cart-item-canteen-link"
+                          onClick={() => {
+                            if (onOpenCanteenModal) {
+                              onOpenCanteenModal({
+                                menuItemId: item.menuItemId,
+                                name: item.name,
+                                basePrice: item.basePrice || item.price,
+                                price: item.price,
+                                image: item.image,
+                                quantity: item.quantity,
+                                canteen: item.canteen || currentCanteen || selectedCanteen,
+                                isFromCart: true
+                              });
+                            }
+                          }}
+                          title="Click to compare & change canteen"
+                        >
+                          <span className="mobile-canteen-link-text"><u>{itemCanteenName}</u></span>
+                          {isClosed && (
+                            <span className="cart-item-closed-badge">🔴 Closed</span>
+                          )}
+                        </button>
+
+                        <div className="mobile-cart-item-meta">
+                          <span className="mobile-cart-item-price">
+                            ₹{item.price}
+                            <span className="cart-item-qty-mult"> × {item.quantity} = </span>
+                            <strong>₹{item.price * item.quantity}</strong>
+                          </span>
                         </div>
                       </div>
 

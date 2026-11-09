@@ -346,6 +346,18 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
   justify-content: center;
 }
 
+.student-hero-greeting-text {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 2px;
+  line-height: 1.2;
+}
+
+.student-hero-quick-chips {
+  display: none;
+}
+
 .student-hero-title {
   font-size: 1.7rem;
   font-weight: 900;
@@ -494,19 +506,7 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
 }
 
 @media (max-width: 768px) {
-  .student-hero-content {
-    flex-direction: column;
-    align-items: flex-start;
-    padding: 16px 18px;
-  }
-  .student-hero-media {
-    width: 100%;
-    justify-content: center;
-    margin-top: 10px;
-  }
-  .student-hero-food-img {
-    max-height: 140px;
-  }
+  /* mobile.css handles mobile hero layout */
 }
 
 /* ==========================================================================
@@ -2877,91 +2877,103 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
 /* Comparison Summary Bar with 4 Metric Columns */
 .selected-item-preview-bar {
   display: flex;
-  align-items: center;
-  background: #fefce8;
-  border: 1px solid #fef08a;
-  border-radius: 12px;
-  padding: 10px 0;
+  flex-direction: column;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 14px;
+  padding: 12px 16px;
   box-shadow: none;
-  gap: 0;
+  gap: 10px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.preview-col {
+.preview-top-item-row {
   display: flex;
   align-items: center;
-  padding: 0 16px;
-}
-
-.preview-col-item {
-  flex: 1;
-  gap: 10px;
-  min-width: 0;
-}
-
-.preview-col-metric {
-  flex-direction: column;
-  align-items: center;
-  gap: 1px;
-  border-left: 1px solid #fde68a;
-  padding: 0 18px;
-  white-space: nowrap;
+  gap: 12px;
+  width: 100%;
 }
 
 .preview-item-thumb {
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   border-radius: 8px;
   object-fit: cover;
-  border: 1px solid #e2e8f0;
+  border: 1px solid #fde68a;
   flex-shrink: 0;
 }
 
 .preview-item-info {
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: 1px;
   min-width: 0;
+  flex: 1;
 }
 
 .preview-item-label {
-  font-size: 0.7rem;
-  font-weight: 500;
-  color: #64748b;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #92400e;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
 }
 
 .preview-item-name {
-  font-size: 0.92rem;
+  font-size: 0.95rem;
   font-weight: 800;
   color: #17243A;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.preview-metric-icon {
-  font-size: 0.85rem;
-  line-height: 1;
+.preview-base-price-badge {
+  font-size: 0.78rem;
+  color: #78350f;
+  background: #ffffff;
+  border: 1px solid #fde68a;
+  padding: 3px 10px;
+  border-radius: 8px;
+  white-space: nowrap;
+  margin-left: auto;
+  flex-shrink: 0;
 }
 
-.preview-metric-icon.metric-green {
-  color: #159447;
+.preview-metrics-strip {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  width: 100%;
+  padding-top: 8px;
+  border-top: 1px dashed #fde68a;
+  box-sizing: border-box;
 }
 
-.preview-metric-icon.metric-star {
-  color: #f59e0b;
-  font-size: 0.95rem;
-}
-
-.preview-metric-icon.metric-orange {
-  color: #F45B0B;
+.preview-metrics-strip .preview-col-metric {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 6px 10px;
+  background: #ffffff;
+  border: 1px solid #fef08a;
+  border-radius: 8px;
+  text-align: center;
 }
 
 .preview-metric-label {
   font-size: 0.68rem;
-  font-weight: 500;
+  font-weight: 600;
   color: #64748b;
+  white-space: nowrap;
 }
 
 .preview-metric-value {
-  font-size: 1rem;
-  font-weight: 800;
+  font-size: 0.95rem;
+  font-weight: 900;
   line-height: 1.2;
 }
 
@@ -2971,6 +2983,10 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
 
 .preview-metric-value.metric-orange {
   color: #F45B0B;
+}
+
+.preview-metric-value.metric-blue {
+  color: #2563eb;
 }
 
 /* Strikethrough Original Price */
@@ -3715,24 +3731,6 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
 
 /* Responsive Stacking for Small Devices (< 680px) */
 @media (max-width: 680px) {
-  .choose-canteen-modal.light-theme-modal {
-    width: 100%;
-    max-height: 94vh;
-    border-radius: 16px 16px 0 0;
-  }
-  .selected-item-preview-bar {
-    flex-wrap: wrap;
-    gap: 8px;
-    padding: 10px 12px;
-  }
-  .preview-col-item {
-    width: 100%;
-  }
-  .preview-col-metric {
-    border-left: none;
-    border-top: 1px solid #fde68a;
-    padding: 6px 12px 0;
-  }
   .choose-canteen-card {
     flex-direction: column;
     align-items: stretch;
@@ -12101,6 +12099,25 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
   font-size: 0.88rem;
 }
 
+.profile-edit-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 18px;
+  justify-content: flex-end;
+}
+
+.profile-edit-actions .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 42px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.88rem;
+  padding: 0 20px;
+}
+
 /* ==========================================================================
    Complete Live Queue Page & Interactive Order Tracker Styling
    ========================================================================== */
@@ -13452,6 +13469,20 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
 
 .cq-metric-num.num-green {
   color: #16a34a;
+}
+
+/* Mobile Queue Tabs (Hidden on Desktop) */
+.cq-mobile-tabs-bar {
+  display: none;
+}
+
+@media (min-width: 769px) {
+  .cq-mobile-tabs-bar {
+    display: none !important;
+  }
+  .cq-col.cq-mobile-hidden {
+    display: flex !important;
+  }
 }
 
 /* 3-Column Board */

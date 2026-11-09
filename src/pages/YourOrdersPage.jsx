@@ -860,7 +860,8 @@ export default function YourOrdersPage({
         <>
           {/* Requirement 8: Filter Tabs & Search Bar */}
           <div className="orders-toolbar">
-            <div className="orders-filter-chips">
+            {/* Desktop Filter Chips */}
+            <div className="orders-filter-chips orders-desktop-filter-chips">
               <button
                 type="button"
                 className={`filter-chip ${filter === "all" ? "active" : ""}`}
@@ -905,6 +906,36 @@ export default function YourOrdersPage({
                   Cancelled ({myOrders.filter((o) => o.orderStatus === "Cancelled").length})
                 </button>
               )}
+            </div>
+
+            {/* Mobile: Single Button Filter Dropdown */}
+            <div className="orders-mobile-filter-dropdown-wrap">
+              <div className="orders-mobile-filter-btn">
+                <span className="filter-btn-text">
+                  {filter === "all" && `All Orders (${myOrders.length})`}
+                  {filter === "active" && `Active In Kitchen (${myOrders.filter((o) => ["Pending", "Preparing"].includes(o.orderStatus)).length})`}
+                  {filter === "ready" && `Ready at Counter (${myOrders.filter((o) => o.orderStatus === "Ready").length})`}
+                  {filter === "missed" && `⚠️ Missed (${myOrders.filter((o) => o.orderStatus === "Missed Pickup").length})`}
+                  {filter === "completed" && `Completed (${myOrders.filter((o) => o.orderStatus === "Completed").length})`}
+                  {filter === "cancelled" && `Cancelled (${myOrders.filter((o) => o.orderStatus === "Cancelled").length})`}
+                </span>
+                <span className="filter-btn-arrow">▾</span>
+                <select
+                  value={filter}
+                  onChange={(e) => setFilter(e.target.value)}
+                  className="orders-mobile-filter-native-select"
+                  aria-label="Filter Orders"
+                >
+                  <option value="all">All Orders ({myOrders.length})</option>
+                  <option value="active">Active In Kitchen ({myOrders.filter((o) => ["Pending", "Preparing"].includes(o.orderStatus)).length})</option>
+                  <option value="ready">Ready at Counter ({myOrders.filter((o) => o.orderStatus === "Ready").length})</option>
+                  <option value="missed">⚠️ Missed ({myOrders.filter((o) => o.orderStatus === "Missed Pickup").length})</option>
+                  <option value="completed">Completed ({myOrders.filter((o) => o.orderStatus === "Completed").length})</option>
+                  {myOrders.some((o) => o.orderStatus === "Cancelled") && (
+                    <option value="cancelled">Cancelled ({myOrders.filter((o) => o.orderStatus === "Cancelled").length})</option>
+                  )}
+                </select>
+              </div>
             </div>
 
             {/* Quick Search */}

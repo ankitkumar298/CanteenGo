@@ -116,14 +116,11 @@ export function AppProvider({ children }) {
 
   const handleCloseProfileModal = () => {
     setIsProfileModalOpen(false);
-    if (!studentProfile?.phone) {
-      router.push("/");
-    }
   };
 
   const handleBackToHome = () => {
     setIsProfileModalOpen(false);
-    router.push("/");
+    router.push("/order");
   };
 
   const handleLogout = async () => {

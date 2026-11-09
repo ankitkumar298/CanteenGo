@@ -55,6 +55,9 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
   const [filterStage, setFilterStage] = useState("all"); // "all", "ready", "preparing", "pending"
   const [paperTokenInput, setPaperTokenInput] = useState("");
 
+  // Mobile-only 3-stage toggle: "next" (default), "preparing", "ready"
+  const [mobileQueueStage, setMobileQueueStage] = useState("next");
+
   // Student profile token shortcut
   const savedLastToken = (() => {
     try {
@@ -1552,10 +1555,49 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
         </div>
       </div>
 
+      {/* MOBILE-ONLY 3 STAGE TOGGLE BUTTONS (Next, Preparing, Ready) */}
+      <div className="cq-mobile-tabs-bar" role="tablist" aria-label="Queue Stages">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={mobileQueueStage === "next"}
+          className={`cq-mobile-tab-btn tab-next ${mobileQueueStage === "next" ? "active" : ""}`}
+          onClick={() => setMobileQueueStage("next")}
+        >
+          <span className="cq-tab-icon">⏳</span>
+          <span className="cq-tab-label">Next</span>
+          <span className="cq-tab-count">{boardPendingOrders.length}</span>
+        </button>
+
+        <button
+          type="button"
+          role="tab"
+          aria-selected={mobileQueueStage === "preparing"}
+          className={`cq-mobile-tab-btn tab-prep ${mobileQueueStage === "preparing" ? "active" : ""}`}
+          onClick={() => setMobileQueueStage("preparing")}
+        >
+          <span className="cq-tab-icon">🔥</span>
+          <span className="cq-tab-label">Preparing</span>
+          <span className="cq-tab-count">{boardPreparingOrders.length}</span>
+        </button>
+
+        <button
+          type="button"
+          role="tab"
+          aria-selected={mobileQueueStage === "ready"}
+          className={`cq-mobile-tab-btn tab-ready ${mobileQueueStage === "ready" ? "active" : ""}`}
+          onClick={() => setMobileQueueStage("ready")}
+        >
+          <span className="cq-tab-icon">✓</span>
+          <span className="cq-tab-label">Ready</span>
+          <span className="cq-tab-count">{boardReadyOrders.length}</span>
+        </button>
+      </div>
+
       {/* 4. THREE MAIN COLUMNS */}
       <div className="cq-board-grid">
         {/* Column 1: Now Preparing */}
-        <div className="cq-col col-prep">
+        <div className={`cq-col col-prep ${mobileQueueStage !== "preparing" ? "cq-mobile-hidden" : ""}`}>
           <div className="cq-col-header">
             <div className="cq-col-title-wrap">
               <div className="cq-col-icon-circle prep" aria-hidden="true">
@@ -1617,7 +1659,7 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
         </div>
 
         {/* Column 2: Ready for Pickup */}
-        <div className="cq-col col-ready">
+        <div className={`cq-col col-ready ${mobileQueueStage !== "ready" ? "cq-mobile-hidden" : ""}`}>
           <div className="cq-col-header">
             <div className="cq-col-title-wrap">
               <div className="cq-col-icon-circle ready" aria-hidden="true">
@@ -1679,7 +1721,7 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
         </div>
 
         {/* Column 3: Next in Queue */}
-        <div className="cq-col col-queue">
+        <div className={`cq-col col-queue ${mobileQueueStage !== "next" ? "cq-mobile-hidden" : ""}`}>
           <div className="cq-col-header">
             <div className="cq-col-title-wrap">
               <div className="cq-col-icon-circle queue" aria-hidden="true">

@@ -230,6 +230,9 @@ export default function ChooseCanteenModal({
         role="dialog"
         aria-modal="true"
       >
+        {/* Touch Drag handle for mobile bottom sheet */}
+        <div className="sheet-drag-handle choose-canteen-drag-handle" onClick={onClose} />
+
         {/* Pinned Top Container: Header, Cart switcher, Preview, and Sort */}
         <div className="choose-canteen-top-bar">
           {/* Modal Header */}
@@ -328,7 +331,7 @@ export default function ChooseCanteenModal({
           {/* Comparison Summary Bar with Metrics */}
           {isItemMode && (
             <div className="selected-item-preview-bar">
-              <div className="preview-col preview-col-item">
+              <div className="preview-top-item-row">
                 <img
                   src={displayItemImage}
                   alt={resolvedActiveItem?.name}
@@ -339,21 +342,24 @@ export default function ChooseCanteenModal({
                   <span className="preview-item-label">Comparing Availability For</span>
                   <strong className="preview-item-name">{resolvedActiveItem?.name}</strong>
                 </div>
+                <div className="preview-base-price-badge">
+                  <span>Base: </span><strong>₹{basePrice}</strong>
+                </div>
               </div>
-              <div className="preview-col preview-col-metric">
-                <span className="preview-metric-icon metric-green">◉</span>
-                <span className="preview-metric-label">Best Price</span>
-                <strong className="preview-metric-value metric-green">₹{bestPrice}</strong>
-              </div>
-              <div className="preview-col preview-col-metric">
-                <span className="preview-metric-icon metric-star">★</span>
-                <span className="preview-metric-label">Max Save</span>
-                <strong className="preview-metric-value metric-orange">₹{maxSave} per item</strong>
-              </div>
-              <div className="preview-col preview-col-metric">
-                <span className="preview-metric-icon metric-orange">◉</span>
-                <span className="preview-metric-label">Available At</span>
-                <strong className="preview-metric-value metric-orange">{sortedCanteens.length} Canteens</strong>
+
+              <div className="preview-metrics-strip">
+                <div className="preview-col-metric">
+                  <span className="preview-metric-label">🟢 Best Price</span>
+                  <strong className="preview-metric-value metric-green">₹{bestPrice}</strong>
+                </div>
+                <div className="preview-col-metric">
+                  <span className="preview-metric-label">⭐ Max Save</span>
+                  <strong className="preview-metric-value metric-orange">₹{maxSave}/item</strong>
+                </div>
+                <div className="preview-col-metric">
+                  <span className="preview-metric-label">🏪 In Stock</span>
+                  <strong className="preview-metric-value metric-blue">{sortedCanteens.length} Canteens</strong>
+                </div>
               </div>
             </div>
           )}

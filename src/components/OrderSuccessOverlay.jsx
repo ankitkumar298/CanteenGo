@@ -11,6 +11,18 @@ export default function OrderSuccessOverlay({
   const [loadingStep, setLoadingStep] = useState(0);
 
   useEffect(() => {
+    if (!isOpen) return;
+
+    document.body.style.overflow = "hidden";
+    document.body.classList.add("order-modal-open");
+
+    return () => {
+      document.body.style.overflow = "";
+      document.body.classList.remove("order-modal-open");
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
     if (!isSubmitting) {
       setLoadingStep(0);
       return;

@@ -256,28 +256,43 @@ export default function NotificationBell({ studentProfile }) {
 
       {/* Notifications Dropdown Panel */}
       {isOpen && (
-        <div className="nav-notif-dropdown">
-          <div className="nav-notif-header">
-            <div className="notif-header-title">
-              <span className="notif-title-text">Notifications</span>
-              {unreadCount > 0 && (
-                <span className="notif-unread-tag">{unreadCount} new</span>
-              )}
-            </div>
+        <>
+          <div
+            className="nav-notif-mobile-backdrop"
+            onClick={() => setIsOpen(false)}
+            aria-hidden="true"
+          />
+          <div className="nav-notif-dropdown">
+            <div className="nav-notif-header">
+              <div className="notif-header-title">
+                <span className="notif-title-text">Notifications</span>
+                {unreadCount > 0 && (
+                  <span className="notif-unread-tag">{unreadCount} new</span>
+                )}
+              </div>
 
-            <div className="notif-header-actions">
-              {notifications.length > 0 && (
+              <div className="notif-header-actions">
+                {notifications.length > 0 && (
+                  <button
+                    type="button"
+                    className="btn-notif-text-action"
+                    onClick={clearAllNotifications}
+                    title="Clear all notifications"
+                  >
+                    Clear all
+                  </button>
+                )}
                 <button
                   type="button"
-                  className="btn-notif-text-action"
-                  onClick={clearAllNotifications}
-                  title="Clear all notifications"
+                  className="btn-notif-close-mobile"
+                  onClick={() => setIsOpen(false)}
+                  title="Close notifications"
+                  aria-label="Close"
                 >
-                  Clear all
+                  ✕
                 </button>
-              )}
+              </div>
             </div>
-          </div>
 
           <div className="nav-notif-list">
             {notifications.length === 0 ? (
@@ -321,6 +336,7 @@ export default function NotificationBell({ studentProfile }) {
             )}
           </div>
         </div>
+        </>
       )}
     </div>
   );

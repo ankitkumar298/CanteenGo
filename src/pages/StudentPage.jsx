@@ -185,6 +185,31 @@ export default function StudentPage({
     setMenuAnimKey((prev) => prev + 1);
   };
 
+  // Instant inline canteen update for mobile cart - updates all cart items & dynamic prices without popup modal
+  const handleCartCanteenChange = (newCanteen) => {
+    if (!newCanteen || newCanteen.id === "all" || newCanteen.name === "All Canteens") return;
+
+    setSelectedCanteen(newCanteen);
+    try {
+      localStorage.setItem("canteenGo_selectedCanteen", JSON.stringify(newCanteen));
+    } catch {}
+
+    setCart((prevCart) => {
+      return prevCart.map((cartItem) => {
+        const fullItem = menu.find((m) => m._id === cartItem.menuItemId) || cartItem;
+        const newPrice = getItemPriceForCanteen(fullItem, newCanteen);
+        return {
+          ...cartItem,
+          canteen: newCanteen,
+          price: newPrice,
+          basePrice: cartItem.basePrice || fullItem.price || newPrice
+        };
+      });
+    });
+
+    setSuccessMessage(`Pickup canteen updated to ${newCanteen.shortName || newCanteen.name}`);
+  };
+
   useEffect(() => {
     if (studentProfile?.name) {
       setStudentName(studentProfile.name);
@@ -744,8 +769,12 @@ export default function StudentPage({
       <div className="student-hero-banner">
         <div className="student-hero-content">
           <div className="student-hero-text">
+            <div className="student-hero-greeting-text">
+              Hey {studentProfile?.name ? studentProfile.name.split(" ")[0] : "Ankit"}! 👋
+            </div>
+
             <h1 className="student-hero-title">
-              Be The Fastest In <span className="highlight-orange">Ordering Your Food</span>
+              Order Ahead, <span className="highlight-orange">Pick Up Fresh!</span>
             </h1>
             <p className="student-hero-subtitle">
               Pre-order your favourite meals, skip the long queue, and pick up fresh food from your campus canteen.
@@ -764,6 +793,43 @@ export default function StudentPage({
                 <span>Digital Token</span>
               </span>
             </div>
+
+            {/* Quick Interactive Shortcut Chips (Shown on Mobile) */}
+            <div className="student-hero-quick-chips">
+              <button
+                type="button"
+                className="hero-quick-chip"
+                onClick={() => {
+                  setSelectedCategory("Combos");
+                  const el = document.querySelector(".menu-toolbar");
+                  if (el) el.scrollIntoView({ behavior: "smooth" });
+                }}
+              >
+                <span>🔥 Top Combos</span>
+              </button>
+
+              <button
+                type="button"
+                className="hero-quick-chip"
+                onClick={() => {
+                  setSelectedCategory("All");
+                  const el = document.querySelector(".menu-toolbar");
+                  if (el) el.scrollIntoView({ behavior: "smooth" });
+                }}
+              >
+                <span>⚡ Quick Bites</span>
+              </button>
+
+              <button
+                type="button"
+                className="hero-quick-chip queue-chip"
+                onClick={() => setActiveTab && setActiveTab("queue")}
+              >
+                <ClockIcon size={12} />
+                <span>Live Queue</span>
+              </button>
+            </div>
+
             <div className="student-hero-actions">
               <button
                 type="button"
@@ -873,6 +939,9 @@ export default function StudentPage({
         currentCanteen={currentCanteen}
         isCartCanteenClosed={isCartCanteenClosed}
         cartClosedCanteens={cartClosedCanteens}
+        canteensList={canteensList}
+        menuItems={menu}
+        onChangeCanteen={handleCartCanteenChange}
         onOpenCanteenModal={(item) => {
           setCanteenModalItem({
             menuItemId: item?.menuItemId,
