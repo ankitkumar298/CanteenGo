@@ -224,6 +224,7 @@
     align-items: center !important;
     gap: 8px !important;
     width: 100% !important;
+    max-width: 100% !important;
   }
 
   .vendor-search-wrap {

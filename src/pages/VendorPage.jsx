@@ -727,8 +727,8 @@ export default function VendorPage({ onExitToHome }) {
           {/* Controls Bar: Search + Status Filter Chips + View Mode Switcher */}
           <div className="vendor-orders-controls-bar">
             {/* Search Input Row with Mobile "..." More Menu */}
-            <div className="vendor-search-row-mobile-wrap" style={{ display: "flex", gap: "8px", alignItems: "center", width: "100%" }}>
-              <div className="vendor-search-wrap" style={{ flex: 1 }}>
+            <div className="vendor-search-row-mobile-wrap">
+              <div className="vendor-search-wrap">
                 <span className="search-icon">
                   <SearchIcon size={16} />
                 </span>
@@ -763,7 +763,7 @@ export default function VendorPage({ onExitToHome }) {
             </div>
 
             {/* Desktop Controls: Orders vs Sales Toggle & Refresh */}
-            <div className="vendor-orders-desktop-controls" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <div className="vendor-orders-desktop-controls">
               <div className="vendor-view-toggle-group">
                 <button
                   type="button"

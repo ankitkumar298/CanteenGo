@@ -6408,11 +6408,25 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
+.vendor-search-row-mobile-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  max-width: 440px;
+}
+
 .vendor-search-wrap {
   position: relative;
   flex: 1;
-  min-width: 220px;
-  max-width: 380px;
+  width: 100%;
+}
+
+.vendor-orders-desktop-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
 }
 
 .vendor-search-wrap .search-icon {
