@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import StatusBadge from "../components/StatusBadge";
 import { CAMPUS_CANTEENS, getItemPriceForCanteen, isItemAvailableAtCanteen } from "../data/canteens";
 import { useAppContext } from "@/context/AppContext";
@@ -16,10 +16,13 @@ import {
   ShieldCheckIcon,
   AlertTriangleIcon,
   UploadIcon,
-  ImageIcon
+  ImageIcon,
+  SearchIcon,
+  VolumeIcon
 } from "../components/Icons";
 import QueuePage from "./QueuePage";
 import SecureHandoverModal from "../components/SecureHandoverModal";
+import DeclineOrderModal from "../components/DeclineOrderModal";
 
 // Preset fast-pick image shortcuts for the vendor
 const PHOTO_PRESETS = [
@@ -41,9 +44,35 @@ export default function VendorPage({ onExitToHome }) {
   const [loadingMenu, setLoadingMenu] = useState(false);
   const [message, setMessage] = useState({ text: "", type: "" });
 
-  // Secure Pickup Verification Handover State
+  // View mode: "cards" (KDS kitchen cards) or "table"
+  const [viewMode, setViewMode] = useState("cards");
+
+  // Search & Filter state for orders
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+
+  // Menu Search
+  const [menuSearchQuery, setMenuSearchQuery] = useState("");
+
+  // Sound chime settings & synthesis
+  const [soundEnabled, setSoundEnabled] = useState(() => {
+    try {
+      return localStorage.getItem("canteenGo_vendorSound") !== "false";
+    } catch {
+      return true;
+    }
+  });
+
+  // Auto-refresh timer state
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [refreshCountdown, setRefreshCountdown] = useState(10);
+
+  // Secure Pickup Handover & Decline Modals
   const [selectedHandoverOrder, setSelectedHandoverOrder] = useState(null);
   const [isHandoverModalOpen, setIsHandoverModalOpen] = useState(false);
+
+  const [selectedDeclineOrder, setSelectedDeclineOrder] = useState(null);
+  const [isDeclineModalOpen, setIsDeclineModalOpen] = useState(false);
 
   const { canteens: ctxCanteens } = useAppContext();
   const canteensList = ctxCanteens && ctxCanteens.length > 0 ? ctxCanteens : CAMPUS_CANTEENS;
@@ -57,8 +86,56 @@ export default function VendorPage({ onExitToHome }) {
         if (match) return match;
       }
     } catch {}
-    return canteensList[0]; // Primary Canteen Hub
+    return canteensList[0];
   });
+
+  // Track previous pending count to trigger audio alert for incoming orders
+  const prevPendingCountRef = useRef(null);
+
+  // Synthesize kitchen chime bell using Web Audio API (100% reliable, zero external files)
+  const playKitchenChime = () => {
+    if (!soundEnabled) return;
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      if (ctx.state === "suspended") {
+        ctx.resume();
+      }
+
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = "sine";
+      // Harmonious double chime: E5 (659Hz) -> A5 (880Hz)
+      osc.frequency.setValueAtTime(659.25, now);
+      osc.frequency.setValueAtTime(880.0, now + 0.14);
+
+      gain.gain.setValueAtTime(0.28, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.7);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.7);
+    } catch {}
+  };
+
+  const toggleSound = () => {
+    const next = !soundEnabled;
+    setSoundEnabled(next);
+    try {
+      localStorage.setItem("canteenGo_vendorSound", String(next));
+    } catch {}
+    if (next) {
+      playKitchenChime();
+      setMessage({ text: "🔔 Kitchen audio notifications enabled!", type: "success" });
+    } else {
+      setMessage({ text: "🔕 Kitchen audio notifications muted", type: "info" });
+    }
+  };
 
   // Add Item Form State
   const [newItemName, setNewItemName] = useState("");
@@ -90,7 +167,6 @@ export default function VendorPage({ onExitToHome }) {
         return;
       }
 
-      // Automatically optimize/compress image using canvas to ensure fast load & small size
       const img = new Image();
       img.onload = () => {
         try {
@@ -141,10 +217,9 @@ export default function VendorPage({ onExitToHome }) {
   const [editPrice, setEditPrice] = useState("");
   const [editCategory, setEditCategory] = useState("");
 
-  const fetchOrders = async (canteenToFetch) => {
+  const fetchOrders = async (canteenToFetch, isBackground = false) => {
     try {
-      setLoadingOrders(true);
-      // If canteenToFetch is an Event or not a valid object with an id, fallback to selectedVendorCanteen
+      if (!isBackground) setLoadingOrders(true);
       const targetCanteen =
         canteenToFetch && typeof canteenToFetch === "object" && typeof canteenToFetch.id === "string"
           ? canteenToFetch
@@ -155,11 +230,22 @@ export default function VendorPage({ onExitToHome }) {
       const res = await fetch(`/api/orders${canteenParam}`);
       if (!res.ok) throw new Error("Failed to load orders");
       const data = await res.json();
+
+      // Check if a brand-new Pending order has arrived
+      const currentPendingCount = data.filter((o) => o.orderStatus === "Pending").length;
+      if (prevPendingCountRef.current !== null && currentPendingCount > prevPendingCountRef.current) {
+        playKitchenChime();
+        setMessage({ text: "⚡ New order request received! Please Accept or Decline.", type: "success" });
+      }
+      prevPendingCountRef.current = currentPendingCount;
+
       setOrders(data);
     } catch (err) {
-      setMessage({ text: err.message, type: "error" });
+      if (!isBackground) {
+        setMessage({ text: err.message, type: "error" });
+      }
     } finally {
-      setLoadingOrders(false);
+      if (!isBackground) setLoadingOrders(false);
     }
   };
 
@@ -177,29 +263,80 @@ export default function VendorPage({ onExitToHome }) {
     }
   };
 
+  // Initial load
   useEffect(() => {
     fetchOrders(selectedVendorCanteen);
     fetchMenu();
   }, [selectedVendorCanteen]);
 
-  const handleUpdateOrderStatus = async (orderId, nextStatus) => {
+  // Auto-refresh countdown effect (every 10 seconds)
+  useEffect(() => {
+    if (!autoRefresh) return;
+    const interval = setInterval(() => {
+      setRefreshCountdown((prev) => {
+        if (prev <= 1) {
+          fetchOrders(selectedVendorCanteen, true);
+          return 10;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [autoRefresh, selectedVendorCanteen]);
+
+  // Order state update (Accept, Ready, etc.)
+  const handleUpdateOrderStatus = async (orderId, nextStatus, extraPayload = {}) => {
     try {
       const res = await fetch(`/api/orders/${orderId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderStatus: nextStatus })
+        body: JSON.stringify({ orderStatus: nextStatus, ...extraPayload })
       });
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Failed to update status");
 
-      setMessage({ text: `Order updated to ${nextStatus}`, type: "success" });
-      fetchOrders();
+      if (nextStatus === "Preparing") {
+        setMessage({ text: `✓ Order ${data.tokenNumber || ""} Accepted! Now cooking in kitchen.`, type: "success" });
+      } else if (nextStatus === "Ready") {
+        setMessage({ text: `✓ Order ${data.tokenNumber || ""} marked Ready for counter pickup!`, type: "success" });
+      } else {
+        setMessage({ text: `Order updated to ${nextStatus}`, type: "success" });
+      }
+
+      fetchOrders(selectedVendorCanteen, true);
     } catch (err) {
       setMessage({ text: err.message, type: "error" });
     }
   };
 
+  // Decline Order Workflow
+  const handleInitiateDecline = (order) => {
+    setSelectedDeclineOrder(order);
+    setIsDeclineModalOpen(true);
+  };
+
+  const handleConfirmDeclineOrder = async (orderId, reason) => {
+    const res = await fetch(`/api/orders/${orderId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        orderStatus: "Cancelled",
+        cancellationReason: reason
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Failed to decline order");
+
+    setMessage({
+      text: `✕ Order ${data.tokenNumber || ""} declined with reason: "${reason}". Student notified.`,
+      type: "info"
+    });
+    fetchOrders(selectedVendorCanteen, true);
+  };
+
+  // Secure Pickup Handover Workflow
   const handleInitiateHandover = (order) => {
     setSelectedHandoverOrder(order);
     setIsHandoverModalOpen(true);
@@ -220,7 +357,7 @@ export default function VendorPage({ onExitToHome }) {
     if (!res.ok) throw new Error(data.message || "Failed to handover order");
 
     setMessage({ text: `✓ Order ${data.tokenNumber} verified & handed over!`, type: "success" });
-    fetchOrders();
+    fetchOrders(selectedVendorCanteen, true);
   };
 
   const handleTogglePaymentStatus = async (orderId, currentStatus) => {
@@ -236,12 +373,13 @@ export default function VendorPage({ onExitToHome }) {
       if (!res.ok) throw new Error(data.message || "Failed to update payment");
 
       setMessage({ text: `Payment status set to ${nextStatus}`, type: "success" });
-      fetchOrders();
+      fetchOrders(selectedVendorCanteen, true);
     } catch (err) {
       setMessage({ text: err.message, type: "error" });
     }
   };
 
+  // Menu Management
   const handleAddMenuItem = async (e) => {
     e.preventDefault();
     if (!newItemName.trim()) {
@@ -314,7 +452,7 @@ export default function VendorPage({ onExitToHome }) {
 
       const canteenName = selectedVendorCanteen?.shortName || selectedVendorCanteen?.name || "this canteen";
       setMessage({
-        text: `"${item.name}" is now ${nextAvail ? "Available" : "Sold Out"} at ${canteenName}! Other canteens remain unaffected.`,
+        text: `"${item.name}" is now ${nextAvail ? "Available (In Stock)" : "Sold Out (Out of Stock)"} at ${canteenName}!`,
         type: "success"
       });
       fetchMenu();
@@ -376,7 +514,6 @@ export default function VendorPage({ onExitToHome }) {
     }
   };
 
-  // Derive existing categories from MongoDB
   const existingCategories = [
     "Hot Snacks",
     "Beverages",
@@ -385,26 +522,74 @@ export default function VendorPage({ onExitToHome }) {
   ];
   const uniqueCategories = [...new Set(existingCategories)];
 
+  // Order Counts & Metrics
   const pendingCount = orders.filter((o) => o.orderStatus === "Pending").length;
   const preparingCount = orders.filter((o) => o.orderStatus === "Preparing").length;
   const readyCount = orders.filter((o) => o.orderStatus === "Ready").length;
+  const completedCount = orders.filter((o) => o.orderStatus === "Completed").length;
+  const cancelledCount = orders.filter((o) => o.orderStatus === "Cancelled").length;
   const totalRevenue = orders.reduce(
     (sum, o) => sum + (o.paymentStatus === "Paid" ? o.totalAmount : 0),
     0
   );
 
-  const displayedMenuItems = menuItems.filter((item) => {
-    const avail = item.availableCanteens || (item.canteenId ? [item.canteenId] : []);
-    return (
-      item.canteenId === selectedVendorCanteen?.id ||
-      avail.includes(selectedVendorCanteen?.id) ||
-      item.canteenId === "all" ||
-      avail.includes("all")
-    );
-  });
+  // Filtered Orders based on Search & Status
+  const filteredOrders = useMemo(() => {
+    return orders.filter((order) => {
+      // Status filter
+      if (statusFilter !== "all" && order.orderStatus !== statusFilter) {
+        return false;
+      }
+
+      // Search Query filter
+      if (searchQuery.trim()) {
+        const query = searchQuery.trim().toLowerCase();
+        const tokenMatch = order.tokenNumber?.toLowerCase().includes(query);
+        const nameMatch = order.studentName?.toLowerCase().includes(query);
+        const itemMatch = order.items?.some((it) => it.name?.toLowerCase().includes(query));
+        if (!tokenMatch && !nameMatch && !itemMatch) return false;
+      }
+
+      return true;
+    });
+  }, [orders, statusFilter, searchQuery]);
+
+  // Displayed Menu Items for current canteen
+  const displayedMenuItems = useMemo(() => {
+    const list = menuItems.filter((item) => {
+      const avail = item.availableCanteens || (item.canteenId ? [item.canteenId] : []);
+      return (
+        item.canteenId === selectedVendorCanteen?.id ||
+        avail.includes(selectedVendorCanteen?.id) ||
+        item.canteenId === "all" ||
+        avail.includes("all")
+      );
+    });
+
+    if (menuSearchQuery.trim()) {
+      const q = menuSearchQuery.trim().toLowerCase();
+      return list.filter(
+        (it) => it.name?.toLowerCase().includes(q) || it.category?.toLowerCase().includes(q)
+      );
+    }
+
+    return list;
+  }, [menuItems, selectedVendorCanteen, menuSearchQuery]);
+
+  // Helper for human-readable time elapsed
+  const getTimeElapsed = (dateString) => {
+    if (!dateString) return "";
+    const diffMs = Date.now() - new Date(dateString).getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins}m ago`;
+    const diffHours = Math.floor(diffMins / 60);
+    return `${diffHours}h ago`;
+  };
 
   return (
     <div>
+      {/* Top Header Row with Title, Live Auto-Refresh & Audio Notification Controls */}
       <div className="page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "12px" }}>
         <div className="page-header-text">
           <span className="section-pill">
@@ -414,22 +599,50 @@ export default function VendorPage({ onExitToHome }) {
             Canteen Vendor Dashboard
           </h2>
           <p className="page-description">
-            Control live order preparation, advance queue stages, and manage canteen inventory dynamically.
+            Accept incoming student orders, manage live cooking queues, and update canteen menu inventory in real time.
           </p>
         </div>
-        {onExitToHome && (
+
+        {/* Live Controls: Sound Toggle, Auto-refresh Countdown, and Logout */}
+        <div className="vendor-live-controls">
           <button
             type="button"
-            className="btn btn-secondary btn-sm btn-vendor-logout"
-            onClick={onExitToHome}
-            title="Log out from this canteen console"
+            className={`vendor-chime-toggle ${soundEnabled ? "active" : ""}`}
+            onClick={toggleSound}
+            title={soundEnabled ? "Sound Alert is ON. Click to mute" : "Sound Alert is MUTED. Click to enable"}
           >
-            ← Log Out / Change Canteen
+            <VolumeIcon size={16} />
+            <span>{soundEnabled ? "Sound: ON" : "Sound: Muted"}</span>
           </button>
-        )}
+
+          <div className={`vendor-auto-pill ${!autoRefresh ? "paused" : ""}`}>
+            <span className="pulse-indicator"></span>
+            <span>
+              {autoRefresh ? `Auto in ${refreshCountdown}s` : "Auto-sync Paused"}
+            </span>
+            <button
+              type="button"
+              style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.75rem", color: "#64748b", textDecoration: "underline", padding: 0 }}
+              onClick={() => setAutoRefresh(!autoRefresh)}
+            >
+              {autoRefresh ? "Pause" : "Resume"}
+            </button>
+          </div>
+
+          {onExitToHome && (
+            <button
+              type="button"
+              className="btn-vendor-logout"
+              onClick={onExitToHome}
+              title="Log out from this canteen console"
+            >
+              ← Exit Console
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Specific Canteen Role Bar (Locked to logged-in canteen) */}
+      {/* Specific Canteen Role Bar */}
       <div className="vendor-canteen-switch-bar">
         <div className="vendor-canteen-info">
           <div className="vendor-canteen-icon-box" style={{ background: selectedVendorCanteen?.themeBg || "#ea580c" }}>
@@ -437,12 +650,12 @@ export default function VendorPage({ onExitToHome }) {
           </div>
           <div className="vendor-canteen-text">
             <div className="vendor-canteen-top-badge">
-              <span className="hub-pill">SPECIFIC CANTEEN ROLE</span>
+              <span className="hub-pill">CANTEEN OPERATOR TERMINAL</span>
               <span className="counter-pill">{selectedVendorCanteen?.counter || "Counter 1"}</span>
             </div>
-            <h3 className="vendor-canteen-name">{selectedVendorCanteen?.name || "Food Court near 34 Block"}</h3>
+            <h3 className="vendor-canteen-name">{selectedVendorCanteen?.name || "Campus Canteen"}</h3>
             <p className="vendor-canteen-sub">
-              📍 {selectedVendorCanteen?.location} • {selectedVendorCanteen?.openingHours}
+              📍 {selectedVendorCanteen?.location} • Hours: {selectedVendorCanteen?.openingHours}
             </p>
           </div>
         </div>
@@ -450,30 +663,32 @@ export default function VendorPage({ onExitToHome }) {
         <div className="vendor-canteen-right-actions">
           <div className="vendor-terminal-status">
             <span className="terminal-live-dot"></span>
-            <span>Active Counter Terminal</span>
+            <span>Live Kitchen Terminal Active</span>
           </div>
         </div>
       </div>
 
-      {/* KPI Stats Bar with SVG Icons */}
+      {/* KPI Stats Bar with Instant Visual Counts */}
       <div className="stats-bar">
         <div className="stat-card">
           <div className="stat-icon stat-icon-orange">
             <ClockIcon size={22} />
           </div>
           <div>
-            <div className="stat-label">Total Orders</div>
+            <div className="stat-label">Total Received</div>
             <div className="stat-value">{orders.length}</div>
           </div>
         </div>
 
-        <div className="stat-card">
+        <div className="stat-card" style={{ borderColor: pendingCount > 0 ? "#f97316" : "" }}>
           <div className="stat-icon stat-icon-amber">
             <FlameIcon size={22} />
           </div>
           <div>
-            <div className="stat-label">Pending Orders</div>
-            <div className="stat-value">{pendingCount}</div>
+            <div className="stat-label">New Requests</div>
+            <div className="stat-value" style={{ color: pendingCount > 0 ? "#ea580c" : "" }}>
+              {pendingCount}
+            </div>
           </div>
         </div>
 
@@ -482,7 +697,7 @@ export default function VendorPage({ onExitToHome }) {
             <ChefIcon size={22} />
           </div>
           <div>
-            <div className="stat-label">Cooking Now</div>
+            <div className="stat-label">In Kitchen Cooking</div>
             <div className="stat-value">{preparingCount}</div>
           </div>
         </div>
@@ -492,7 +707,7 @@ export default function VendorPage({ onExitToHome }) {
             <BellIcon size={22} />
           </div>
           <div>
-            <div className="stat-label">Ready for Pickup</div>
+            <div className="stat-label">Ready at Counter</div>
             <div className="stat-value">{readyCount}</div>
           </div>
         </div>
@@ -508,9 +723,9 @@ export default function VendorPage({ onExitToHome }) {
         </div>
       </div>
 
-      {/* Flash Alert */}
+      {/* Flash Alert Banner */}
       {message.text && (
-        <div className={`alert ${message.type === "success" ? "alert-success" : "alert-error"}`}>
+        <div className={`alert ${message.type === "success" ? "alert-success" : message.type === "info" ? "alert-info" : "alert-error"}`} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span>{message.text}</span>
           <button
             style={{ background: "none", border: "none", cursor: "pointer", fontWeight: "bold", fontSize: "1rem" }}
@@ -521,14 +736,19 @@ export default function VendorPage({ onExitToHome }) {
         </div>
       )}
 
-      {/* Switcher Tabs */}
+      {/* Main Switcher Navigation Tabs */}
       <div className="vendor-tabs-nav">
         <button
           className={`vendor-tab-btn ${activeVendorTab === "orders" ? "active" : ""}`}
           onClick={() => setActiveVendorTab("orders")}
         >
           <ClockIcon size={16} />
-          <span>Live Orders Table ({orders.length})</span>
+          <span>Live Orders Console ({orders.length})</span>
+          {pendingCount > 0 && (
+            <span className="chip-pulse-badge" style={{ fontSize: "0.7rem", padding: "1px 6px", borderRadius: "999px" }}>
+              {pendingCount} NEW
+            </span>
+          )}
         </button>
         <button
           className={`vendor-tab-btn ${activeVendorTab === "queue" ? "active" : ""}`}
@@ -546,174 +766,499 @@ export default function VendorPage({ onExitToHome }) {
         </button>
       </div>
 
-      {/* Tab 1: Orders Management */}
+      {/* =========================================================================
+          TAB 1: LIVE ORDERS CONSOLE (With KDS Card View, Accept/Decline, Search)
+          ========================================================================= */}
       {activeVendorTab === "orders" && (
-        <div className="card">
-          <div className="card-header">
-            <h3 className="card-title">Live Student Orders</h3>
+        <div>
+          {/* Controls Bar: Search + Status Filter Chips + View Mode Switcher */}
+          <div className="vendor-orders-controls-bar">
+            {/* Search Input */}
+            <div className="vendor-search-wrap">
+              <span className="search-icon">
+                <SearchIcon size={16} />
+              </span>
+              <input
+                type="text"
+                className="vendor-search-input"
+                placeholder="Search Token (e.g. 127), Student, or Item..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  className="vendor-clear-search-btn"
+                  onClick={() => setSearchQuery("")}
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
+            {/* View Mode Toggle: Card View vs Table View */}
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <div className="vendor-view-toggle-group">
+                <button
+                  type="button"
+                  className={`btn-view-toggle ${viewMode === "cards" ? "active" : ""}`}
+                  onClick={() => setViewMode("cards")}
+                  title="Card View (Kitchen Display System)"
+                >
+                  📋 Card View
+                </button>
+                <button
+                  type="button"
+                  className={`btn-view-toggle ${viewMode === "table" ? "active" : ""}`}
+                  onClick={() => setViewMode("table")}
+                  title="Table View (Data List)"
+                >
+                  📄 Table View
+                </button>
+              </div>
+
+              <button
+                className="btn btn-secondary btn-sm"
+                onClick={() => fetchOrders()}
+                disabled={loadingOrders}
+                title="Refresh queue manually"
+              >
+                <RefreshIcon size={14} />
+                <span>{loadingOrders ? "Refreshing..." : "Refresh"}</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Status Filter Chips */}
+          <div className="vendor-status-chips">
             <button
-              className="btn btn-secondary btn-sm"
-              onClick={() => fetchOrders()}
-              disabled={loadingOrders}
+              type="button"
+              className={`status-chip ${statusFilter === "all" ? "active" : ""}`}
+              onClick={() => setStatusFilter("all")}
             >
-              <RefreshIcon size={14} />
-              <span>{loadingOrders ? "Refreshing..." : "Refresh Queue"}</span>
+              <span>All Orders</span>
+              <span className="status-chip-count">{orders.length}</span>
+            </button>
+
+            <button
+              type="button"
+              className={`status-chip chip-pending ${statusFilter === "Pending" ? "active" : ""}`}
+              onClick={() => setStatusFilter("Pending")}
+            >
+              <span>⚡ New Requests</span>
+              <span className={`status-chip-count ${pendingCount > 0 ? "chip-pulse-badge" : ""}`}>
+                {pendingCount}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              className={`status-chip ${statusFilter === "Preparing" ? "active" : ""}`}
+              onClick={() => setStatusFilter("Preparing")}
+            >
+              <span>👨‍🍳 Cooking</span>
+              <span className="status-chip-count">{preparingCount}</span>
+            </button>
+
+            <button
+              type="button"
+              className={`status-chip ${statusFilter === "Ready" ? "active" : ""}`}
+              onClick={() => setStatusFilter("Ready")}
+            >
+              <span>🔔 Ready for Pickup</span>
+              <span className="status-chip-count">{readyCount}</span>
+            </button>
+
+            <button
+              type="button"
+              className={`status-chip ${statusFilter === "Completed" ? "active" : ""}`}
+              onClick={() => setStatusFilter("Completed")}
+            >
+              <span>✓ Handed Over</span>
+              <span className="status-chip-count">{completedCount}</span>
+            </button>
+
+            <button
+              type="button"
+              className={`status-chip ${statusFilter === "Cancelled" ? "active" : ""}`}
+              onClick={() => setStatusFilter("Cancelled")}
+            >
+              <span>✕ Declined / Cancelled</span>
+              <span className="status-chip-count">{cancelledCount}</span>
             </button>
           </div>
 
-          {orders.length === 0 ? (
-            <div className="empty-vendor-state">
-              <p>No orders received yet.</p>
-              <small>Switch to "Student Order" tab to place a test order!</small>
+          {/* Empty State */}
+          {filteredOrders.length === 0 ? (
+            <div className="card" style={{ textAlign: "center", padding: "40px 20px" }}>
+              <div style={{ fontSize: "2.5rem", marginBottom: "8px" }}>🍽️</div>
+              <h4 style={{ margin: "0 0 6px", fontSize: "1.1rem", color: "#0f172a" }}>
+                {searchQuery || statusFilter !== "all"
+                  ? "No matching orders found"
+                  : "No orders received yet"}
+              </h4>
+              <p style={{ margin: 0, color: "#64748b", fontSize: "0.85rem" }}>
+                {searchQuery || statusFilter !== "all"
+                  ? "Try resetting filters or search query to view all orders."
+                  : "New student orders will ring a kitchen chime and appear right here automatically."}
+              </p>
             </div>
-          ) : (
-            <div className="table-container">
-              <table className="order-table">
-                <thead>
-                  <tr>
-                    <th>Token No.</th>
-                    <th>Student Details</th>
-                    <th>Items Ordered</th>
-                    <th>Total</th>
-                    <th>Order Status</th>
-                    <th>Payment</th>
-                    <th>Kitchen Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {orders.map((order) => (
-                    <tr key={order._id}>
-                      <td>
-                        <span className="token-table-badge">
-                          {order.tokenNumber}
+          ) : viewMode === "cards" ? (
+            /* =========================================================
+               KDS CARD VIEW (Kitchen Display System - Touch Friendly)
+               ========================================================= */
+            <div className="vendor-kds-grid">
+              {filteredOrders.map((order) => {
+                const isPending = order.orderStatus === "Pending";
+                const isPreparing = order.orderStatus === "Preparing";
+                const isReady = order.orderStatus === "Ready";
+                const isMissed = order.orderStatus === "Missed Pickup";
+                const isCompleted = order.orderStatus === "Completed";
+                const isCancelled = order.orderStatus === "Cancelled";
+
+                const cardStatusClass = isPending
+                  ? "status-pending"
+                  : isPreparing
+                  ? "status-preparing"
+                  : isReady
+                  ? "status-ready"
+                  : isMissed
+                  ? "status-missed"
+                  : isCancelled
+                  ? "status-cancelled"
+                  : "status-completed";
+
+                return (
+                  <div key={order._id} className={`kds-card ${cardStatusClass}`}>
+                    {/* Header */}
+                    <div className="kds-card-header">
+                      <div>
+                        <div className="kds-token-badge">{order.tokenNumber}</div>
+                        <span className="kds-time-ago">
+                          Ordered {getTimeElapsed(order.createdAt)}
                         </span>
-                      </td>
-                      <td>
-                        <strong>{order.studentName}</strong>
-                        <div className="table-timestamp">
-                          {new Date(order.createdAt).toLocaleTimeString()}
-                        </div>
-                      </td>
-                      <td>
-                        <div className="table-items-cell">
-                          {order.items.map((item, idx) => (
-                            <div key={idx} className="table-item-row">
+                      </div>
+                      <div className="kds-meta-right">
+                        <StatusBadge status={order.orderStatus} type="order" />
+                        <span style={{ fontSize: "0.72rem", color: "#64748b" }}>
+                          {new Date(order.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Body */}
+                    <div className="kds-card-body">
+                      {/* Student info */}
+                      <div className="kds-student-info">
+                        <span className="kds-student-name">
+                          👤 {order.studentName}
+                        </span>
+                        {order.studentPhone && (
+                          <span className="kds-student-phone">📞 {order.studentPhone}</span>
+                        )}
+                      </div>
+
+                      {/* Items list */}
+                      <div className="kds-items-list">
+                        {order.items?.map((item, idx) => (
+                          <div key={idx} className="kds-item-row">
+                            <div className="kds-item-left">
                               <img
                                 src={item.image || "/images/samosa.jpg"}
                                 alt={item.name}
-                                className="table-item-thumb"
+                                className="kds-item-img"
                                 onError={(e) => {
                                   e.target.src = "/images/samosa.jpg";
                                 }}
                               />
-                              <span>
-                                {item.name} × <strong>{item.quantity}</strong>
-                              </span>
+                              <span className="kds-item-name">{item.name}</span>
                             </div>
-                          ))}
-                          {order.remarks && (
-                            <div style={{ marginTop: "6px", fontSize: "0.78rem", color: "#b45309", background: "#fef3c7", padding: "3px 8px", borderRadius: "4px", border: "1px dashed #f59e0b", display: "inline-flex", alignItems: "center", gap: "4px" }}>
-                              <span>📝</span>
-                              <strong>Note:</strong>
-                              <span>{order.remarks}</span>
-                            </div>
-                          )}
+                            <span className="kds-item-qty">× {item.quantity}</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Remarks / Special Notes */}
+                      {order.remarks && (
+                        <div className="kds-remarks-box">
+                          <span>📝</span>
+                          <div>
+                            <strong>Student Note:</strong> {order.remarks}
+                          </div>
                         </div>
-                      </td>
-                      <td>
-                        <strong className="table-price">₹{order.totalAmount}</strong>
-                      </td>
-                      <td>
-                        <StatusBadge status={order.orderStatus} type="order" />
-                      </td>
-                      <td>
-                        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                          <StatusBadge status={order.paymentStatus} type="payment" />
-                          <span style={{ fontSize: "0.75rem", color: "#64748b" }}>
-                            Via {order.paymentMethod}
+                      )}
+
+                      {/* Cancellation Reason if Cancelled */}
+                      {isCancelled && order.cancellationReason && (
+                        <div className="kds-cancellation-banner">
+                          ✕ Reason: {order.cancellationReason}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Footer with Billing & Action Buttons */}
+                    <div className="kds-card-footer">
+                      <div className="kds-billing-row">
+                        <div>
+                          <span style={{ fontSize: "0.74rem", color: "#64748b", textTransform: "uppercase", display: "block" }}>
+                            Total Bill
                           </span>
+                          <span className="kds-total-amount">₹{order.totalAmount}</span>
                         </div>
-                      </td>
-                      <td>
-                        <div className="table-actions-stack">
-                          {order.orderStatus === "Pending" && (
-                            <button
-                              className="btn btn-secondary btn-sm btn-action-step"
-                              onClick={() => handleUpdateOrderStatus(order._id, "Preparing")}
-                            >
-                              <ChefIcon size={14} /> Mark Cooking
-                            </button>
-                          )}
-                          {order.orderStatus === "Preparing" && (
-                            <button
-                              className="btn btn-success btn-sm btn-action-step"
-                              onClick={() => handleUpdateOrderStatus(order._id, "Ready")}
-                            >
-                              <BellIcon size={14} /> Mark Ready
-                            </button>
-                          )}
-                          {order.orderStatus === "Ready" && (
-                            <>
+
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                          <button
+                            type="button"
+                            className="btn btn-outline btn-sm"
+                            style={{ fontSize: "0.75rem", padding: "3px 8px" }}
+                            onClick={() => handleTogglePaymentStatus(order._id, order.paymentStatus)}
+                            title="Click to toggle payment status"
+                          >
+                            {order.paymentStatus === "Paid" ? "✓ Paid" : "💵 Unpaid"}
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Action Buttons based on status */}
+                      {isPending && (
+                        <div className="kds-actions-grid two-cols">
+                          <button
+                            type="button"
+                            className="btn-kds-accept"
+                            onClick={() => handleUpdateOrderStatus(order._id, "Preparing")}
+                            title="Accept order and move to kitchen queue"
+                          >
+                            <ChefIcon size={16} /> Accept Order
+                          </button>
+                          <button
+                            type="button"
+                            className="btn-kds-decline"
+                            onClick={() => handleInitiateDecline(order)}
+                            title="Decline order with reason"
+                          >
+                            ✕ Decline
+                          </button>
+                        </div>
+                      )}
+
+                      {isPreparing && (
+                        <div className="kds-actions-grid">
+                          <button
+                            type="button"
+                            className="btn-kds-ready"
+                            onClick={() => handleUpdateOrderStatus(order._id, "Ready")}
+                            title="Food cooked! Mark ready for student counter pickup"
+                          >
+                            <BellIcon size={16} /> Mark Ready for Pickup
+                          </button>
+                        </div>
+                      )}
+
+                      {isReady && (
+                        <div className="kds-actions-grid two-cols">
+                          <button
+                            type="button"
+                            className="btn-kds-verify"
+                            onClick={() => handleInitiateHandover(order)}
+                            title="Student at counter: verify PIN and complete handover"
+                          >
+                            <ShieldCheckIcon size={16} /> Verify PIN
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            style={{ fontSize: "0.8rem", padding: "9px 8px" }}
+                            onClick={() => handleUpdateOrderStatus(order._id, "Missed Pickup")}
+                            title="Student didn't collect in time"
+                          >
+                            <AlertTriangleIcon size={13} /> Missed Pickup
+                          </button>
+                        </div>
+                      )}
+
+                      {isMissed && (
+                        <div className="kds-actions-grid two-cols">
+                          <button
+                            type="button"
+                            className="btn btn-success btn-sm"
+                            onClick={() => handleUpdateOrderStatus(order._id, "Ready")}
+                          >
+                            <RefreshIcon size={13} /> Restore to Ready
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-danger btn-sm"
+                            onClick={() => handleInitiateDecline(order)}
+                          >
+                            ✕ Cancel Order
+                          </button>
+                        </div>
+                      )}
+
+                      {isCompleted && (
+                        <div style={{ textAlign: "center", fontSize: "0.82rem", fontWeight: "700", color: "#16a34a", padding: "6px" }}>
+                          ✓ Order Handed Over & Completed
+                        </div>
+                      )}
+
+                      {isCancelled && (
+                        <div style={{ textAlign: "center", fontSize: "0.82rem", fontWeight: "700", color: "#dc2626", padding: "6px" }}>
+                          ✕ Declined by Kitchen
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            /* =========================================================
+               TABLE VIEW (Compact Data Grid)
+               ========================================================= */
+            <div className="card">
+              <div className="table-container">
+                <table className="order-table">
+                  <thead>
+                    <tr>
+                      <th>Token No.</th>
+                      <th>Student Details</th>
+                      <th>Items Ordered</th>
+                      <th>Total</th>
+                      <th>Status</th>
+                      <th>Payment</th>
+                      <th>Kitchen Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredOrders.map((order) => (
+                      <tr key={order._id}>
+                        <td>
+                          <span className="token-table-badge">{order.tokenNumber}</span>
+                        </td>
+                        <td>
+                          <strong>{order.studentName}</strong>
+                          <div className="table-timestamp">
+                            {new Date(order.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} • {getTimeElapsed(order.createdAt)}
+                          </div>
+                        </td>
+                        <td>
+                          <div className="table-items-cell">
+                            {order.items?.map((item, idx) => (
+                              <div key={idx} className="table-item-row">
+                                <img
+                                  src={item.image || "/images/samosa.jpg"}
+                                  alt={item.name}
+                                  className="table-item-thumb"
+                                  onError={(e) => {
+                                    e.target.src = "/images/samosa.jpg";
+                                  }}
+                                />
+                                <span>
+                                  {item.name} × <strong>{item.quantity}</strong>
+                                </span>
+                              </div>
+                            ))}
+                            {order.remarks && (
+                              <div style={{ marginTop: "4px", fontSize: "0.76rem", color: "#b45309", background: "#fef3c7", padding: "2px 6px", borderRadius: "4px", border: "1px dashed #f59e0b" }}>
+                                <strong>Note:</strong> {order.remarks}
+                              </div>
+                            )}
+                            {order.orderStatus === "Cancelled" && order.cancellationReason && (
+                              <div style={{ marginTop: "4px", fontSize: "0.76rem", color: "#dc2626", background: "#fee2e2", padding: "2px 6px", borderRadius: "4px" }}>
+                                <strong>Declined:</strong> {order.cancellationReason}
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                        <td>
+                          <strong className="table-price">₹{order.totalAmount}</strong>
+                        </td>
+                        <td>
+                          <StatusBadge status={order.orderStatus} type="order" />
+                        </td>
+                        <td>
+                          <button
+                            type="button"
+                            className="btn btn-outline btn-sm"
+                            style={{ fontSize: "0.74rem", padding: "2px 6px" }}
+                            onClick={() => handleTogglePaymentStatus(order._id, order.paymentStatus)}
+                          >
+                            {order.paymentStatus === "Paid" ? "✓ Paid" : "💵 Unpaid"}
+                          </button>
+                        </td>
+                        <td>
+                          <div className="table-actions-stack">
+                            {order.orderStatus === "Pending" && (
+                              <div style={{ display: "flex", gap: "6px" }}>
+                                <button
+                                  className="btn btn-success btn-sm btn-action-step"
+                                  onClick={() => handleUpdateOrderStatus(order._id, "Preparing")}
+                                >
+                                  <ChefIcon size={13} /> Accept
+                                </button>
+                                <button
+                                  className="btn btn-danger btn-sm btn-action-step"
+                                  onClick={() => handleInitiateDecline(order)}
+                                >
+                                  ✕ Decline
+                                </button>
+                              </div>
+                            )}
+                            {order.orderStatus === "Preparing" && (
                               <button
                                 className="btn btn-primary btn-sm btn-action-step"
-                                onClick={() => handleInitiateHandover(order)}
+                                onClick={() => handleUpdateOrderStatus(order._id, "Ready")}
                               >
-                                <ShieldCheckIcon size={14} /> Verify PIN & Handover
+                                <BellIcon size={13} /> Mark Ready
                               </button>
-                              <button
-                                className="btn btn-secondary btn-sm btn-action-step btn-mark-missed"
-                                onClick={() => handleUpdateOrderStatus(order._id, "Missed Pickup")}
-                                title="Mark missed pickup if student didn't collect in time"
-                              >
-                                <AlertTriangleIcon size={13} /> Missed Pickup
-                              </button>
-                            </>
-                          )}
-                          {order.orderStatus === "Missed Pickup" && (
-                            <>
+                            )}
+                            {order.orderStatus === "Ready" && (
+                              <div style={{ display: "flex", gap: "6px" }}>
+                                <button
+                                  className="btn btn-primary btn-sm btn-action-step"
+                                  onClick={() => handleInitiateHandover(order)}
+                                >
+                                  <ShieldCheckIcon size={13} /> Verify PIN
+                                </button>
+                                <button
+                                  className="btn btn-secondary btn-sm btn-action-step"
+                                  onClick={() => handleUpdateOrderStatus(order._id, "Missed Pickup")}
+                                >
+                                  Missed
+                                </button>
+                              </div>
+                            )}
+                            {order.orderStatus === "Missed Pickup" && (
                               <button
                                 className="btn btn-success btn-sm btn-action-step"
                                 onClick={() => handleUpdateOrderStatus(order._id, "Ready")}
                               >
-                                <RefreshIcon size={13} /> Restore to Ready
+                                <RefreshIcon size={13} /> Restore
                               </button>
-                              <button
-                                className="btn btn-danger btn-sm btn-action-step"
-                                onClick={() => handleUpdateOrderStatus(order._id, "Cancelled")}
-                              >
-                                ✕ Cancel Order
-                              </button>
-                            </>
-                          )}
-                          {order.orderStatus === "Completed" && (
-                            <span className="table-collected-tag">
-                              ✓ Collected
-                            </span>
-                          )}
-                          {order.orderStatus === "Cancelled" && (
-                            <span className="table-cancelled-tag">
-                              ✕ Cancelled
-                            </span>
-                          )}
-
-                          <button
-                            className="btn btn-outline btn-sm"
-                            onClick={() => handleTogglePaymentStatus(order._id, order.paymentStatus)}
-                          >
-                            {order.paymentStatus === "Paid" ? "Mark Unpaid" : "💵 Mark Paid"}
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                            )}
+                            {order.orderStatus === "Completed" && (
+                              <span className="table-collected-tag">✓ Handed Over</span>
+                            )}
+                            {order.orderStatus === "Cancelled" && (
+                              <span style={{ fontSize: "0.78rem", fontWeight: "700", color: "#dc2626" }}>
+                                ✕ Declined
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>
       )}
 
-      {/* Tab 2: Live Queue Board for Vendor */}
+      {/* =========================================================================
+          TAB 2: LIVE QUEUE DISPLAY MONITOR (For Canteen TV / Wall Screen)
+          ========================================================================= */}
       {activeVendorTab === "queue" && (
         <div className="vendor-queue-container">
           <div className="vendor-queue-banner-notice">
@@ -737,7 +1282,9 @@ export default function VendorPage({ onExitToHome }) {
         </div>
       )}
 
-      {/* Tab 3: Dynamic Menu Management */}
+      {/* =========================================================================
+          TAB 3: DYNAMIC MENU INVENTORY (Fast 1-Click Stock Toggle & Add Form)
+          ========================================================================= */}
       {activeVendorTab === "menu" && (
         <div>
           {/* Add Item Dynamic Form */}
@@ -841,7 +1388,6 @@ export default function VendorPage({ onExitToHome }) {
                   )}
                 </div>
 
-                {/* Input row with URL input & Upload button */}
                 <div className="image-input-upload-row">
                   <div className="image-url-input-wrap">
                     <input
@@ -980,15 +1526,31 @@ export default function VendorPage({ onExitToHome }) {
             </form>
           </div>
 
-          {/* Active Canteen Menu Table */}
+          {/* Active Canteen Menu Table with Fast In-Stock/Out-of-Stock Toggle */}
           <div className="card">
             <div className="card-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
-              <h3 className="card-title">
-                Menu Inventory • {selectedVendorCanteen?.shortName || selectedVendorCanteen?.name} ({displayedMenuItems.length})
-              </h3>
-              <button className="btn btn-secondary btn-sm" onClick={() => fetchMenu()} disabled={loadingMenu}>
-                <RefreshIcon size={14} /> Refresh Menu
-              </button>
+              <div>
+                <h3 className="card-title" style={{ margin: 0 }}>
+                  Menu Inventory • {selectedVendorCanteen?.shortName || selectedVendorCanteen?.name} ({displayedMenuItems.length})
+                </h3>
+                <small style={{ color: "#64748b" }}>
+                  1-Click instant Out-of-Stock toggle & price manager for this counter
+                </small>
+              </div>
+
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="Filter menu items..."
+                  style={{ width: "200px", padding: "6px 10px", fontSize: "0.85rem" }}
+                  value={menuSearchQuery}
+                  onChange={(e) => setMenuSearchQuery(e.target.value)}
+                />
+                <button className="btn btn-secondary btn-sm" onClick={() => fetchMenu()} disabled={loadingMenu}>
+                  <RefreshIcon size={14} /> Refresh
+                </button>
+              </div>
             </div>
 
             <div className="table-container">
@@ -999,7 +1561,7 @@ export default function VendorPage({ onExitToHome }) {
                     <th>Category</th>
                     <th>Canteen Hub</th>
                     <th>Price</th>
-                    <th>Availability</th>
+                    <th>Stock Status (1-Click Toggle)</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
@@ -1081,16 +1643,17 @@ export default function VendorPage({ onExitToHome }) {
                           )}
                         </td>
                         <td>
-                          <StatusBadge status={isAvailAtCanteen} type="availability" />
+                          <button
+                            type="button"
+                            className={`stock-toggle-btn ${isAvailAtCanteen ? "in-stock" : "out-stock"}`}
+                            onClick={() => handleToggleAvailability(item)}
+                            title="Click to toggle stock status instantly"
+                          >
+                            <span>{isAvailAtCanteen ? "● In Stock" : "○ Sold Out"}</span>
+                          </button>
                         </td>
                         <td>
                           <div className="table-item-actions">
-                            <button
-                              className={`btn btn-sm ${isAvailAtCanteen ? "btn-secondary" : "btn-success"}`}
-                              onClick={() => handleToggleAvailability(item)}
-                            >
-                              {isAvailAtCanteen ? "Mark Sold Out" : "Mark Available"}
-                            </button>
                             <button
                               className="btn btn-danger btn-sm"
                               onClick={() => handleDeleteMenuItem(item._id, item.name)}
@@ -1119,6 +1682,17 @@ export default function VendorPage({ onExitToHome }) {
           setSelectedHandoverOrder(null);
         }}
         onConfirmHandover={handleConfirmSecureHandover}
+      />
+
+      {/* Decline Order Modal */}
+      <DeclineOrderModal
+        isOpen={isDeclineModalOpen}
+        order={selectedDeclineOrder}
+        onClose={() => {
+          setIsDeclineModalOpen(false);
+          setSelectedDeclineOrder(null);
+        }}
+        onConfirmDecline={handleConfirmDeclineOrder}
       />
     </div>
   );

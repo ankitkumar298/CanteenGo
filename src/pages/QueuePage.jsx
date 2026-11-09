@@ -278,6 +278,12 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
                 title: "Order Handed Over",
                 text: `Token ${match.tokenNumber} has been verified and handed over. Enjoy your meal!`
               });
+            } else if (match.orderStatus === "Cancelled") {
+              setLiveNotification({
+                type: "error",
+                title: "Order Declined by Kitchen",
+                text: `Token ${match.tokenNumber} was declined by kitchen.${match.cancellationReason ? ` Reason: ${match.cancellationReason}` : ""}`
+              });
             }
           }
 

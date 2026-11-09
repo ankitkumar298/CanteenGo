@@ -97,6 +97,11 @@ const orderSchema = new mongoose.Schema({
     trim: true,
     default: ""
   },
+  cancellationReason: {
+    type: String,
+    trim: true,
+    default: ""
+  },
   estimatedPrepTime: {
     type: Number,
     default: 7

@@ -53,6 +53,10 @@ export async function PUT(request, context) {
         }
       }
 
+      if (data.cancellationReason !== undefined) {
+        updateData.cancellationReason = data.cancellationReason.toString().trim();
+      }
+
       // Feature: Secure Pickup Verification Code check
       if (data.orderStatus === "Completed" && data.verifyPickupCode !== undefined && !data.bypassVerification) {
         const inputCode = data.verifyPickupCode.toString().trim();
