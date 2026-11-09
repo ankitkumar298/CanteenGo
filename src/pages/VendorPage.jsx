@@ -24,7 +24,7 @@ import QueuePage from "./QueuePage";
 import SecureHandoverModal from "../components/SecureHandoverModal";
 import DeclineOrderModal from "../components/DeclineOrderModal";
 import VendorLiveQueueBoard from "../components/VendorLiveQueueBoard";
-import VendorSalesReportModal from "../components/VendorSalesReportModal";
+import VendorItemSalesView from "../components/VendorItemSalesView";
 
 // Preset fast-pick image shortcuts for the vendor
 const PHOTO_PRESETS = [
@@ -60,8 +60,8 @@ export default function VendorPage({ onExitToHome }) {
   const [selectedDeclineOrder, setSelectedDeclineOrder] = useState(null);
   const [isDeclineModalOpen, setIsDeclineModalOpen] = useState(false);
 
-  // Item-wise Sales Report Modal (Today & Monthly)
-  const [isSalesModalOpen, setIsSalesModalOpen] = useState(false);
+  // Sub-view toggle: "orders" (live kitchen cards) or "sales" (item-wise sales breakdown)
+  const [ordersSubView, setOrdersSubView] = useState("orders");
 
   const { canteens: ctxCanteens } = useAppContext();
   const canteensList = ctxCanteens && ctxCanteens.length > 0 ? ctxCanteens : CAMPUS_CANTEENS;
@@ -679,31 +679,26 @@ export default function VendorPage({ onExitToHome }) {
               )}
             </div>
 
-            {/* Action Bar: Item Sales Report Button & Manual Refresh */}
+            {/* View Mode Toggle: Orders vs Sales */}
             <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <button
-                type="button"
-                className="btn btn-primary btn-sm vendor-sales-btn"
-                onClick={() => setIsSalesModalOpen(true)}
-                title="View today & monthly item-wise sales report for this canteen"
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "6px",
-                  padding: "7px 14px",
-                  borderRadius: "10px",
-                  fontWeight: 700,
-                  fontSize: "0.82rem",
-                  background: "#0f172a",
-                  color: "#ffffff",
-                  boxShadow: "0 2px 6px rgba(15, 23, 42, 0.15)",
-                  cursor: "pointer",
-                  border: "none"
-                }}
-              >
-                <span>📊</span>
-                <span>Item Sales (Today & Monthly)</span>
-              </button>
+              <div className="vendor-view-toggle-group">
+                <button
+                  type="button"
+                  className={`btn-view-toggle ${ordersSubView === "orders" ? "active" : ""}`}
+                  onClick={() => setOrdersSubView("orders")}
+                  title="View Live Kitchen Orders"
+                >
+                  📋 Orders
+                </button>
+                <button
+                  type="button"
+                  className={`btn-view-toggle ${ordersSubView === "sales" ? "active" : ""}`}
+                  onClick={() => setOrdersSubView("sales")}
+                  title="View Item-wise Sales & Revenue for this Canteen"
+                >
+                  📊 Sales
+                </button>
+              </div>
 
               <button
                 className="btn btn-secondary btn-sm"
@@ -717,8 +712,10 @@ export default function VendorPage({ onExitToHome }) {
             </div>
           </div>
 
-          {/* Status Filter Chips */}
-          <div className="vendor-status-chips">
+          {ordersSubView === "orders" ? (
+            <>
+              {/* Status Filter Chips */}
+              <div className="vendor-status-chips">
             <button
               type="button"
               className={`status-chip ${statusFilter === "all" ? "active" : ""}`}
@@ -1018,6 +1015,16 @@ export default function VendorPage({ onExitToHome }) {
                 );
               })}
             </div>
+          )}
+            </>
+          ) : (
+            /* =========================================================
+               IN-PAGE ITEM-WISE SALES BREAKDOWN (Today & Monthly)
+               ========================================================= */
+            <VendorItemSalesView
+              orders={orders}
+              selectedCanteen={selectedVendorCanteen}
+            />
           )}
         </div>
       )}
@@ -1469,14 +1476,6 @@ export default function VendorPage({ onExitToHome }) {
           setSelectedDeclineOrder(null);
         }}
         onConfirmDecline={handleConfirmDeclineOrder}
-      />
-
-      {/* Canteen Item-wise Sales Report Modal (Today & Monthly) */}
-      <VendorSalesReportModal
-        isOpen={isSalesModalOpen}
-        onClose={() => setIsSalesModalOpen(false)}
-        orders={orders}
-        selectedCanteen={selectedVendorCanteen}
       />
     </div>
   );
