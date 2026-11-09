@@ -223,7 +223,7 @@ export default function StudentPage({
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
-  // Bottom Toast Notification (1.5s auto-dismiss with slide up / down animation)
+  // Bottom Toast Notification (1s auto-dismiss on mobile, 2.2s on desktop)
   const [toast, setToast] = useState(null);
   const toastTimeoutRef = useRef(null);
 
@@ -231,12 +231,17 @@ export default function StudentPage({
     if (!message) return;
     if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
     setToast({ message, type, isExiting: false });
+
+    // On mobile, alert dismisses after 1 second as requested; desktop stays 2.2s
+    const isMobile = typeof window !== "undefined" && window.innerWidth <= 768;
+    const duration = isMobile ? 1000 : 2200;
+
     toastTimeoutRef.current = setTimeout(() => {
       setToast((prev) => (prev ? { ...prev, isExiting: true } : null));
       setTimeout(() => {
         setToast(null);
-      }, 250);
-    }, 2400);
+      }, 200);
+    }, duration);
   }, []);
 
   useEffect(() => {
@@ -1661,6 +1666,7 @@ export default function StudentPage({
         cartCount={totalCartCount}
         isCartOpen={Boolean(isMobileCartOpen)}
         onToggleCart={() => setIsMobileCartOpen && setIsMobileCartOpen((prev) => !prev)}
+        onOpenProfile={onOpenProfile}
       />
     </div>
   );

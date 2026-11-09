@@ -45,6 +45,18 @@ export default function NotificationBell({ studentProfile }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Lock mobile body scroll and auto-hide floating bottom dock when notification sheet is open
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.body.classList.toggle("notif-sheet-open", isOpen);
+    }
+    return () => {
+      if (typeof document !== "undefined") {
+        document.body.classList.remove("notif-sheet-open");
+      }
+    };
+  }, [isOpen]);
+
   // Poll for updates on student orders
   useEffect(() => {
     const checkOrderUpdates = async () => {
@@ -263,6 +275,7 @@ export default function NotificationBell({ studentProfile }) {
             aria-hidden="true"
           />
           <div className="nav-notif-dropdown">
+            <div className="notif-mobile-drag-handle" aria-hidden="true" />
             <div className="nav-notif-header">
               <div className="notif-header-title">
                 <span className="notif-title-text">Notifications</span>

@@ -1,6 +1,7 @@
 "use client";
 
-import { UtensilsIcon, QueueIcon, CartIcon, ReceiptIcon } from "./Icons";
+import { UtensilsIcon, QueueIcon, CartIcon, ReceiptIcon, UserIcon } from "./Icons";
+import { useAppContext } from "@/context/AppContext";
 
 /**
  * StudentMobileBottomNav
@@ -10,6 +11,7 @@ import { UtensilsIcon, QueueIcon, CartIcon, ReceiptIcon } from "./Icons";
  * 2. Live Queue
  * 3. Cart (with dynamic count badge)
  * 4. My Orders
+ * 5. Account / Student Profile
  *
  * Hidden on desktop (min-width: 769px).
  */
@@ -18,8 +20,22 @@ export default function StudentMobileBottomNav({
   setStudentTab,
   cartCount = 0,
   isCartOpen = false,
-  onToggleCart
+  onToggleCart,
+  onOpenProfile
 }) {
+  const { setIsProfileModalOpen, isProfileModalOpen } = useAppContext();
+
+  const handleOpenAccount = () => {
+    if (isCartOpen && onToggleCart) {
+      onToggleCart();
+    }
+    if (onOpenProfile) {
+      onOpenProfile();
+    } else if (setIsProfileModalOpen) {
+      setIsProfileModalOpen(true);
+    }
+  };
+
   return (
     <nav
       className="student-mobile-bottom-dock"
@@ -28,7 +44,7 @@ export default function StudentMobileBottomNav({
       {/* 1. Order Food (Utensils / Food Menu) */}
       <button
         type="button"
-        className={`student-mobile-dock-btn ${studentTab === "order" && !isCartOpen ? "active" : ""}`}
+        className={`student-mobile-dock-btn ${studentTab === "order" && !isCartOpen && !isProfileModalOpen ? "active" : ""}`}
         onClick={() => {
           if (isCartOpen && onToggleCart) {
             onToggleCart();
@@ -46,7 +62,7 @@ export default function StudentMobileBottomNav({
       {/* 2. Live Queue Display */}
       <button
         type="button"
-        className={`student-mobile-dock-btn ${studentTab === "queue" ? "active" : ""}`}
+        className={`student-mobile-dock-btn ${studentTab === "queue" && !isCartOpen && !isProfileModalOpen ? "active" : ""}`}
         onClick={() => {
           if (isCartOpen && onToggleCart) {
             onToggleCart();
@@ -82,7 +98,7 @@ export default function StudentMobileBottomNav({
       {/* 4. My Orders / History */}
       <button
         type="button"
-        className={`student-mobile-dock-btn ${studentTab === "my-orders" ? "active" : ""}`}
+        className={`student-mobile-dock-btn ${studentTab === "my-orders" && !isCartOpen && !isProfileModalOpen ? "active" : ""}`}
         onClick={() => {
           if (isCartOpen && onToggleCart) {
             onToggleCart();
@@ -95,6 +111,17 @@ export default function StudentMobileBottomNav({
         title="Your Orders & Tokens"
       >
         <ReceiptIcon size={20} />
+      </button>
+
+      {/* 5. Account / Student Profile */}
+      <button
+        type="button"
+        className={`student-mobile-dock-btn ${isProfileModalOpen ? "active" : ""}`}
+        onClick={handleOpenAccount}
+        aria-label="Account Profile"
+        title="Student Profile & Settings"
+      >
+        <UserIcon size={20} />
       </button>
     </nav>
   );
