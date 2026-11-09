@@ -65,6 +65,9 @@ export default function VendorPage({ onExitToHome }) {
   // Sub-view toggle: "orders" (live kitchen cards) or "sales" (item-wise sales breakdown)
   const [ordersSubView, setOrdersSubView] = useState("orders");
 
+  // Sub-view toggle for Menu tab: "list" (items table) or "add" (add item form)
+  const [menuSubView, setMenuSubView] = useState("list");
+
   // Mobile overflow "..." menu sheet state
   const [isMobileMoreOpen, setIsMobileMoreOpen] = useState(false);
 
@@ -382,6 +385,7 @@ export default function VendorPage({ onExitToHome }) {
       setNewItemDescription("");
       setNewItemAvailable(true);
       setNewItemFoodType("veg");
+      setMenuSubView("list");
       fetchMenu();
     } catch (err) {
       setMessage({ text: err.message, type: "error" });
@@ -1136,12 +1140,44 @@ export default function VendorPage({ onExitToHome }) {
           TAB 3: DYNAMIC MENU INVENTORY (Fast 1-Click Stock Toggle & Add Form)
           ========================================================================= */}
       {activeVendorTab === "menu" && (
-        <div>
-          {/* Add Item Dynamic Form */}
-          <div className="card add-item-card">
-            <h3 className="card-title" style={{ marginBottom: "16px" }}>
-              <PlusIcon size={18} /> Add New Canteen Food Item
-            </h3>
+        <div className="vendor-menu-section-container">
+          {/* Top Sub-view Toggle Buttons: Add New vs Items List */}
+          <div className="menu-subview-toggle-bar">
+            <button
+              type="button"
+              className={`menu-subview-btn ${menuSubView === "add" ? "active" : ""}`}
+              onClick={() => setMenuSubView("add")}
+            >
+              <PlusIcon size={16} />
+              <span>+ Add New</span>
+            </button>
+
+            <button
+              type="button"
+              className={`menu-subview-btn ${menuSubView === "list" ? "active" : ""}`}
+              onClick={() => setMenuSubView("list")}
+            >
+              <ChefIcon size={16} />
+              <span>Items List ({displayedMenuItems.length})</span>
+            </button>
+          </div>
+
+          {/* Sub-view 1: Add Item Dynamic Form */}
+          {menuSubView === "add" && (
+            <div className="card add-item-card">
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexWrap: "wrap", gap: "10px" }}>
+                <h3 className="card-title" style={{ margin: 0 }}>
+                  <PlusIcon size={18} /> Add New Canteen Food Item
+                </h3>
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => setMenuSubView("list")}
+                  style={{ fontSize: "0.8rem", padding: "6px 12px", display: "inline-flex", alignItems: "center", gap: "6px" }}
+                >
+                  <ChefIcon size={14} /> View Items List ({displayedMenuItems.length})
+                </button>
+              </div>
 
             <form onSubmit={handleAddMenuItem} className="add-menu-form">
               <div className="form-grid-4">
@@ -1450,62 +1486,73 @@ export default function VendorPage({ onExitToHome }) {
               </div>
             </form>
           </div>
+          )}
 
-          {/* Active Canteen Menu Table with Fast In-Stock/Out-of-Stock Toggle & Category Filters */}
-          <div className="card">
-            <div className="card-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
-              <div>
-                <h3 className="card-title" style={{ margin: 0 }}>
-                  Menu Inventory • {selectedVendorCanteen?.shortName || selectedVendorCanteen?.name} ({displayedMenuItems.length})
-                </h3>
-                <small style={{ color: "#64748b" }}>
-                  1-Click instant Out-of-Stock toggle, bulk actions & full item editor
-                </small>
-              </div>
-
-              <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-                {/* Bulk Stock Actions */}
-                <div style={{ display: "flex", gap: "6px" }}>
-                  <button
-                    type="button"
-                    className="btn btn-outline btn-sm"
-                    onClick={() => handleBulkStockToggle("mark-all-available")}
-                    disabled={bulkUpdating}
-                    style={{ fontSize: "0.76rem", padding: "4px 10px", borderColor: "#16a34a", color: "#16a34a", fontWeight: 700 }}
-                    title="Mark all menu items for this canteen as In Stock"
-                  >
-                    ✓ All In-Stock
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-outline btn-sm"
-                    onClick={() => handleBulkStockToggle("mark-all-soldout")}
-                    disabled={bulkUpdating}
-                    style={{ fontSize: "0.76rem", padding: "4px 10px", borderColor: "#dc2626", color: "#dc2626", fontWeight: 700 }}
-                    title="Mark all menu items for this canteen as Sold Out (Closing)"
-                  >
-                    ✕ All Sold-Out
-                  </button>
+          {/* Sub-view 2: Active Canteen Menu Table with Fast In-Stock/Out-of-Stock Toggle & Category Filters */}
+          {menuSubView === "list" && (
+            <div className="card">
+              <div className="card-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
+                <div>
+                  <h3 className="card-title" style={{ margin: 0 }}>
+                    Menu Inventory • {selectedVendorCanteen?.shortName || selectedVendorCanteen?.name} ({displayedMenuItems.length})
+                  </h3>
+                  <small style={{ color: "#64748b" }}>
+                    1-Click instant Out-of-Stock toggle, bulk actions & full item editor
+                  </small>
                 </div>
 
-                <input
-                  type="text"
-                  className="form-input"
-                  placeholder="Filter menu items..."
-                  style={{ width: "170px", padding: "6px 10px", fontSize: "0.85rem" }}
-                  value={menuSearchQuery}
-                  onChange={(e) => setMenuSearchQuery(e.target.value)}
-                />
-                <button className="btn btn-secondary btn-sm" onClick={() => fetchMenu()} disabled={loadingMenu}>
-                  <RefreshIcon size={14} /> Refresh
-                </button>
-              </div>
-            </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-sm"
+                    onClick={() => setMenuSubView("add")}
+                    style={{ fontSize: "0.78rem", padding: "5px 12px", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: "6px" }}
+                  >
+                    <PlusIcon size={14} /> + Add Item
+                  </button>
 
-            {/* Category Filter Chips & Dietary Pills Toolbar */}
-            <div style={{ padding: "12px 18px", borderBottom: "1px solid #f1f5f9", background: "#f8fafc", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
-              {/* Category Pills */}
-              <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", alignItems: "center" }}>
+                  {/* Bulk Stock Actions */}
+                  <div style={{ display: "flex", gap: "6px" }}>
+                    <button
+                      type="button"
+                      className="btn btn-outline btn-sm"
+                      onClick={() => handleBulkStockToggle("mark-all-available")}
+                      disabled={bulkUpdating}
+                      style={{ fontSize: "0.76rem", padding: "4px 10px", borderColor: "#16a34a", color: "#16a34a", fontWeight: 700 }}
+                      title="Mark all menu items for this canteen as In Stock"
+                    >
+                      ✓ All In-Stock
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-outline btn-sm"
+                      onClick={() => handleBulkStockToggle("mark-all-soldout")}
+                      disabled={bulkUpdating}
+                      style={{ fontSize: "0.76rem", padding: "4px 10px", borderColor: "#dc2626", color: "#dc2626", fontWeight: 700 }}
+                      title="Mark all menu items for this canteen as Sold Out (Closing)"
+                    >
+                      ✕ All Sold-Out
+                    </button>
+                  </div>
+
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="Filter menu items..."
+                    style={{ width: "170px", padding: "6px 10px", fontSize: "0.85rem" }}
+                    value={menuSearchQuery}
+                    onChange={(e) => setMenuSearchQuery(e.target.value)}
+                  />
+                  <button className="btn btn-secondary btn-sm" onClick={() => fetchMenu()} disabled={loadingMenu}>
+                    <RefreshIcon size={14} /> Refresh
+                  </button>
+                </div>
+              </div>
+
+              {/* Category Filter Chips & Dietary Pills Toolbar */}
+              <div className="vendor-menu-filters-toolbar" style={{ padding: "12px 18px", borderBottom: "1px solid #f1f5f9", background: "#f8fafc", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
+                {/* Category Pills */}
+                <div className="vendor-category-pills-row" style={{ display: "flex", gap: "6px", flexWrap: "wrap", alignItems: "center" }}>
                 <span style={{ fontSize: "0.78rem", fontWeight: 700, color: "#64748b" }}>Category:</span>
                 <button
                   type="button"
@@ -1734,6 +1781,7 @@ export default function VendorPage({ onExitToHome }) {
               </table>
             </div>
           </div>
+          )}
         </div>
       )}
 
