@@ -126,3 +126,4 @@ export default function DeclineOrderModal({ isOpen, order, onClose, onConfirmDec
     </div>
   );
 }
+

@@ -23,6 +23,7 @@ import {
 import QueuePage from "./QueuePage";
 import SecureHandoverModal from "../components/SecureHandoverModal";
 import DeclineOrderModal from "../components/DeclineOrderModal";
+import VendorLiveQueueBoard from "../components/VendorLiveQueueBoard";
 
 // Preset fast-pick image shortcuts for the vendor
 const PHOTO_PRESETS = [
@@ -1261,23 +1262,21 @@ export default function VendorPage({ onExitToHome }) {
           ========================================================================= */}
       {activeVendorTab === "queue" && (
         <div className="vendor-queue-container">
-          <div className="vendor-queue-banner-notice">
-            <div className="notice-left">
-              <span className="section-pill">
-                <QueueIcon size={14} /> Canteen Display Monitor Mode
-              </span>
-              <p className="notice-text">
-                Live view of the student counter board. As a vendor, you can also advance orders directly using the action buttons on each card!
-              </p>
-            </div>
-          </div>
-
-          <QueuePage
-            isVendorView={true}
+          <VendorLiveQueueBoard
+            orders={orders}
             selectedCanteen={selectedVendorCanteen}
             onVendorAction={async (orderId, nextStatus) => {
+              if (nextStatus === "Completed") {
+                const targetOrder = orders.find((o) => o._id === orderId);
+                if (targetOrder) {
+                  handleInitiateHandover(targetOrder);
+                  return;
+                }
+              }
               await handleUpdateOrderStatus(orderId, nextStatus);
             }}
+            onRefresh={() => fetchOrders(selectedVendorCanteen, true)}
+            loading={loadingOrders}
           />
         </div>
       )}

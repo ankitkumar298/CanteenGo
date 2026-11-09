@@ -5487,6 +5487,430 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
 }
 
 /* ==========================================================================
+   Redesigned Vendor Kiosk / TV Live Queue Display Board
+   ========================================================================== */
+.vendor-kiosk-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.vendor-kiosk-board-header {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  border-radius: 18px;
+  padding: 18px 24px;
+  color: #ffffff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.kiosk-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.kiosk-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.kiosk-live-pill {
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  background: #16a34a;
+  color: #ffffff;
+  padding: 2px 8px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.kiosk-counter-pill {
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fed7aa;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+.kiosk-title {
+  font-size: 1.45rem;
+  font-weight: 900;
+  margin: 2px 0 0;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+}
+
+.kiosk-time-display {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #38bdf8;
+  font-family: 'Outfit', monospace;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 6px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+.kiosk-controls-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btn-kiosk-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-kiosk-toggle:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.btn-kiosk-toggle.active {
+  background: #ea580c;
+  border-color: #f97316;
+  color: #ffffff;
+}
+
+/* 3 Swimlane Columns for the Display */
+.vendor-kiosk-lanes-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+@media (max-width: 980px) {
+  .vendor-kiosk-lanes-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.kiosk-lane {
+  background: #ffffff;
+  border-radius: 18px;
+  border: 2px solid #e2e8f0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+}
+
+.kiosk-lane.lane-ready {
+  border-color: #22c55e;
+  box-shadow: 0 8px 25px rgba(34, 197, 94, 0.15);
+}
+
+.kiosk-lane.lane-preparing {
+  border-color: #0ea5e9;
+  box-shadow: 0 8px 25px rgba(14, 165, 233, 0.12);
+}
+
+.kiosk-lane.lane-pending {
+  border-color: #f59e0b;
+  box-shadow: 0 8px 25px rgba(245, 158, 11, 0.12);
+}
+
+.kiosk-lane-header {
+  padding: 14px 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 800;
+  font-size: 1rem;
+}
+
+.lane-ready .kiosk-lane-header {
+  background: #f0fdf4;
+  color: #15803d;
+  border-bottom: 2px solid #bbf7d0;
+}
+
+.lane-preparing .kiosk-lane-header {
+  background: #f0f9ff;
+  color: #0369a1;
+  border-bottom: 2px solid #bae6fd;
+}
+
+.lane-pending .kiosk-lane-header {
+  background: #fffbeb;
+  color: #b45309;
+  border-bottom: 2px solid #fde68a;
+}
+
+.kiosk-lane-badge {
+  font-size: 0.82rem;
+  font-weight: 900;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #ffffff;
+}
+
+.lane-ready .kiosk-lane-badge {
+  color: #15803d;
+  border: 1.5px solid #86efac;
+}
+
+.lane-preparing .kiosk-lane-badge {
+  color: #0369a1;
+  border: 1.5px solid #7dd3fc;
+}
+
+.lane-pending .kiosk-lane-badge {
+  color: #b45309;
+  border: 1.5px solid #fcd34d;
+}
+
+.kiosk-lane-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 280px;
+  max-height: 700px;
+  overflow-y: auto;
+}
+
+.kiosk-card {
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1.5px solid #e2e8f0;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.kiosk-card.ready-card {
+  border-color: #86efac;
+  background: #fcfdfc;
+  box-shadow: 0 4px 14px rgba(34, 197, 94, 0.12);
+}
+
+.kiosk-card.ready-card.flashing {
+  animation: cardFlash 1s 3;
+}
+
+@keyframes cardFlash {
+  0%, 100% { background: #fcfdfc; border-color: #86efac; }
+  50% { background: #dcfce7; border-color: #22c55e; transform: scale(1.02); }
+}
+
+.kiosk-card.preparing-card {
+  border-color: #bae6fd;
+  background: #fdfeff;
+}
+
+.kiosk-card.pending-card {
+  border-color: #fde68a;
+  background: #fffdfa;
+}
+
+.kiosk-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.kiosk-token-huge {
+  font-size: 1.85rem;
+  font-weight: 900;
+  line-height: 1;
+  font-family: 'Outfit', sans-serif;
+  letter-spacing: -0.02em;
+}
+
+.ready-card .kiosk-token-huge {
+  color: #16a34a;
+}
+
+.preparing-card .kiosk-token-huge {
+  color: #0284c7;
+}
+
+.pending-card .kiosk-token-huge {
+  color: #d97706;
+}
+
+.kiosk-card-time {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.kiosk-student-row {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.kiosk-items-box {
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 0.8rem;
+  color: #334155;
+  border: 1px solid #f1f5f9;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.kiosk-item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.kiosk-action-btn-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.btn-kiosk-call {
+  flex: 1;
+  background: #16a34a;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-kiosk-call:hover {
+  background: #15803d;
+}
+
+.btn-kiosk-advance {
+  flex: 1;
+  background: #0284c7;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-kiosk-advance:hover {
+  background: #0369a1;
+}
+
+.btn-kiosk-start {
+  flex: 1;
+  background: #ea580c;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-kiosk-start:hover {
+  background: #c2410c;
+}
+
+/* Recent Pickups Ticker Strip */
+.kiosk-pickups-strip {
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.pickups-strip-label {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #16a34a;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pickups-chips-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  flex: 1;
+}
+
+.pickup-token-chip {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #15803d;
+  font-size: 0.82rem;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 8px;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pickup-token-chip .chip-time {
+  font-size: 0.7rem;
+  color: #16a34a;
+  font-weight: 600;
+}
+
+/* ==========================================================================
    Redesigned Vendor Console & Kitchen Display System (KDS)
    ========================================================================== */
 .vendor-top-toolbar {
