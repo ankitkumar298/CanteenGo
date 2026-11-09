@@ -61,9 +61,28 @@ export default function MenuCard({
               <span className="menu-rating-count">({item.ratingCount || 12})</span>
             </div>
           </div>
-          <span className="veg-indicator" title="Pure Veg Snack">
-            <span className="veg-dot"></span>
-          </span>
+          {(() => {
+            const ft = item.foodType || (item.isVeg === false ? "non-veg" : "veg");
+            if (ft === "non-veg") {
+              return (
+                <span className="veg-indicator non-veg" title="Non-Vegetarian" style={{ borderColor: "#dc2626" }}>
+                  <span className="veg-dot" style={{ background: "#dc2626" }}></span>
+                </span>
+              );
+            }
+            if (ft === "egg") {
+              return (
+                <span className="veg-indicator egg" title="Contains Egg" style={{ borderColor: "#d97706" }}>
+                  <span className="veg-dot" style={{ background: "#d97706" }}></span>
+                </span>
+              );
+            }
+            return (
+              <span className="veg-indicator" title="Pure Vegetarian" style={{ borderColor: "#16a34a" }}>
+                <span className="veg-dot" style={{ background: "#16a34a" }}></span>
+              </span>
+            );
+          })()}
         </div>
 
         {item.description && (

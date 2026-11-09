@@ -20,6 +20,15 @@ const menuSchema = new mongoose.Schema(
       type: Boolean,
       default: true
     },
+    foodType: {
+      type: String,
+      enum: ["veg", "non-veg", "egg"],
+      default: "veg"
+    },
+    isVeg: {
+      type: Boolean,
+      default: true
+    },
     image: {
       type: String,
       default: "/images/samosa.jpg"

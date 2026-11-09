@@ -25,6 +25,7 @@ import SecureHandoverModal from "../components/SecureHandoverModal";
 import DeclineOrderModal from "../components/DeclineOrderModal";
 import VendorLiveQueueBoard from "../components/VendorLiveQueueBoard";
 import VendorItemSalesView from "../components/VendorItemSalesView";
+import EditMenuItemModal from "../components/EditMenuItemModal";
 
 // Preset fast-pick image shortcuts for the vendor
 const PHOTO_PRESETS = [
@@ -86,12 +87,24 @@ export default function VendorPage({ onExitToHome }) {
   const [newItemPrice, setNewItemPrice] = useState("");
   const [newItemCategory, setNewItemCategory] = useState("Hot Snacks");
   const [newItemCustomCategory, setNewItemCustomCategory] = useState("");
+  const [newItemFoodType, setNewItemFoodType] = useState("veg"); // "veg" | "non-veg" | "egg"
   const [newItemImage, setNewItemImage] = useState("/images/samosa.jpg");
   const [newItemDescription, setNewItemDescription] = useState("");
   const [newItemAvailable, setNewItemAvailable] = useState(true);
   const [imageLoadError, setImageLoadError] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const fileInputRef = useRef(null);
+
+  // Menu Category & Dietary Filter Chips
+  const [selectedMenuCategory, setSelectedMenuCategory] = useState("all");
+  const [selectedFoodTypeFilter, setSelectedFoodTypeFilter] = useState("all");
+
+  // Bulk stock update state
+  const [bulkUpdating, setBulkUpdating] = useState(false);
+
+  // Full item edit modal state
+  const [editingMenuItem, setEditingMenuItem] = useState(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const handleImageFileUpload = (e) => {
     const file = e.target.files?.[0];
@@ -345,6 +358,8 @@ export default function VendorPage({ onExitToHome }) {
           name: newItemName.trim(),
           price: priceNum,
           category: finalCategory,
+          foodType: newItemFoodType,
+          isVeg: newItemFoodType === "veg",
           image: newItemImage.trim() || "/images/samosa.jpg",
           description: newItemDescription.trim(),
           available: newItemAvailable,
@@ -362,6 +377,7 @@ export default function VendorPage({ onExitToHome }) {
       setNewItemPrice("");
       setNewItemDescription("");
       setNewItemAvailable(true);
+      setNewItemFoodType("veg");
       fetchMenu();
     } catch (err) {
       setMessage({ text: err.message, type: "error" });
@@ -450,6 +466,41 @@ export default function VendorPage({ onExitToHome }) {
     }
   };
 
+  const handleBulkStockToggle = async (action) => {
+    const isSoldOutAction = action === "mark-all-soldout";
+    const actionLabel = isSoldOutAction ? "Sold Out" : "In Stock / Available";
+    const canteenName = selectedVendorCanteen?.shortName || selectedVendorCanteen?.name || "this canteen";
+
+    if (!window.confirm(`Are you sure you want to mark ALL menu items as ${actionLabel} for ${canteenName}?`)) {
+      return;
+    }
+
+    try {
+      setBulkUpdating(true);
+      const res = await fetch("/api/menu/bulk", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          canteenId: selectedVendorCanteen?.id || "foodcourt-34",
+          action
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Bulk update failed");
+
+      setMessage({
+        text: `✓ All menu items are now marked as ${actionLabel} for ${canteenName}!`,
+        type: "success"
+      });
+      await fetchMenu();
+    } catch (err) {
+      setMessage({ text: err.message, type: "error" });
+    } finally {
+      setBulkUpdating(false);
+    }
+  };
+
   const existingCategories = [
     "Hot Snacks",
     "Beverages",
@@ -492,7 +543,7 @@ export default function VendorPage({ onExitToHome }) {
 
   // Displayed Menu Items for current canteen
   const displayedMenuItems = useMemo(() => {
-    const list = menuItems.filter((item) => {
+    let list = menuItems.filter((item) => {
       const avail = item.availableCanteens || (item.canteenId ? [item.canteenId] : []);
       return (
         item.canteenId === selectedVendorCanteen?.id ||
@@ -502,15 +553,26 @@ export default function VendorPage({ onExitToHome }) {
       );
     });
 
+    if (selectedMenuCategory !== "all") {
+      list = list.filter((it) => (it.category || "Hot Snacks") === selectedMenuCategory);
+    }
+
+    if (selectedFoodTypeFilter !== "all") {
+      list = list.filter((it) => {
+        const ft = it.foodType || (it.isVeg === false ? "non-veg" : "veg");
+        return ft === selectedFoodTypeFilter;
+      });
+    }
+
     if (menuSearchQuery.trim()) {
       const q = menuSearchQuery.trim().toLowerCase();
-      return list.filter(
+      list = list.filter(
         (it) => it.name?.toLowerCase().includes(q) || it.category?.toLowerCase().includes(q)
       );
     }
 
     return list;
-  }, [menuItems, selectedVendorCanteen, menuSearchQuery]);
+  }, [menuItems, selectedVendorCanteen, menuSearchQuery, selectedMenuCategory, selectedFoodTypeFilter]);
 
   // Helper for human-readable time elapsed
   const getTimeElapsed = (dateString) => {
@@ -1127,6 +1189,81 @@ export default function VendorPage({ onExitToHome }) {
                 </div>
               </div>
 
+              {/* Dietary Food Type: Pure Veg / Non-Veg / Egg */}
+              <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "16px", padding: "10px 14px", background: "#f8fafc", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
+                <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#334155" }}>Dietary Type:</span>
+                <div style={{ display: "inline-flex", gap: "8px" }}>
+                  <button
+                    type="button"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      padding: "6px 12px",
+                      borderRadius: "8px",
+                      fontSize: "0.82rem",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      border: newItemFoodType === "veg" ? "2px solid #16a34a" : "1px solid #cbd5e1",
+                      background: newItemFoodType === "veg" ? "#f0fdf4" : "#ffffff",
+                      color: newItemFoodType === "veg" ? "#166534" : "#64748b"
+                    }}
+                    onClick={() => setNewItemFoodType("veg")}
+                  >
+                    <span style={{ width: "12px", height: "12px", border: "1.5px solid #16a34a", borderRadius: "2px", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+                      <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#16a34a" }} />
+                    </span>
+                    <span>Pure Veg</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      padding: "6px 12px",
+                      borderRadius: "8px",
+                      fontSize: "0.82rem",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      border: newItemFoodType === "non-veg" ? "2px solid #dc2626" : "1px solid #cbd5e1",
+                      background: newItemFoodType === "non-veg" ? "#fef2f2" : "#ffffff",
+                      color: newItemFoodType === "non-veg" ? "#991b1b" : "#64748b"
+                    }}
+                    onClick={() => setNewItemFoodType("non-veg")}
+                  >
+                    <span style={{ width: "12px", height: "12px", border: "1.5px solid #dc2626", borderRadius: "2px", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+                      <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#dc2626" }} />
+                    </span>
+                    <span>Non-Veg</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      padding: "6px 12px",
+                      borderRadius: "8px",
+                      fontSize: "0.82rem",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      border: newItemFoodType === "egg" ? "2px solid #d97706" : "1px solid #cbd5e1",
+                      background: newItemFoodType === "egg" ? "#fffbeb" : "#ffffff",
+                      color: newItemFoodType === "egg" ? "#92400e" : "#64748b"
+                    }}
+                    onClick={() => setNewItemFoodType("egg")}
+                  >
+                    <span style={{ width: "12px", height: "12px", border: "1.5px solid #d97706", borderRadius: "2px", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+                      <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#d97706" }} />
+                    </span>
+                    <span>Contains Egg</span>
+                  </button>
+                </div>
+              </div>
+
               {newItemCategory === "Custom" && (
                 <div className="form-group" style={{ marginBottom: "16px" }}>
                   <label className="form-label">Type Custom Category Name:</label>
@@ -1297,7 +1434,7 @@ export default function VendorPage({ onExitToHome }) {
             </form>
           </div>
 
-          {/* Active Canteen Menu Table with Fast In-Stock/Out-of-Stock Toggle */}
+          {/* Active Canteen Menu Table with Fast In-Stock/Out-of-Stock Toggle & Category Filters */}
           <div className="card">
             <div className="card-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
               <div>
@@ -1305,21 +1442,165 @@ export default function VendorPage({ onExitToHome }) {
                   Menu Inventory • {selectedVendorCanteen?.shortName || selectedVendorCanteen?.name} ({displayedMenuItems.length})
                 </h3>
                 <small style={{ color: "#64748b" }}>
-                  1-Click instant Out-of-Stock toggle & price manager for this counter
+                  1-Click instant Out-of-Stock toggle, bulk actions & full item editor
                 </small>
               </div>
 
-              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                {/* Bulk Stock Actions */}
+                <div style={{ display: "flex", gap: "6px" }}>
+                  <button
+                    type="button"
+                    className="btn btn-outline btn-sm"
+                    onClick={() => handleBulkStockToggle("mark-all-available")}
+                    disabled={bulkUpdating}
+                    style={{ fontSize: "0.76rem", padding: "4px 10px", borderColor: "#16a34a", color: "#16a34a", fontWeight: 700 }}
+                    title="Mark all menu items for this canteen as In Stock"
+                  >
+                    ✓ All In-Stock
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-outline btn-sm"
+                    onClick={() => handleBulkStockToggle("mark-all-soldout")}
+                    disabled={bulkUpdating}
+                    style={{ fontSize: "0.76rem", padding: "4px 10px", borderColor: "#dc2626", color: "#dc2626", fontWeight: 700 }}
+                    title="Mark all menu items for this canteen as Sold Out (Closing)"
+                  >
+                    ✕ All Sold-Out
+                  </button>
+                </div>
+
                 <input
                   type="text"
                   className="form-input"
                   placeholder="Filter menu items..."
-                  style={{ width: "200px", padding: "6px 10px", fontSize: "0.85rem" }}
+                  style={{ width: "170px", padding: "6px 10px", fontSize: "0.85rem" }}
                   value={menuSearchQuery}
                   onChange={(e) => setMenuSearchQuery(e.target.value)}
                 />
                 <button className="btn btn-secondary btn-sm" onClick={() => fetchMenu()} disabled={loadingMenu}>
                   <RefreshIcon size={14} /> Refresh
+                </button>
+              </div>
+            </div>
+
+            {/* Category Filter Chips & Dietary Pills Toolbar */}
+            <div style={{ padding: "12px 18px", borderBottom: "1px solid #f1f5f9", background: "#f8fafc", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
+              {/* Category Pills */}
+              <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", alignItems: "center" }}>
+                <span style={{ fontSize: "0.78rem", fontWeight: 700, color: "#64748b" }}>Category:</span>
+                <button
+                  type="button"
+                  onClick={() => setSelectedMenuCategory("all")}
+                  style={{
+                    padding: "4px 10px",
+                    borderRadius: "8px",
+                    fontSize: "0.78rem",
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    background: selectedMenuCategory === "all" ? "#0f172a" : "#ffffff",
+                    color: selectedMenuCategory === "all" ? "#ffffff" : "#475569",
+                    border: "1px solid",
+                    borderColor: selectedMenuCategory === "all" ? "#0f172a" : "#e2e8f0"
+                  }}
+                >
+                  All ({menuItems.length})
+                </button>
+                {uniqueCategories.map((cat) => {
+                  const count = menuItems.filter((m) => (m.category || "Hot Snacks") === cat).length;
+                  return (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => setSelectedMenuCategory(cat)}
+                      style={{
+                        padding: "4px 10px",
+                        borderRadius: "8px",
+                        fontSize: "0.78rem",
+                        fontWeight: 700,
+                        cursor: "pointer",
+                        background: selectedMenuCategory === cat ? "#0f172a" : "#ffffff",
+                        color: selectedMenuCategory === cat ? "#ffffff" : "#475569",
+                        border: "1px solid",
+                        borderColor: selectedMenuCategory === cat ? "#0f172a" : "#e2e8f0"
+                      }}
+                    >
+                      {cat} ({count})
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Dietary Filter Pills */}
+              <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                <button
+                  type="button"
+                  onClick={() => setSelectedFoodTypeFilter("all")}
+                  style={{
+                    padding: "4px 8px",
+                    borderRadius: "6px",
+                    fontSize: "0.76rem",
+                    fontWeight: 700,
+                    border: "1px solid",
+                    borderColor: selectedFoodTypeFilter === "all" ? "#0f172a" : "#e2e8f0",
+                    background: selectedFoodTypeFilter === "all" ? "#0f172a" : "#ffffff",
+                    color: selectedFoodTypeFilter === "all" ? "#ffffff" : "#64748b",
+                    cursor: "pointer"
+                  }}
+                >
+                  All
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedFoodTypeFilter("veg")}
+                  style={{
+                    padding: "4px 8px",
+                    borderRadius: "6px",
+                    fontSize: "0.76rem",
+                    fontWeight: 700,
+                    border: "1px solid",
+                    borderColor: selectedFoodTypeFilter === "veg" ? "#16a34a" : "#bbf7d0",
+                    background: selectedFoodTypeFilter === "veg" ? "#16a34a" : "#f0fdf4",
+                    color: selectedFoodTypeFilter === "veg" ? "#ffffff" : "#166534",
+                    cursor: "pointer"
+                  }}
+                >
+                  🌱 Veg
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedFoodTypeFilter("non-veg")}
+                  style={{
+                    padding: "4px 8px",
+                    borderRadius: "6px",
+                    fontSize: "0.76rem",
+                    fontWeight: 700,
+                    border: "1px solid",
+                    borderColor: selectedFoodTypeFilter === "non-veg" ? "#dc2626" : "#fecaca",
+                    background: selectedFoodTypeFilter === "non-veg" ? "#dc2626" : "#fef2f2",
+                    color: selectedFoodTypeFilter === "non-veg" ? "#ffffff" : "#991b1b",
+                    cursor: "pointer"
+                  }}
+                >
+                  🍗 Non-Veg
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedFoodTypeFilter("egg")}
+                  style={{
+                    padding: "4px 8px",
+                    borderRadius: "6px",
+                    fontSize: "0.76rem",
+                    fontWeight: 700,
+                    border: "1px solid",
+                    borderColor: selectedFoodTypeFilter === "egg" ? "#d97706" : "#fed7aa",
+                    background: selectedFoodTypeFilter === "egg" ? "#d97706" : "#fffbeb",
+                    color: selectedFoodTypeFilter === "egg" ? "#ffffff" : "#92400e",
+                    cursor: "pointer"
+                  }}
+                >
+                  🥚 Egg
                 </button>
               </div>
             </div>
@@ -1340,6 +1621,7 @@ export default function VendorPage({ onExitToHome }) {
                   {displayedMenuItems.map((item) => {
                     const itemPriceAtCanteen = getItemPriceForCanteen(item, selectedVendorCanteen);
                     const isAvailAtCanteen = isItemAvailableAtCanteen(item, selectedVendorCanteen);
+                    const itemFoodType = item.foodType || (item.isVeg === false ? "non-veg" : "veg");
 
                     return (
                       <tr key={item._id}>
@@ -1354,7 +1636,24 @@ export default function VendorPage({ onExitToHome }) {
                               }}
                             />
                             <div>
-                              <strong className="table-item-title">{item.name}</strong>
+                              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                                {itemFoodType === "veg" && (
+                                  <span title="Pure Vegetarian" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "15px", height: "15px", border: "1.5px solid #16a34a", borderRadius: "3px", background: "#ffffff", flexShrink: 0 }}>
+                                    <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#16a34a" }} />
+                                  </span>
+                                )}
+                                {itemFoodType === "non-veg" && (
+                                  <span title="Non-Vegetarian" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "15px", height: "15px", border: "1.5px solid #dc2626", borderRadius: "3px", background: "#ffffff", flexShrink: 0 }}>
+                                    <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#dc2626" }} />
+                                  </span>
+                                )}
+                                {itemFoodType === "egg" && (
+                                  <span title="Contains Egg" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "15px", height: "15px", border: "1.5px solid #d97706", borderRadius: "3px", background: "#ffffff", flexShrink: 0 }}>
+                                    <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#d97706" }} />
+                                  </span>
+                                )}
+                                <strong className="table-item-title">{item.name}</strong>
+                              </div>
                               {item.description && (
                                 <div className="table-item-desc">{item.description}</div>
                               )}
@@ -1372,46 +1671,9 @@ export default function VendorPage({ onExitToHome }) {
                           </span>
                         </td>
                         <td>
-                          {editingItemId === item._id ? (
-                            <div className="inline-edit-box">
-                              <input
-                                type="number"
-                                min="0"
-                                className="form-input"
-                                style={{ width: "80px", padding: "4px 8px" }}
-                                value={editPrice}
-                                onChange={(e) => setEditPrice(e.target.value)}
-                              />
-                              <button
-                                className="btn btn-success btn-sm"
-                                onClick={() => handleSaveEdit(item._id)}
-                              >
-                                Save
-                              </button>
-                              <button
-                                className="btn btn-secondary btn-sm"
-                                onClick={() => setEditingItemId(null)}
-                              >
-                                Cancel
-                              </button>
-                            </div>
-                          ) : (
-                            <div className="price-display-wrap">
-                              <strong className="table-price">₹{itemPriceAtCanteen}</strong>
-                              <button
-                                type="button"
-                                className="btn-edit-icon"
-                                title={`Edit Price for ${selectedVendorCanteen?.shortName || "this canteen"}`}
-                                onClick={() => {
-                                  setEditingItemId(item._id);
-                                  setEditPrice(itemPriceAtCanteen);
-                                  setEditCategory(item.category || "Hot Snacks");
-                                }}
-                              >
-                                <EditIcon size={14} />
-                              </button>
-                            </div>
-                          )}
+                          <div className="price-display-wrap">
+                            <strong className="table-price">₹{itemPriceAtCanteen}</strong>
+                          </div>
                         </td>
                         <td>
                           <button
@@ -1424,11 +1686,25 @@ export default function VendorPage({ onExitToHome }) {
                           </button>
                         </td>
                         <td>
-                          <div className="table-item-actions">
+                          <div className="table-item-actions" style={{ display: "flex", gap: "6px" }}>
                             <button
+                              type="button"
+                              className="btn btn-secondary btn-sm"
+                              onClick={() => {
+                                setEditingMenuItem(item);
+                                setIsEditModalOpen(true);
+                              }}
+                              title="Edit Item Details (Name, Price, Category, Photo, Veg/Non-Veg)"
+                              style={{ padding: "4px 8px", fontSize: "0.78rem" }}
+                            >
+                              <EditIcon size={14} /> Edit
+                            </button>
+                            <button
+                              type="button"
                               className="btn btn-danger btn-sm"
                               onClick={() => handleDeleteMenuItem(item._id, item.name)}
                               title="Delete Item"
+                              style={{ padding: "4px 8px" }}
                             >
                               <TrashIcon size={14} />
                             </button>
@@ -1476,6 +1752,21 @@ export default function VendorPage({ onExitToHome }) {
           setSelectedDeclineOrder(null);
         }}
         onConfirmDecline={handleConfirmDeclineOrder}
+      />
+
+      {/* Full Edit Menu Item Modal */}
+      <EditMenuItemModal
+        isOpen={isEditModalOpen}
+        item={editingMenuItem}
+        selectedCanteen={selectedVendorCanteen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setEditingMenuItem(null);
+        }}
+        onSave={() => {
+          fetchMenu();
+          setMessage({ text: "✓ Menu item updated successfully!", type: "success" });
+        }}
       />
     </div>
   );

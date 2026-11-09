@@ -69,6 +69,18 @@ export async function PUT(request, context) {
       updateData.soldOutCanteens = data.soldOutCanteens;
     }
 
+    if (data.name !== undefined) {
+      updateData.name = String(data.name).trim();
+    }
+
+    if (data.foodType !== undefined) {
+      updateData.foodType = String(data.foodType).toLowerCase();
+      updateData.isVeg = updateData.foodType === "veg";
+    } else if (data.isVeg !== undefined) {
+      updateData.isVeg = Boolean(data.isVeg);
+      updateData.foodType = data.isVeg ? "veg" : "non-veg";
+    }
+
     if (data.category !== undefined) {
       updateData.category = String(data.category).trim() || "Snacks";
     }

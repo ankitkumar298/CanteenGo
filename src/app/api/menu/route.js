@@ -145,7 +145,7 @@ export async function POST(request) {
     await connectToDatabase();
     const data = await request.json();
 
-    const { name, price, available, image, category, description, canteenId, canteenName, availableCanteens } = data;
+    const { name, price, available, image, category, description, canteenId, canteenName, availableCanteens, foodType, isVeg } = data;
 
     // Validation
     if (!name || name.trim() === "") {
@@ -157,6 +157,9 @@ export async function POST(request) {
       return Response.json({ message: "Please provide a valid positive price" }, { status: 400 });
     }
 
+    const resolvedFoodType = foodType ? String(foodType).toLowerCase() : (isVeg === false ? "non-veg" : "veg");
+    const resolvedIsVeg = resolvedFoodType === "veg";
+
     const resolvedCanteenId = canteenId || "foodcourt-34";
     const resolvedCanteenName = canteenName || "Food Court near 34 Block";
     const resolvedAvailableCanteens = Array.isArray(availableCanteens) && availableCanteens.length > 0
@@ -167,6 +170,8 @@ export async function POST(request) {
       name: name.trim(),
       price: numericPrice,
       available: available !== undefined ? Boolean(available) : true,
+      foodType: resolvedFoodType,
+      isVeg: resolvedIsVeg,
       image: image && image.trim() !== "" ? image.trim() : "/images/samosa.jpg",
       category: category && category.trim() !== "" ? category.trim() : "Hot Snacks",
       description: description ? description.trim() : "",
