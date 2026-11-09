@@ -102,6 +102,14 @@ const orderSchema = new mongoose.Schema({
     trim: true,
     default: ""
   },
+  calledAt: {
+    type: Date,
+    default: null
+  },
+  callCount: {
+    type: Number,
+    default: 0
+  },
   estimatedPrepTime: {
     type: Number,
     default: 7

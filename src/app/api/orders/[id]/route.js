@@ -114,6 +114,12 @@ export async function PUT(request, context) {
       }
     }
 
+    // Call Out Feature: Vendor announces token to student
+    if (data.callOut || data.action === "call_out") {
+      updateData.calledAt = new Date();
+      updateData.callCount = (existingOrder.callCount || 0) + 1;
+    }
+
     if (data.delayMinutes !== undefined) {
       updateData.delayMinutes = parseInt(data.delayMinutes, 10) || 0;
     }

@@ -20,8 +20,8 @@ export default function VendorLiveQueueBoard({
 }) {
   const [currentTime, setCurrentTime] = useState("");
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [flashingTokenId, setFlashingTokenId] = useState(null);
+  const [callNotice, setCallNotice] = useState("");
 
   // Live Digital Clock
   useEffect(() => {
@@ -58,52 +58,21 @@ export default function VendorLiveQueueBoard({
     }
   };
 
-  // Play counter chime
-  const playCounterDing = () => {
-    try {
-      const AudioCtx = window.AudioContext || window.webkitAudioContext;
-      if (!AudioCtx) return;
-      const ctx = new AudioCtx();
-      if (ctx.state === "suspended") ctx.resume();
-
-      const now = ctx.currentTime;
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(783.99, now); // G5
-      osc.frequency.setValueAtTime(1046.5, now + 0.15); // C6
-
-      gain.gain.setValueAtTime(0.3, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.7);
-
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-
-      osc.start(now);
-      osc.stop(now + 0.7);
-    } catch {}
-  };
-
-  // Announce Token via Voice & Chime
-  const handleCallToken = (order) => {
-    playCounterDing();
+  // Announce Token: sends callOut trigger to student's notification bell!
+  const handleCallToken = async (order) => {
     setFlashingTokenId(order._id);
     setTimeout(() => setFlashingTokenId(null), 3000);
+    setCallNotice(`📢 Call Out notification sent to student for Token ${order.tokenNumber}!`);
+    setTimeout(() => setCallNotice(""), 3500);
 
-    if (voiceEnabled && "speechSynthesis" in window) {
-      try {
-        window.speechSynthesis.cancel();
-        const cleanToken = (order.tokenNumber || "").replace("T-", "").replace("t-", "");
-        const counterName = selectedCanteen?.counter || "Counter 1";
-        const utterance = new SpeechSynthesisUtterance(
-          `Token number ${cleanToken}, your order is ready for pickup at ${counterName}.`
-        );
-        utterance.rate = 0.92;
-        utterance.pitch = 1.05;
-        window.speechSynthesis.speak(utterance);
-      } catch {}
-    }
+    try {
+      await fetch(`/api/orders/${order._id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ callOut: true })
+      });
+      if (onRefresh) onRefresh();
+    } catch {}
   };
 
   // Filter orders by canteen & stages
@@ -156,16 +125,6 @@ export default function VendorLiveQueueBoard({
 
           <button
             type="button"
-            className={`btn-kiosk-toggle ${voiceEnabled ? "active" : ""}`}
-            onClick={() => setVoiceEnabled(!voiceEnabled)}
-            title={voiceEnabled ? "Voice Calling is ON" : "Voice Calling is MUTED"}
-          >
-            <VolumeIcon size={15} />
-            <span>{voiceEnabled ? "Voice: ON" : "Voice: Muted"}</span>
-          </button>
-
-          <button
-            type="button"
             className={`btn-kiosk-toggle ${isFullscreen ? "active" : ""}`}
             onClick={toggleFullscreen}
             title="Toggle TV / Fullscreen Display Mode"
@@ -187,6 +146,13 @@ export default function VendorLiveQueueBoard({
           )}
         </div>
       </div>
+
+      {/* Real-time Call-Out Flash Toast Notice */}
+      {callNotice && (
+        <div className="alert alert-success" style={{ margin: 0, fontWeight: "700" }}>
+          <span>{callNotice}</span>
+        </div>
+      )}
 
       {/* 3 Prominent Kiosk Swimlanes Grid */}
       <div className="vendor-kiosk-lanes-grid">

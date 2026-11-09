@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { CartIcon, ChefIcon, QueueIcon, ReceiptIcon, LogOutIcon } from "./Icons";
+import NotificationBell from "./NotificationBell";
 
 export default function Navbar({
   userRole,
@@ -99,10 +100,13 @@ export default function Navbar({
       )}
 
       {/* Right Container:
-          - If student: NO Vendor Panel button (Student CANNOT access Vendor)
-          - Shows only "Exit / Switch Role" to return to Home if needed
+          - If student: Notifications Bell & Profile dropdown
       */}
       <div className="nav-right-container">
+        {userRole === "student" && (
+          <NotificationBell studentProfile={studentProfile} />
+        )}
+
         {userRole === "student" && !studentProfile?.name && (
           <button
             type="button"

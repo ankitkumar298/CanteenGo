@@ -55,15 +55,6 @@ export default function VendorPage({ onExitToHome }) {
   // Menu Search
   const [menuSearchQuery, setMenuSearchQuery] = useState("");
 
-  // Sound chime settings & synthesis
-  const [soundEnabled, setSoundEnabled] = useState(() => {
-    try {
-      return localStorage.getItem("canteenGo_vendorSound") !== "false";
-    } catch {
-      return true;
-    }
-  });
-
   // Auto-refresh timer state
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [refreshCountdown, setRefreshCountdown] = useState(10);
@@ -90,53 +81,8 @@ export default function VendorPage({ onExitToHome }) {
     return canteensList[0];
   });
 
-  // Track previous pending count to trigger audio alert for incoming orders
+  // Track previous pending count to trigger alert message for incoming orders
   const prevPendingCountRef = useRef(null);
-
-  // Synthesize kitchen chime bell using Web Audio API (100% reliable, zero external files)
-  const playKitchenChime = () => {
-    if (!soundEnabled) return;
-    try {
-      const AudioCtx = window.AudioContext || window.webkitAudioContext;
-      if (!AudioCtx) return;
-      const ctx = new AudioCtx();
-      if (ctx.state === "suspended") {
-        ctx.resume();
-      }
-
-      const now = ctx.currentTime;
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-
-      osc.type = "sine";
-      // Harmonious double chime: E5 (659Hz) -> A5 (880Hz)
-      osc.frequency.setValueAtTime(659.25, now);
-      osc.frequency.setValueAtTime(880.0, now + 0.14);
-
-      gain.gain.setValueAtTime(0.28, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.7);
-
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-
-      osc.start(now);
-      osc.stop(now + 0.7);
-    } catch {}
-  };
-
-  const toggleSound = () => {
-    const next = !soundEnabled;
-    setSoundEnabled(next);
-    try {
-      localStorage.setItem("canteenGo_vendorSound", String(next));
-    } catch {}
-    if (next) {
-      playKitchenChime();
-      setMessage({ text: "🔔 Kitchen audio notifications enabled!", type: "success" });
-    } else {
-      setMessage({ text: "🔕 Kitchen audio notifications muted", type: "info" });
-    }
-  };
 
   // Add Item Form State
   const [newItemName, setNewItemName] = useState("");
@@ -235,7 +181,6 @@ export default function VendorPage({ onExitToHome }) {
       // Check if a brand-new Pending order has arrived
       const currentPendingCount = data.filter((o) => o.orderStatus === "Pending").length;
       if (prevPendingCountRef.current !== null && currentPendingCount > prevPendingCountRef.current) {
-        playKitchenChime();
         setMessage({ text: "⚡ New order request received! Please Accept or Decline.", type: "success" });
       }
       prevPendingCountRef.current = currentPendingCount;
@@ -604,18 +549,8 @@ export default function VendorPage({ onExitToHome }) {
           </p>
         </div>
 
-        {/* Live Controls: Sound Toggle, Auto-refresh Countdown, and Logout */}
+        {/* Live Controls: Auto-refresh Countdown, and Logout */}
         <div className="vendor-live-controls">
-          <button
-            type="button"
-            className={`vendor-chime-toggle ${soundEnabled ? "active" : ""}`}
-            onClick={toggleSound}
-            title={soundEnabled ? "Sound Alert is ON. Click to mute" : "Sound Alert is MUTED. Click to enable"}
-          >
-            <VolumeIcon size={16} />
-            <span>{soundEnabled ? "Sound: ON" : "Sound: Muted"}</span>
-          </button>
-
           <div className={`vendor-auto-pill ${!autoRefresh ? "paused" : ""}`}>
             <span className="pulse-indicator"></span>
             <span>
