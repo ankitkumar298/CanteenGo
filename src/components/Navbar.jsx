@@ -94,7 +94,7 @@ export default function Navbar({
       {userRole === "vendor" && (
         <div className="nav-center-container">
           <span className="nav-vendor-active-chip">
-            <ChefIcon size={16} /> Live Kitchen Vendor Console
+            <ChefIcon size={16} /> Vendor Dashboard
           </span>
         </div>
       )}

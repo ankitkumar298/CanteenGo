@@ -55,10 +55,6 @@ export default function VendorPage({ onExitToHome }) {
   // Menu Search
   const [menuSearchQuery, setMenuSearchQuery] = useState("");
 
-  // Auto-refresh timer state
-  const [autoRefresh, setAutoRefresh] = useState(true);
-  const [refreshCountdown, setRefreshCountdown] = useState(10);
-
   // Secure Pickup Handover & Decline Modals
   const [selectedHandoverOrder, setSelectedHandoverOrder] = useState(null);
   const [isHandoverModalOpen, setIsHandoverModalOpen] = useState(false);
@@ -215,20 +211,13 @@ export default function VendorPage({ onExitToHome }) {
     fetchMenu();
   }, [selectedVendorCanteen]);
 
-  // Auto-refresh countdown effect (every 10 seconds)
+  // Silent background auto-sync (every 10 seconds) without UI clutter
   useEffect(() => {
-    if (!autoRefresh) return;
     const interval = setInterval(() => {
-      setRefreshCountdown((prev) => {
-        if (prev <= 1) {
-          fetchOrders(selectedVendorCanteen, true);
-          return 10;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+      fetchOrders(selectedVendorCanteen, true);
+    }, 10000);
     return () => clearInterval(interval);
-  }, [autoRefresh, selectedVendorCanteen]);
+  }, [selectedVendorCanteen]);
 
   // Order state update (Accept, Ready, etc.)
   const handleUpdateOrderStatus = async (orderId, nextStatus, extraPayload = {}) => {
@@ -535,49 +524,6 @@ export default function VendorPage({ onExitToHome }) {
 
   return (
     <div>
-      {/* Top Header Row with Title, Live Auto-Refresh & Audio Notification Controls */}
-      <div className="page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "12px" }}>
-        <div className="page-header-text">
-          <span className="section-pill">
-            <ChefIcon size={14} /> Canteen Management Console
-          </span>
-          <h2 className="page-title">
-            Canteen Vendor Dashboard
-          </h2>
-          <p className="page-description">
-            Accept incoming student orders, manage live cooking queues, and update canteen menu inventory in real time.
-          </p>
-        </div>
-
-        {/* Live Controls: Auto-refresh Countdown, and Logout */}
-        <div className="vendor-live-controls">
-          <div className={`vendor-auto-pill ${!autoRefresh ? "paused" : ""}`}>
-            <span className="pulse-indicator"></span>
-            <span>
-              {autoRefresh ? `Auto in ${refreshCountdown}s` : "Auto-sync Paused"}
-            </span>
-            <button
-              type="button"
-              style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.75rem", color: "#64748b", textDecoration: "underline", padding: 0 }}
-              onClick={() => setAutoRefresh(!autoRefresh)}
-            >
-              {autoRefresh ? "Pause" : "Resume"}
-            </button>
-          </div>
-
-          {onExitToHome && (
-            <button
-              type="button"
-              className="btn-vendor-logout"
-              onClick={onExitToHome}
-              title="Log out from this canteen console"
-            >
-              ← Exit Console
-            </button>
-          )}
-        </div>
-      </div>
-
       {/* Specific Canteen Role Bar */}
       <div className="vendor-canteen-switch-bar">
         <div className="vendor-canteen-info">
