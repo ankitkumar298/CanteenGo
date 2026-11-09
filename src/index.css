@@ -10221,12 +10221,13 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
 /* Secure Handover Modal */
 .secure-handover-card {
   max-width: 480px;
-  width: 90%;
-  border-radius: 24px;
-  padding: 24px;
+  width: 92%;
+  border-radius: 20px;
+  padding: 18px 20px;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 12px;
+  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.22);
 }
 
 .secure-header {

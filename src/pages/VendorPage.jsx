@@ -1639,6 +1639,14 @@ export default function VendorPage({ onExitToHome }) {
           await handleTogglePaymentStatus(orderId, "Pending");
           setSelectedHandoverOrder((prev) => (prev ? { ...prev, paymentStatus: "Paid" } : null));
         }}
+        onCallOut={async (orderId) => {
+          await fetch(`/api/orders/${orderId}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ callOut: true })
+          });
+          fetchOrders(selectedVendorCanteen, true);
+        }}
       />
 
       {/* Decline Order Modal */}
