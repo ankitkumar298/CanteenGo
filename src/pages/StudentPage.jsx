@@ -448,6 +448,32 @@ export default function StudentPage({
 
   const totalCartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
+  // Transient 2.5-second floating cart alert when an item is added or quantity increased
+  const [showCartAlert, setShowCartAlert] = useState(false);
+  const cartAlertTimerRef = useRef(null);
+  const prevCartCountRef = useRef(totalCartCount);
+
+  useEffect(() => {
+    if (totalCartCount > prevCartCountRef.current) {
+      setShowCartAlert(true);
+      if (cartAlertTimerRef.current) {
+        clearTimeout(cartAlertTimerRef.current);
+      }
+      cartAlertTimerRef.current = setTimeout(() => {
+        setShowCartAlert(false);
+      }, 2500);
+    } else if (totalCartCount === 0) {
+      setShowCartAlert(false);
+    }
+    prevCartCountRef.current = totalCartCount;
+
+    return () => {
+      if (cartAlertTimerRef.current) {
+        clearTimeout(cartAlertTimerRef.current);
+      }
+    };
+  }, [totalCartCount]);
+
   const submitOrderToServer = async (paidOnline = false) => {
     try {
       setIsUpiModalOpen(false);
@@ -863,11 +889,14 @@ export default function StudentPage({
         liveStatsMap={liveCanteenStats}
       />
 
-      {/* Mobile Floating Mini Cart Bar (< 768px when items in cart & sheet closed) */}
-      {cart.length > 0 && !isMobileCartOpen && (
+      {/* Mobile Floating Mini Cart Bar (< 768px - shows temporarily for 2.5s alert on add to cart) */}
+      {showCartAlert && cart.length > 0 && !isMobileCartOpen && (
         <div
           className="mobile-floating-cart-bar"
-          onClick={() => setIsMobileCartOpen && setIsMobileCartOpen(true)}
+          onClick={() => {
+            setShowCartAlert(false);
+            if (setIsMobileCartOpen) setIsMobileCartOpen(true);
+          }}
           role="button"
           tabIndex={0}
           aria-label="View Cart"
@@ -875,7 +904,7 @@ export default function StudentPage({
           <div className="floating-cart-left">
             <span className="floating-cart-badge">{totalCartCount}</span>
             <div className="floating-cart-meta">
-              <span className="floating-cart-label">{totalCartCount === 1 ? "1 item" : `${totalCartCount} items`}</span>
+              <span className="floating-cart-label">{totalCartCount === 1 ? "1 item added" : `${totalCartCount} items in cart`}</span>
               <strong className="floating-cart-total">₹{cartTotal}</strong>
             </div>
           </div>

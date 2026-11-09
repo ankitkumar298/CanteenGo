@@ -793,13 +793,13 @@
     bottom: max(16px, env(safe-area-inset-bottom, 16px)) !important;
     left: 50% !important;
     transform: translateX(-50%) translateZ(0) !important;
-    background: rgba(15, 23, 42, 0.95) !important;
+    background: #ffffff !important;
     backdrop-filter: blur(18px) !important;
     -webkit-backdrop-filter: blur(18px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.16) !important;
+    border: 1.5px solid #e2e8f0 !important;
     border-radius: 999px !important;
-    padding: 6px 12px !important;
-    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45), 0 2px 10px rgba(0, 0, 0, 0.2) !important;
+    padding: 6px 10px !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06) !important;
     z-index: 999999 !important;
     align-items: center !important;
     gap: 8px !important;
@@ -815,7 +815,7 @@
     align-items: center !important;
     justify-content: center !important;
     background: transparent !important;
-    color: #94a3b8 !important;
+    color: #64748b !important;
     border: none !important;
     cursor: pointer !important;
     transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
@@ -827,9 +827,9 @@
   }
 
   .student-mobile-dock-btn.active {
-    background: #ffffff !important;
-    color: #0f172a !important;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25) !important;
+    background: #ea580c !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 14px rgba(234, 88, 12, 0.38) !important;
   }
 
   .student-dock-cart-badge {
@@ -847,7 +847,13 @@
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    border: 2px solid #0f172a !important;
+    border: 2px solid #ffffff !important;
+  }
+
+  .student-mobile-dock-btn.active .student-dock-cart-badge {
+    background: #ffffff !important;
+    color: #ea580c !important;
+    border: 2px solid #ea580c !important;
   }
 
   /* ========================================================================
@@ -1473,9 +1479,9 @@
 
   .menu-card {
     display: flex !important;
-    flex-direction: row-reverse !important;
+    flex-direction: row !important;
     align-items: stretch !important;
-    justify-content: space-between !important;
+    justify-content: flex-start !important;
     background: #ffffff !important;
     border: 1.5px solid #e2e8f0 !important;
     border-radius: 16px !important;
@@ -1489,15 +1495,22 @@
     box-sizing: border-box !important;
   }
 
-  /* Right column: Image Thumbnail */
+  /* Left column: Image Thumbnail */
   .menu-card-img-wrap {
     width: 92px !important;
+    min-width: 92px !important;
     height: 92px !important;
     border-radius: 12px !important;
     flex-shrink: 0 !important;
     position: relative !important;
     overflow: hidden !important;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08) !important;
+  }
+
+  .combo-card-img-wrap {
+    width: 92px !important;
+    min-width: 92px !important;
+    height: 92px !important;
   }
 
   .menu-card-img {
@@ -1617,7 +1630,22 @@
   }
 
   .menu-card-time-badge {
-    display: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 3px !important;
+    font-size: 0.68rem !important;
+    font-weight: 600 !important;
+    color: #64748b !important;
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    padding: 1px 5px !important;
+    border-radius: 6px !important;
+    white-space: nowrap !important;
+    margin-left: 4px !important;
+  }
+
+  .menu-card-time-badge svg {
+    color: #ea580c !important;
   }
 
   /* Add to Cart Button & Quantity Stepper */
