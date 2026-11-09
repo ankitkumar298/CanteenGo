@@ -57,6 +57,19 @@ export async function PUT(request, context) {
         updateData.cancellationReason = data.cancellationReason.toString().trim();
       }
 
+      // Feature: Unpaid Handover Protection Rule - Cannot handover until Paid!
+      if (data.orderStatus === "Completed") {
+        const finalPaymentStatus = data.paymentStatus || existingOrder.paymentStatus;
+        if (finalPaymentStatus !== "Paid" && !data.bypassPaymentCheck) {
+          return Response.json(
+            {
+              message: `Payment Pending (₹${existingOrder.totalAmount}). Order cannot be handed over until payment is collected and marked as Paid.`
+            },
+            { status: 400 }
+          );
+        }
+      }
+
       // Feature: Secure Pickup Verification Code check
       if (data.orderStatus === "Completed" && data.verifyPickupCode !== undefined && !data.bypassVerification) {
         const inputCode = data.verifyPickupCode.toString().trim();

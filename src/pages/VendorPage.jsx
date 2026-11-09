@@ -1011,11 +1011,18 @@ export default function VendorPage({ onExitToHome }) {
                           <button
                             type="button"
                             className="btn btn-outline btn-sm"
-                            style={{ fontSize: "0.75rem", padding: "3px 8px" }}
+                            style={{
+                              fontSize: "0.76rem",
+                              padding: "4px 10px",
+                              fontWeight: "800",
+                              color: order.paymentStatus === "Paid" ? "#16a34a" : "#dc2626",
+                              borderColor: order.paymentStatus === "Paid" ? "#86efac" : "#fca5a5",
+                              background: order.paymentStatus === "Paid" ? "#f0fdf4" : "#fef2f2"
+                            }}
                             onClick={() => handleTogglePaymentStatus(order._id, order.paymentStatus)}
                             title="Click to toggle payment status"
                           >
-                            {order.paymentStatus === "Paid" ? "✓ Paid" : "💵 Unpaid"}
+                            {order.paymentStatus === "Paid" ? "✓ Paid" : `🔴 Unpaid (₹${order.totalAmount})`}
                           </button>
                         </div>
                       </div>
@@ -1060,10 +1067,22 @@ export default function VendorPage({ onExitToHome }) {
                           <button
                             type="button"
                             className="btn-kds-verify"
+                            style={{
+                              background: order.paymentStatus !== "Paid" ? "#dc2626" : "#ea580c"
+                            }}
                             onClick={() => handleInitiateHandover(order)}
-                            title="Student at counter: verify PIN and complete handover"
+                            title={
+                              order.paymentStatus !== "Paid"
+                                ? `⚠️ Collect ₹${order.totalAmount} before handover!`
+                                : "Student at counter: verify PIN and complete handover"
+                            }
                           >
-                            <ShieldCheckIcon size={16} /> Verify PIN
+                            <ShieldCheckIcon size={16} />
+                            <span>
+                              {order.paymentStatus !== "Paid"
+                                ? `Collect ₹${order.totalAmount} & Handover`
+                                : "Verify PIN & Handover"}
+                            </span>
                           </button>
                           <button
                             type="button"
@@ -1672,7 +1691,7 @@ export default function VendorPage({ onExitToHome }) {
         </div>
       )}
 
-      {/* Secure Pickup Handover Modal */}
+      {/* Secure Pickup Handover Modal with Unpaid Protection & 1-Click Collection */}
       <SecureHandoverModal
         isOpen={isHandoverModalOpen}
         order={selectedHandoverOrder}
@@ -1681,6 +1700,10 @@ export default function VendorPage({ onExitToHome }) {
           setSelectedHandoverOrder(null);
         }}
         onConfirmHandover={handleConfirmSecureHandover}
+        onMarkPaymentPaid={async (orderId) => {
+          await handleTogglePaymentStatus(orderId, "Pending");
+          setSelectedHandoverOrder((prev) => (prev ? { ...prev, paymentStatus: "Paid" } : null));
+        }}
       />
 
       {/* Decline Order Modal */}

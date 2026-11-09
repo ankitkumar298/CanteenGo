@@ -226,8 +226,20 @@ export default function VendorLiveQueueBoard({
                     </span>
                   </div>
 
-                  <div className="kiosk-student-row">
-                    👤 {order.studentName}
+                  <div className="kiosk-student-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span>👤 {order.studentName}</span>
+                    <span
+                      style={{
+                        fontSize: "0.74rem",
+                        fontWeight: "800",
+                        padding: "2px 7px",
+                        borderRadius: "6px",
+                        color: order.paymentStatus === "Paid" ? "#16a34a" : "#dc2626",
+                        background: order.paymentStatus === "Paid" ? "#dcfce7" : "#fee2e2"
+                      }}
+                    >
+                      {order.paymentStatus === "Paid" ? "✓ Paid" : `🔴 Unpaid (₹${order.totalAmount})`}
+                    </span>
                   </div>
 
                   <div className="kiosk-items-box">
@@ -253,10 +265,22 @@ export default function VendorLiveQueueBoard({
                       <button
                         type="button"
                         className="btn-kiosk-advance"
+                        style={{
+                          background: order.paymentStatus !== "Paid" ? "#dc2626" : "#0284c7"
+                        }}
                         onClick={() => onVendorAction(order._id, "Completed")}
-                        title="Mark order collected and handed over"
+                        title={
+                          order.paymentStatus !== "Paid"
+                            ? `Payment Pending (₹${order.totalAmount}). Click to collect payment and verify handover.`
+                            : "Mark order collected and handed over"
+                        }
                       >
-                        <ShieldCheckIcon size={14} /> Handover
+                        <ShieldCheckIcon size={14} />
+                        <span>
+                          {order.paymentStatus !== "Paid"
+                            ? `Collect ₹${order.totalAmount}`
+                            : "Handover"}
+                        </span>
                       </button>
                     )}
                   </div>
@@ -421,3 +445,4 @@ export default function VendorLiveQueueBoard({
     </div>
   );
 }
+

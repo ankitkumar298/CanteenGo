@@ -5910,6 +5910,93 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
   font-weight: 600;
 }
 
+/* Secure Handover Modal Payment Alert & Lock */
+.handover-payment-alert-box {
+  background: #fff7ed;
+  border: 1.5px solid #fdba74;
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.handover-payment-alert-box.is-unpaid {
+  background: #fef2f2;
+  border-color: #fca5a5;
+}
+
+.payment-alert-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex: 1;
+  min-width: 220px;
+}
+
+.payment-alert-icon {
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.payment-alert-title {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: #dc2626;
+  margin: 0;
+  display: block;
+}
+
+.payment-alert-sub {
+  font-size: 0.78rem;
+  color: #7f1d1d;
+  margin: 2px 0 0;
+  line-height: 1.35;
+}
+
+.btn-collect-now {
+  background: #16a34a !important;
+  color: #ffffff !important;
+  font-weight: 800 !important;
+  border-radius: 8px !important;
+  padding: 8px 14px !important;
+  box-shadow: 0 3px 10px rgba(22, 163, 74, 0.25);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-collect-now:hover {
+  background: #15803d !important;
+}
+
+.handover-payment-paid-box {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #15803d;
+  font-size: 0.82rem;
+  font-weight: 700;
+  margin-bottom: 14px;
+}
+
+.handover-locked-notice {
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #dc2626;
+  background: #fee2e2;
+  padding: 6px 12px;
+  border-radius: 8px;
+  margin-top: 10px;
+}
+
 /* ==========================================================================
    Redesigned Vendor Console & Kitchen Display System (KDS)
    ========================================================================== */
