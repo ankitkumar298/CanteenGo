@@ -1,0 +1,464 @@
+/* ==========================================================================
+   CANTEENGO - MOBILE & TABLET RESPONSIVE STYLESHEET (Step 1: Vendor Console)
+   Optimized for touchscreens, mobile viewports (360px - 768px), and iPad/tablets.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. KEYFRAME ANIMATIONS FOR MOBILE TOUCH & INTERACTION
+   -------------------------------------------------------------------------- */
+@keyframes mobileFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes mobileSheetSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(22, 163, 74, 0);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   2. GLOBAL MOBILE INPUT & TOUCH RULES
+   -------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+  /* Prevent iOS automatic zoom on focus while preserving touch precision */
+  input[type="text"],
+  input[type="number"],
+  input[type="email"],
+  input[type="password"],
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  /* Universal touch button active feedback */
+  button:active,
+  .btn:active,
+  .status-chip:active,
+  .btn-view-toggle:active {
+    transform: scale(0.97);
+    transition: transform 0.1s ease;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   3. TABLETS & LARGE PHONES (max-width: 900px)
+   -------------------------------------------------------------------------- */
+@media (max-width: 900px) {
+  /* Live Kiosk Board 3-column swimlanes collapse to single stacked columns */
+  .vendor-kiosk-lanes-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+
+  .vendor-kiosk-board-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+
+  .kiosk-controls-right {
+    width: 100% !important;
+    justify-content: space-between !important;
+  }
+
+  /* Vendor Form Grid collapse from 4 columns to 2 */
+  .form-grid-4 {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   4. MOBILE VIEWPORTS (max-width: 768px)
+   -------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+  /* Vendor Top Canteen Role Bar */
+  .vendor-canteen-switch-bar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+    padding: 12px 14px !important;
+    border-radius: 14px !important;
+  }
+
+  .vendor-canteen-info {
+    width: 100% !important;
+    justify-content: flex-start !important;
+  }
+
+  .vendor-canteen-selector {
+    width: 100% !important;
+  }
+
+  .vendor-canteen-select {
+    width: 100% !important;
+    font-size: 0.88rem !important;
+  }
+
+  /* Vendor Primary Navigation Tabs Ribbon */
+  .vendor-tabs-bar {
+    display: flex !important;
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    padding: 6px !important;
+    gap: 6px !important;
+    margin-bottom: 16px !important;
+  }
+
+  .vendor-tabs-bar::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .vendor-tab-btn {
+    flex: 0 0 auto !important;
+    padding: 8px 14px !important;
+    font-size: 0.84rem !important;
+    border-radius: 10px !important;
+  }
+
+  /* Vendor Quick KPI Stats Grid: 2 per row */
+  .vendor-stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+    margin-bottom: 16px !important;
+  }
+
+  .stat-card {
+    padding: 12px 14px !important;
+    border-radius: 12px !important;
+  }
+
+  .stat-card-value {
+    font-size: 1.45rem !important;
+  }
+
+  .stat-card-label {
+    font-size: 0.72rem !important;
+  }
+
+  /* Controls Bar: Search wrap full width, toggles side by side */
+  .vendor-orders-controls-bar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+    margin-bottom: 14px !important;
+  }
+
+  .vendor-search-wrap {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .vendor-search-input {
+    width: 100% !important;
+    padding-left: 36px !important;
+    padding-right: 32px !important;
+    height: 40px !important;
+  }
+
+  /* View toggle group: Orders vs Sales button full width row */
+  .vendor-orders-controls-bar > div:last-child {
+    display: flex !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    gap: 8px !important;
+  }
+
+  .vendor-view-toggle-group {
+    flex: 1 !important;
+    display: flex !important;
+    justify-content: stretch !important;
+  }
+
+  .btn-view-toggle {
+    flex: 1 !important;
+    text-align: center !important;
+    justify-content: center !important;
+    padding: 8px 10px !important;
+    font-size: 0.82rem !important;
+  }
+
+  /* Status Filter Chips: Horizontal Swipeable Ribbon */
+  .vendor-status-chips {
+    display: flex !important;
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    padding-bottom: 6px !important;
+    gap: 6px !important;
+    margin-bottom: 16px !important;
+  }
+
+  .vendor-status-chips::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .status-chip {
+    flex: 0 0 auto !important;
+    padding: 6px 12px !important;
+    font-size: 0.78rem !important;
+    border-radius: 20px !important;
+  }
+
+  /* KDS Kitchen Cards Grid: 1 Full-width Column on Mobile */
+  .vendor-kds-grid {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+  }
+
+  .kds-card {
+    border-radius: 14px !important;
+    animation: mobileFadeIn 0.25s ease !important;
+  }
+
+  .kds-card-header {
+    padding: 12px 14px !important;
+  }
+
+  .kds-token-badge {
+    font-size: 1.3rem !important;
+    padding: 4px 10px !important;
+  }
+
+  .kds-card-body {
+    padding: 12px 14px !important;
+  }
+
+  .kds-card-footer {
+    padding: 10px 14px 14px !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+
+  .kds-card-footer .btn-action-step,
+  .kds-card-footer .btn-kiosk-call {
+    width: 100% !important;
+    min-height: 42px !important;
+    font-size: 0.88rem !important;
+    justify-content: center !important;
+  }
+
+  /* Add Item Form: 1-Column Stacking on Mobile */
+  .form-grid-4 {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  .add-item-card {
+    padding: 16px !important;
+    border-radius: 14px !important;
+  }
+
+  .image-input-upload-row {
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+
+  .btn-upload-image {
+    width: 100% !important;
+    justify-content: center !important;
+    height: 40px !important;
+  }
+
+  /* Preset photo chips horizontal scroll */
+  .preset-photo-chips {
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+    padding-bottom: 4px !important;
+    scrollbar-width: none !important;
+  }
+
+  .preset-photo-chips::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  /* Form action buttons */
+  .form-actions-bar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+  }
+
+  .btn-submit-item {
+    width: 100% !important;
+    height: 44px !important;
+    font-size: 0.95rem !important;
+    justify-content: center !important;
+  }
+
+  /* Menu Table Card Mobile Optimizations */
+  .card-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+    padding: 14px !important;
+  }
+
+  .card-header > div:last-child {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+  }
+
+  .card-header input.form-input {
+    width: 100% !important;
+  }
+
+  .card-header .btn-secondary {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  /* Bulk action buttons 50/50 split */
+  .card-header > div:last-child > div:first-child {
+    display: flex !important;
+    width: 100% !important;
+    gap: 8px !important;
+  }
+
+  .card-header > div:last-child > div:first-child button {
+    flex: 1 !important;
+    justify-content: center !important;
+    height: 36px !important;
+  }
+
+  /* Category Filter Chips Horizontal Swipe */
+  .card > div:nth-child(2) {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+    padding: 10px 14px !important;
+  }
+
+  .card > div:nth-child(2) > div:first-child,
+  .card > div:nth-child(2) > div:last-child {
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    padding-bottom: 4px !important;
+  }
+
+  /* Table Container Horizontal Scrolling with indicator */
+  .table-container {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    position: relative !important;
+    margin: 0 !important;
+  }
+
+  .order-table {
+    min-width: 620px !important;
+  }
+
+  .order-table th,
+  .order-table td {
+    padding: 10px 12px !important;
+    font-size: 0.82rem !important;
+  }
+
+  /* In-Page Sales Breakdown View on Mobile */
+  .vendor-sales-view-card {
+    padding: 16px 14px !important;
+    border-radius: 14px !important;
+  }
+
+  .vendor-sales-view-card > div:first-child {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+  }
+
+  .vendor-sales-view-card > div:first-child > div:last-child {
+    width: 100% !important;
+    display: flex !important;
+    justify-content: stretch !important;
+  }
+
+  .vendor-sales-view-card > div:first-child > div:last-child button {
+    flex: 1 !important;
+    padding: 7px 8px !important;
+    font-size: 0.78rem !important;
+    text-align: center !important;
+  }
+
+  /* In-Page Sales KPI summary cards: 2x2 grid */
+  .vendor-sales-view-card > div:nth-child(2) {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  /* --------------------------------------------------------------------------
+     5. MOBILE MODALS & BOTTOM SHEETS (< 640px)
+     -------------------------------------------------------------------------- */
+  .modal-backdrop {
+    padding: 0 !important;
+    align-items: flex-end !important;
+  }
+
+  .modal-card,
+  .edit-menu-modal,
+  .secure-handover-card,
+  .decline-modal-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 20px 20px 0 0 !important;
+    max-height: 88vh !important;
+    overflow-y: auto !important;
+    padding: 20px 16px !important;
+    animation: mobileSheetSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  }
+
+  /* Full-width action buttons in modals */
+  .modal-card button[type="submit"],
+  .modal-card .btn-primary,
+  .modal-card .btn-danger {
+    min-height: 44px !important;
+    font-size: 0.92rem !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   6. EXTRA SMALL SCREENS (max-width: 420px - iPhone SE & compact Androids)
+   -------------------------------------------------------------------------- */
+@media (max-width: 420px) {
+  .vendor-stats-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .vendor-sales-view-card > div:nth-child(2) {
+    grid-template-columns: 1fr !important;
+  }
+
+  .kds-token-badge {
+    font-size: 1.15rem !important;
+  }
+
+  .stat-card-value {
+    font-size: 1.3rem !important;
+  }
+}

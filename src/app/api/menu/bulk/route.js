@@ -32,3 +32,4 @@ export async function PUT(request) {
     return Response.json({ message: "Failed to perform bulk stock update", error: error.message }, { status: 500 });
   }
 }
+

@@ -1,5 +1,6 @@
 import "../index.css";
 import "../App.css";
+import "../mobile.css";
 import { AppProvider } from "@/context/AppContext";
 
 export const metadata = {
