@@ -26,6 +26,7 @@ import DeclineOrderModal from "../components/DeclineOrderModal";
 import VendorLiveQueueBoard from "../components/VendorLiveQueueBoard";
 import VendorItemSalesView from "../components/VendorItemSalesView";
 import EditMenuItemModal from "../components/EditMenuItemModal";
+import MobileVendorMoreSheet from "../components/MobileVendorMoreSheet";
 
 // Preset fast-pick image shortcuts for the vendor
 const PHOTO_PRESETS = [
@@ -63,6 +64,9 @@ export default function VendorPage({ onExitToHome }) {
 
   // Sub-view toggle: "orders" (live kitchen cards) or "sales" (item-wise sales breakdown)
   const [ordersSubView, setOrdersSubView] = useState("orders");
+
+  // Mobile overflow "..." menu sheet state
+  const [isMobileMoreOpen, setIsMobileMoreOpen] = useState(false);
 
   const { canteens: ctxCanteens } = useAppContext();
   const canteensList = ctxCanteens && ctxCanteens.length > 0 ? ctxCanteens : CAMPUS_CANTEENS;
@@ -718,31 +722,44 @@ export default function VendorPage({ onExitToHome }) {
         <div>
           {/* Controls Bar: Search + Status Filter Chips + View Mode Switcher */}
           <div className="vendor-orders-controls-bar">
-            {/* Search Input */}
-            <div className="vendor-search-wrap">
-              <span className="search-icon">
-                <SearchIcon size={16} />
-              </span>
-              <input
-                type="text"
-                className="vendor-search-input"
-                placeholder="Search Token (e.g. 127), Student, or Item..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  className="vendor-clear-search-btn"
-                  onClick={() => setSearchQuery("")}
-                >
-                  ✕
-                </button>
-              )}
+            {/* Search Input Row with Mobile "..." More Menu */}
+            <div className="vendor-search-row-mobile-wrap" style={{ display: "flex", gap: "8px", alignItems: "center", width: "100%" }}>
+              <div className="vendor-search-wrap" style={{ flex: 1 }}>
+                <span className="search-icon">
+                  <SearchIcon size={16} />
+                </span>
+                <input
+                  type="text"
+                  className="vendor-search-input"
+                  placeholder="Search Token (e.g. 127), Student, or Item..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    className="vendor-clear-search-btn"
+                    onClick={() => setSearchQuery("")}
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+
+              {/* Mobile "..." More Options Trigger */}
+              <button
+                type="button"
+                className="btn-mobile-more-trigger"
+                onClick={() => setIsMobileMoreOpen(true)}
+                title="More actions, sales & filters"
+                aria-label="More actions"
+              >
+                ⋯
+              </button>
             </div>
 
-            {/* View Mode Toggle: Orders vs Sales */}
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            {/* Desktop Controls: Orders vs Sales Toggle & Refresh */}
+            <div className="vendor-orders-desktop-controls" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
               <div className="vendor-view-toggle-group">
                 <button
                   type="button"
@@ -1767,6 +1784,88 @@ export default function VendorPage({ onExitToHome }) {
           fetchMenu();
           setMessage({ text: "✓ Menu item updated successfully!", type: "success" });
         }}
+      />
+
+      {/* Mobile Floating Bottom Navigation Pill (Icons only, no names) */}
+      <nav className="mobile-vendor-bottom-pill-bar" aria-label="Mobile Navigation">
+        <button
+          type="button"
+          className={`mobile-pill-item ${activeVendorTab === "orders" && ordersSubView === "orders" ? "active" : ""}`}
+          onClick={() => {
+            setActiveVendorTab("orders");
+            setOrdersSubView("orders");
+          }}
+          title="Live Kitchen Orders"
+          aria-label="Live Kitchen Orders"
+        >
+          <ClockIcon size={20} />
+          {pendingCount > 0 && (
+            <span className="mobile-pill-badge">{pendingCount}</span>
+          )}
+        </button>
+
+        <button
+          type="button"
+          className={`mobile-pill-item ${activeVendorTab === "queue" ? "active" : ""}`}
+          onClick={() => setActiveVendorTab("queue")}
+          title="Live Queue Display Board"
+          aria-label="Live Queue Display Board"
+        >
+          <QueueIcon size={20} />
+        </button>
+
+        <button
+          type="button"
+          className={`mobile-pill-item ${activeVendorTab === "menu" ? "active" : ""}`}
+          onClick={() => setActiveVendorTab("menu")}
+          title="Menu Inventory"
+          aria-label="Menu Inventory"
+        >
+          <ChefIcon size={20} />
+        </button>
+
+        <button
+          type="button"
+          className={`mobile-pill-item ${activeVendorTab === "orders" && ordersSubView === "sales" ? "active" : ""}`}
+          onClick={() => {
+            setActiveVendorTab("orders");
+            setOrdersSubView("sales");
+          }}
+          title="Sales & Revenue"
+          aria-label="Sales & Revenue"
+        >
+          <span style={{ fontSize: "1.15rem", lineHeight: 1 }}>📊</span>
+        </button>
+
+        <button
+          type="button"
+          className={`mobile-pill-item ${isMobileMoreOpen ? "active" : ""}`}
+          onClick={() => setIsMobileMoreOpen(true)}
+          title="More Console Options"
+          aria-label="More Console Options"
+        >
+          <span style={{ fontSize: "1.25rem", lineHeight: 1, fontWeight: "900", letterSpacing: "-1px" }}>⋯</span>
+        </button>
+      </nav>
+
+      {/* Mobile Overflow "..." Sheet */}
+      <MobileVendorMoreSheet
+        isOpen={isMobileMoreOpen}
+        onClose={() => setIsMobileMoreOpen(false)}
+        onSelectSales={() => {
+          setActiveVendorTab("orders");
+          setOrdersSubView("sales");
+        }}
+        onSelectFilter={(status) => {
+          setActiveVendorTab("orders");
+          setOrdersSubView("orders");
+          setStatusFilter(status);
+        }}
+        onRefresh={() => fetchOrders(selectedVendorCanteen, true)}
+        completedCount={completedCount}
+        cancelledCount={cancelledCount}
+        selectedCanteen={selectedVendorCanteen}
+        onExit={onExitToHome}
       />
     </div>
   );
