@@ -13,8 +13,6 @@ export default function VendorSalesReportModal({
   const [itemSearchQuery, setItemSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("revenue-desc"); // "revenue-desc" | "qty-desc" | "name-asc" | "price-desc"
 
-  if (!isOpen) return null;
-
   const targetCanteenId = selectedCanteen?.id || selectedCanteen?.canteenId;
   const targetCanteenName = selectedCanteen?.name || selectedCanteen?.shortName;
 
@@ -176,6 +174,8 @@ export default function VendorSalesReportModal({
   const topSellingItem = itemsList.length > 0
     ? [...itemsList].sort((a, b) => b.quantity - a.quantity)[0]
     : null;
+
+  if (!isOpen) return null;
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -732,3 +732,4 @@ export default function VendorSalesReportModal({
     </div>
   );
 }
+
