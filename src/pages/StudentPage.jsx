@@ -4,6 +4,7 @@ import StatusBadge from "../components/StatusBadge";
 import UpiModal from "../components/UpiModal";
 import OrderSuccessOverlay from "../components/OrderSuccessOverlay";
 import ChooseCanteenModal from "../components/ChooseCanteenModal";
+import MobileStudentCartSheet from "../components/MobileStudentCartSheet";
 import { CAMPUS_CANTEENS, DEFAULT_CANTEEN, getCanteenItemPrice, isCanteenOpenNow, getItemEstimateTime, getItemPriceForCanteen, isItemAvailableAtCanteen } from "../data/canteens";
 import { useAppContext } from "@/context/AppContext";
 import {
@@ -67,7 +68,7 @@ export default function StudentPage({
     } catch {}
   }, [remarks]);
 
-  const { canteens: ctxCanteens } = useAppContext();
+  const { canteens: ctxCanteens, isMobileCartOpen, setIsMobileCartOpen } = useAppContext();
   const canteensList = ctxCanteens && ctxCanteens.length > 0 ? ctxCanteens : CAMPUS_CANTEENS;
   const defaultCanteenObj = canteensList[0] || DEFAULT_CANTEEN;
 
@@ -518,6 +519,7 @@ export default function StudentPage({
       setTimeout(() => {
         setLastPlacedOrder(data);
         setSubmittingOrder(false);
+        if (setIsMobileCartOpen) setIsMobileCartOpen(false);
         setSuccessMessage(`Order Placed! Your Pickup Token is ${data.tokenNumber}`);
         setCart([]);
         setRemarks("");
@@ -821,6 +823,67 @@ export default function StudentPage({
         amount={cartTotal}
         onPaymentSuccess={() => submitOrderToServer(true)}
       />
+
+      {/* Mobile Slide-Up Cart Bottom Sheet (< 768px) */}
+      <MobileStudentCartSheet
+        isOpen={Boolean(isMobileCartOpen)}
+        onClose={() => setIsMobileCartOpen && setIsMobileCartOpen(false)}
+        cart={cart}
+        cartTotal={cartTotal}
+        onIncrease={handleIncreaseQuantity}
+        onDecrease={handleDecreaseQuantity}
+        onRemove={handleRemoveFromCart}
+        studentName={studentName}
+        setStudentName={setStudentName}
+        studentProfile={studentProfile}
+        remarks={remarks}
+        setRemarks={setRemarks}
+        paymentMethod={paymentMethod}
+        setPaymentMethod={setPaymentMethod}
+        onSubmit={handlePlaceOrderClick}
+        submitting={submittingOrder}
+        selectedCanteen={selectedCanteen}
+        currentCanteen={currentCanteen}
+        isCartCanteenClosed={isCartCanteenClosed}
+        cartClosedCanteens={cartClosedCanteens}
+        onOpenCanteenModal={(item) => {
+          setCanteenModalItem({
+            menuItemId: item?.menuItemId,
+            name: item?.name,
+            basePrice: item?.basePrice || item?.price,
+            price: item?.price,
+            image: item?.image,
+            quantity: item?.quantity || 1,
+            canteen: item?.canteen || currentCanteen,
+            isFromCart: true
+          });
+          setIsCanteenModalOpen(true);
+        }}
+        liveStatsMap={liveCanteenStats}
+      />
+
+      {/* Mobile Floating Mini Cart Bar (< 768px when items in cart & sheet closed) */}
+      {cart.length > 0 && !isMobileCartOpen && (
+        <div
+          className="mobile-floating-cart-bar"
+          onClick={() => setIsMobileCartOpen && setIsMobileCartOpen(true)}
+          role="button"
+          tabIndex={0}
+          aria-label="View Cart"
+        >
+          <div className="floating-cart-left">
+            <span className="floating-cart-badge">{totalCartCount}</span>
+            <div className="floating-cart-meta">
+              <span className="floating-cart-label">{totalCartCount === 1 ? "1 item" : `${totalCartCount} items`}</span>
+              <strong className="floating-cart-total">₹{cartTotal}</strong>
+            </div>
+          </div>
+          <div className="floating-cart-right">
+            <span>View Cart</span>
+            <ArrowRightIcon size={16} />
+          </div>
+        </div>
+      )}
 
       {/* Main Grid: Menu on Left, Cart on Right */}
       <div className="grid-2">
