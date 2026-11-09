@@ -24,6 +24,7 @@ import QueuePage from "./QueuePage";
 import SecureHandoverModal from "../components/SecureHandoverModal";
 import DeclineOrderModal from "../components/DeclineOrderModal";
 import VendorLiveQueueBoard from "../components/VendorLiveQueueBoard";
+import VendorSalesReportModal from "../components/VendorSalesReportModal";
 
 // Preset fast-pick image shortcuts for the vendor
 const PHOTO_PRESETS = [
@@ -45,9 +46,6 @@ export default function VendorPage({ onExitToHome }) {
   const [loadingMenu, setLoadingMenu] = useState(false);
   const [message, setMessage] = useState({ text: "", type: "" });
 
-  // View mode: "cards" (KDS kitchen cards) or "table"
-  const [viewMode, setViewMode] = useState("cards");
-
   // Search & Filter state for orders
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -61,6 +59,9 @@ export default function VendorPage({ onExitToHome }) {
 
   const [selectedDeclineOrder, setSelectedDeclineOrder] = useState(null);
   const [isDeclineModalOpen, setIsDeclineModalOpen] = useState(false);
+
+  // Item-wise Sales Report Modal (Today & Monthly)
+  const [isSalesModalOpen, setIsSalesModalOpen] = useState(false);
 
   const { canteens: ctxCanteens } = useAppContext();
   const canteensList = ctxCanteens && ctxCanteens.length > 0 ? ctxCanteens : CAMPUS_CANTEENS;
@@ -678,26 +679,31 @@ export default function VendorPage({ onExitToHome }) {
               )}
             </div>
 
-            {/* View Mode Toggle: Card View vs Table View */}
+            {/* Action Bar: Item Sales Report Button & Manual Refresh */}
             <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <div className="vendor-view-toggle-group">
-                <button
-                  type="button"
-                  className={`btn-view-toggle ${viewMode === "cards" ? "active" : ""}`}
-                  onClick={() => setViewMode("cards")}
-                  title="Card View (Kitchen Display System)"
-                >
-                  📋 Card View
-                </button>
-                <button
-                  type="button"
-                  className={`btn-view-toggle ${viewMode === "table" ? "active" : ""}`}
-                  onClick={() => setViewMode("table")}
-                  title="Table View (Data List)"
-                >
-                  📄 Table View
-                </button>
-              </div>
+              <button
+                type="button"
+                className="btn btn-primary btn-sm vendor-sales-btn"
+                onClick={() => setIsSalesModalOpen(true)}
+                title="View today & monthly item-wise sales report for this canteen"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  padding: "7px 14px",
+                  borderRadius: "10px",
+                  fontWeight: 700,
+                  fontSize: "0.82rem",
+                  background: "#0f172a",
+                  color: "#ffffff",
+                  boxShadow: "0 2px 6px rgba(15, 23, 42, 0.15)",
+                  cursor: "pointer",
+                  border: "none"
+                }}
+              >
+                <span>📊</span>
+                <span>Item Sales (Today & Monthly)</span>
+              </button>
 
               <button
                 className="btn btn-secondary btn-sm"
@@ -785,7 +791,7 @@ export default function VendorPage({ onExitToHome }) {
                   : "New student orders will ring a kitchen chime and appear right here automatically."}
               </p>
             </div>
-          ) : viewMode === "cards" ? (
+          ) : (
             /* =========================================================
                KDS CARD VIEW (Kitchen Display System - Touch Friendly)
                ========================================================= */
@@ -1011,147 +1017,6 @@ export default function VendorPage({ onExitToHome }) {
                   </div>
                 );
               })}
-            </div>
-          ) : (
-            /* =========================================================
-               TABLE VIEW (Compact Data Grid)
-               ========================================================= */
-            <div className="card">
-              <div className="table-container">
-                <table className="order-table">
-                  <thead>
-                    <tr>
-                      <th>Token No.</th>
-                      <th>Student Details</th>
-                      <th>Items Ordered</th>
-                      <th>Total</th>
-                      <th>Status</th>
-                      <th>Payment</th>
-                      <th>Kitchen Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredOrders.map((order) => (
-                      <tr key={order._id}>
-                        <td>
-                          <span className="token-table-badge">{order.tokenNumber}</span>
-                        </td>
-                        <td>
-                          <strong>{order.studentName}</strong>
-                          <div className="table-timestamp">
-                            {new Date(order.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} • {getTimeElapsed(order.createdAt)}
-                          </div>
-                        </td>
-                        <td>
-                          <div className="table-items-cell">
-                            {order.items?.map((item, idx) => (
-                              <div key={idx} className="table-item-row">
-                                <img
-                                  src={item.image || "/images/samosa.jpg"}
-                                  alt={item.name}
-                                  className="table-item-thumb"
-                                  onError={(e) => {
-                                    e.target.src = "/images/samosa.jpg";
-                                  }}
-                                />
-                                <span>
-                                  {item.name} × <strong>{item.quantity}</strong>
-                                </span>
-                              </div>
-                            ))}
-                            {order.remarks && (
-                              <div style={{ marginTop: "4px", fontSize: "0.76rem", color: "#b45309", background: "#fef3c7", padding: "2px 6px", borderRadius: "4px", border: "1px dashed #f59e0b" }}>
-                                <strong>Note:</strong> {order.remarks}
-                              </div>
-                            )}
-                            {order.orderStatus === "Cancelled" && order.cancellationReason && (
-                              <div style={{ marginTop: "4px", fontSize: "0.76rem", color: "#dc2626", background: "#fee2e2", padding: "2px 6px", borderRadius: "4px" }}>
-                                <strong>Declined:</strong> {order.cancellationReason}
-                              </div>
-                            )}
-                          </div>
-                        </td>
-                        <td>
-                          <strong className="table-price">₹{order.totalAmount}</strong>
-                        </td>
-                        <td>
-                          <StatusBadge status={order.orderStatus} type="order" />
-                        </td>
-                        <td>
-                          <button
-                            type="button"
-                            className="btn btn-outline btn-sm"
-                            style={{ fontSize: "0.74rem", padding: "2px 6px" }}
-                            onClick={() => handleTogglePaymentStatus(order._id, order.paymentStatus)}
-                          >
-                            {order.paymentStatus === "Paid" ? "✓ Paid" : "💵 Unpaid"}
-                          </button>
-                        </td>
-                        <td>
-                          <div className="table-actions-stack">
-                            {order.orderStatus === "Pending" && (
-                              <div style={{ display: "flex", gap: "6px" }}>
-                                <button
-                                  className="btn btn-success btn-sm btn-action-step"
-                                  onClick={() => handleUpdateOrderStatus(order._id, "Preparing")}
-                                >
-                                  <ChefIcon size={13} /> Accept
-                                </button>
-                                <button
-                                  className="btn btn-danger btn-sm btn-action-step"
-                                  onClick={() => handleInitiateDecline(order)}
-                                >
-                                  ✕ Decline
-                                </button>
-                              </div>
-                            )}
-                            {order.orderStatus === "Preparing" && (
-                              <button
-                                className="btn btn-primary btn-sm btn-action-step"
-                                onClick={() => handleUpdateOrderStatus(order._id, "Ready")}
-                              >
-                                <BellIcon size={13} /> Mark Ready
-                              </button>
-                            )}
-                            {order.orderStatus === "Ready" && (
-                              <div style={{ display: "flex", gap: "6px" }}>
-                                <button
-                                  className="btn btn-primary btn-sm btn-action-step"
-                                  onClick={() => handleInitiateHandover(order)}
-                                >
-                                  <ShieldCheckIcon size={13} /> Verify PIN
-                                </button>
-                                <button
-                                  className="btn btn-secondary btn-sm btn-action-step"
-                                  onClick={() => handleUpdateOrderStatus(order._id, "Missed Pickup")}
-                                >
-                                  Missed
-                                </button>
-                              </div>
-                            )}
-                            {order.orderStatus === "Missed Pickup" && (
-                              <button
-                                className="btn btn-success btn-sm btn-action-step"
-                                onClick={() => handleUpdateOrderStatus(order._id, "Ready")}
-                              >
-                                <RefreshIcon size={13} /> Restore
-                              </button>
-                            )}
-                            {order.orderStatus === "Completed" && (
-                              <span className="table-collected-tag">✓ Handed Over</span>
-                            )}
-                            {order.orderStatus === "Cancelled" && (
-                              <span style={{ fontSize: "0.78rem", fontWeight: "700", color: "#dc2626" }}>
-                                ✕ Declined
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
             </div>
           )}
         </div>
@@ -1604,6 +1469,14 @@ export default function VendorPage({ onExitToHome }) {
           setSelectedDeclineOrder(null);
         }}
         onConfirmDecline={handleConfirmDeclineOrder}
+      />
+
+      {/* Canteen Item-wise Sales Report Modal (Today & Monthly) */}
+      <VendorSalesReportModal
+        isOpen={isSalesModalOpen}
+        onClose={() => setIsSalesModalOpen(false)}
+        orders={orders}
+        selectedCanteen={selectedVendorCanteen}
       />
     </div>
   );
