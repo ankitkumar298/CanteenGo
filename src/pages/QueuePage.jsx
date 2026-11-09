@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import StatusBadge from "../components/StatusBadge";
+import StudentMobileBottomNav from "../components/StudentMobileBottomNav";
 import { CAMPUS_CANTEENS } from "../data/canteens";
 import { useAppContext } from "@/context/AppContext";
 import {
@@ -2010,6 +2011,16 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
             )}
           </div>
         </div>
+      )}
+
+      {/* Student Floating Bottom Pill Dock (< 768px, permanently sticky fixed) */}
+      {!isVendorView && (
+        <StudentMobileBottomNav
+          studentTab="queue"
+          setStudentTab={setActiveTab}
+          cartCount={0}
+          onToggleCart={() => setActiveTab && setActiveTab("order")}
+        />
       )}
     </div>
   );

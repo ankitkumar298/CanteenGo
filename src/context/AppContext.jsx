@@ -3,7 +3,6 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import StudentProfileModal from "@/components/StudentProfileModal";
-import StudentMobileBottomNav from "@/components/StudentMobileBottomNav";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { CAMPUS_CANTEENS } from "@/data/canteens";
@@ -214,22 +213,6 @@ export function AppProvider({ children }) {
         </main>
 
         {pathname !== "/" && <Footer />}
-
-        {/* Student Mobile Bottom Pill Bar (Only icons: Order Food, Live Queue, Cart, My Orders) */}
-        {userRole === "student" && pathname !== "/" && (
-          <StudentMobileBottomNav
-            studentTab={studentTab}
-            setStudentTab={handleSetStudentTab}
-            cartCount={totalCartCount}
-            isCartOpen={isMobileCartOpen}
-            onToggleCart={() => {
-              if (!pathname?.startsWith("/order")) {
-                router.push("/order");
-              }
-              setIsMobileCartOpen((prev) => !prev);
-            }}
-          />
-        )}
 
         <StudentProfileModal
           isOpen={isProfileModalOpen}

@@ -21,7 +21,17 @@ export default function StudentMobileBottomNav({
   onToggleCart
 }) {
   return (
-    <nav className="student-mobile-bottom-dock" aria-label="Student Mobile Navigation">
+    <nav
+      className="student-mobile-bottom-dock"
+      aria-label="Student Mobile Navigation"
+      style={{
+        position: "fixed",
+        bottom: "16px",
+        left: "50%",
+        transform: "translateX(-50%) translateZ(0)",
+        zIndex: 99999
+      }}
+    >
       {/* 1. Order Food (Utensils / Food Menu) */}
       <button
         type="button"
@@ -96,3 +106,4 @@ export default function StudentMobileBottomNav({
     </nav>
   );
 }
+

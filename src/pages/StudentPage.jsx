@@ -5,6 +5,7 @@ import UpiModal from "../components/UpiModal";
 import OrderSuccessOverlay from "../components/OrderSuccessOverlay";
 import ChooseCanteenModal from "../components/ChooseCanteenModal";
 import MobileStudentCartSheet from "../components/MobileStudentCartSheet";
+import StudentMobileBottomNav from "../components/StudentMobileBottomNav";
 import { CAMPUS_CANTEENS, DEFAULT_CANTEEN, getCanteenItemPrice, isCanteenOpenNow, getItemEstimateTime, getItemPriceForCanteen, isItemAvailableAtCanteen } from "../data/canteens";
 import { useAppContext } from "@/context/AppContext";
 import {
@@ -1553,6 +1554,15 @@ export default function StudentPage({
         cartItems={cart}
         canteens={canteensList}
         menuItems={menu}
+      />
+
+      {/* Student Floating Bottom Pill Dock (< 768px, permanently sticky fixed) */}
+      <StudentMobileBottomNav
+        studentTab="order"
+        setStudentTab={setActiveTab}
+        cartCount={totalCartCount}
+        isCartOpen={Boolean(isMobileCartOpen)}
+        onToggleCart={() => setIsMobileCartOpen && setIsMobileCartOpen((prev) => !prev)}
       />
     </div>
   );

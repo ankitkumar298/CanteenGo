@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import StatusBadge from "../components/StatusBadge";
+import StudentMobileBottomNav from "../components/StudentMobileBottomNav";
 import {
   ReceiptIcon,
   ShieldCheckIcon,
@@ -1311,6 +1312,17 @@ export default function YourOrdersPage({
           </div>
         </div>
       )}
+
+      {/* Student Floating Bottom Pill Dock (< 768px, permanently sticky fixed) */}
+      <StudentMobileBottomNav
+        studentTab="my-orders"
+        setStudentTab={(tab) => {
+          if (tab === "order") onOrderMore && onOrderMore();
+          else if (tab === "queue") onGoToQueue && onGoToQueue();
+        }}
+        cartCount={0}
+        onToggleCart={() => onOrderMore && onOrderMore()}
+      />
     </div>
   );
 }
