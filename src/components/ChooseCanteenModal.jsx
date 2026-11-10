@@ -31,6 +31,103 @@ export default function ChooseCanteenModal({
   const [liveStats, setLiveStats] = useState({});
   const [loadingStats, setLoadingStats] = useState(false);
 
+  // Touch / Pointer Drag-down & Exit Animation States
+  const [dragOffset, setDragOffset] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
+  const dragStartYRef = useRef(0);
+  const currentDragYRef = useRef(0);
+  const isClosingRef = useRef(false);
+
+  const handleCloseWithAnimation = () => {
+    if (isClosingRef.current) return;
+    isClosingRef.current = true;
+    setIsClosing(true);
+    setDragOffset(0);
+
+    setTimeout(() => {
+      setIsClosing(false);
+      isClosingRef.current = false;
+      if (onClose) onClose();
+    }, 280);
+  };
+
+  const handlePointerDown = (e) => {
+    if (isClosingRef.current) return;
+    if (e.button && e.button !== 0) return;
+    const startY = e.clientY;
+    dragStartYRef.current = startY;
+    currentDragYRef.current = startY;
+    setIsDragging(true);
+
+    const onPointerMove = (moveEvt) => {
+      currentDragYRef.current = moveEvt.clientY;
+      const deltaY = moveEvt.clientY - startY;
+      if (deltaY > 0) {
+        setDragOffset(deltaY);
+      } else {
+        setDragOffset(deltaY * 0.15);
+      }
+    };
+
+    const onPointerUp = (upEvt) => {
+      setIsDragging(false);
+      const deltaY = upEvt.clientY - startY;
+      if (deltaY > 55) {
+        handleCloseWithAnimation();
+      } else {
+        setDragOffset(0);
+      }
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", onPointerUp);
+      window.removeEventListener("pointercancel", onPointerUp);
+    };
+
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", onPointerUp);
+    window.addEventListener("pointercancel", onPointerUp);
+  };
+
+  const handleTouchStart = (e) => {
+    if (isClosingRef.current) return;
+    const startY = e.touches[0].clientY;
+    dragStartYRef.current = startY;
+    currentDragYRef.current = startY;
+    setIsDragging(true);
+  };
+
+  const handleTouchMove = (e) => {
+    if (!isDragging || isClosingRef.current) return;
+    const currentY = e.touches[0].clientY;
+    currentDragYRef.current = currentY;
+    const deltaY = currentY - dragStartYRef.current;
+    if (deltaY > 0) {
+      setDragOffset(deltaY);
+    } else {
+      setDragOffset(deltaY * 0.15);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (!isDragging || isClosingRef.current) return;
+    setIsDragging(false);
+    const deltaY = currentDragYRef.current - dragStartYRef.current;
+    if (deltaY > 55) {
+      handleCloseWithAnimation();
+    } else {
+      setDragOffset(0);
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      setIsClosing(false);
+      setDragOffset(0);
+      setIsDragging(false);
+      isClosingRef.current = false;
+    }
+  }, [isOpen]);
+
   useEffect(() => {
     if (propMenuItems && propMenuItems.length > 0) {
       setDbMenuItems(propMenuItems);
@@ -98,7 +195,7 @@ export default function ChooseCanteenModal({
 
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") handleCloseWithAnimation();
     };
     if (isOpen) {
       document.body.style.overflow = "hidden";
@@ -223,15 +320,41 @@ export default function ChooseCanteenModal({
   if (!isOpen) return null;
 
   return (
-    <div className="choose-canteen-overlay" onClick={onClose}>
+    <div
+      className={`choose-canteen-overlay ${isClosing ? "overlay-closing" : ""}`}
+      onClick={handleCloseWithAnimation}
+    >
       <div
-        className="choose-canteen-modal light-theme-modal"
+        className={`choose-canteen-modal light-theme-modal ${isClosing ? "sheet-closing" : ""} ${isDragging ? "sheet-dragging" : ""}`}
         onClick={(e) => e.stopPropagation()}
+        style={{
+          transform: isClosing
+            ? "translateY(100%)"
+            : dragOffset > 0
+            ? `translateY(${dragOffset}px)`
+            : undefined,
+          transition: isDragging
+            ? "none"
+            : "transform 0.28s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.22s ease"
+        }}
         role="dialog"
         aria-modal="true"
       >
-        {/* Touch Drag handle for mobile bottom sheet */}
-        <div className="sheet-drag-handle choose-canteen-drag-handle" onClick={onClose} />
+        {/* Touch / Pointer Drag handle zone for mobile bottom sheet */}
+        <div
+          className="sheet-drag-handle-zone choose-canteen-drag-zone"
+          onPointerDown={handlePointerDown}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onClick={handleCloseWithAnimation}
+          role="button"
+          tabIndex={0}
+          aria-label="Drag down or tap to close"
+          title="Drag down or tap to close"
+        >
+          <div className="sheet-drag-handle choose-canteen-drag-handle" />
+        </div>
 
         {/* Pinned Top Container: Header, Cart switcher, Preview, and Sort */}
         <div className="choose-canteen-top-bar">
@@ -260,7 +383,7 @@ export default function ChooseCanteenModal({
             <button
               type="button"
               className="choose-canteen-close-btn"
-              onClick={onClose}
+              onClick={handleCloseWithAnimation}
               aria-label="Close"
             >
               ✕

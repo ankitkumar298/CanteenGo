@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import StatusBadge from "../components/StatusBadge";
-import StudentMobileBottomNav from "../components/StudentMobileBottomNav";
+import StudentMobileBottomNav from "../components/mobile/StudentMobileBottomNav";
 import { CAMPUS_CANTEENS } from "../data/canteens";
 import { useAppContext } from "@/context/AppContext";
 import {
@@ -25,7 +25,7 @@ import {
   CheckSquareIcon
 } from "../components/Icons";
 
-export default function QueuePage({ setActiveTab, isVendorView = false, onVendorAction, selectedCanteen = null }) {
+export default function QueuePage({ setActiveTab, isVendorView = false, onVendorAction, selectedCanteen = null, onOpenProfile }) {
   const { canteens: ctxCanteens } = useAppContext();
   const canteensList = ctxCanteens && ctxCanteens.length > 0 ? ctxCanteens : CAMPUS_CANTEENS;
 
@@ -2060,8 +2060,7 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
         <StudentMobileBottomNav
           studentTab="queue"
           setStudentTab={setActiveTab}
-          cartCount={0}
-          onToggleCart={() => setActiveTab && setActiveTab("order")}
+          onOpenProfile={onOpenProfile}
         />
       )}
     </div>

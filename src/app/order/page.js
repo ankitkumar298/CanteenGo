@@ -18,6 +18,7 @@ export default function OrderRoute() {
     if (tab === "queue") router.push("/queue");
     else if (tab === "my-orders") router.push("/orders");
     else if (tab === "order") router.push("/order");
+    else if (tab === "account") router.push("/account");
   };
 
   return (

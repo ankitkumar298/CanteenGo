@@ -2,7 +2,10 @@
 
 import { createContext, useContext, useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import StudentProfileModal from "@/components/StudentProfileModal";
+import MobileStudentCartSheet from "@/components/mobile/MobileStudentCartSheet";
+import OrderSuccessOverlay from "@/components/OrderSuccessOverlay";
+import UpiModal from "@/components/UpiModal";
+import ChooseCanteenModal from "@/components/ChooseCanteenModal";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { CAMPUS_CANTEENS } from "@/data/canteens";
@@ -140,7 +143,7 @@ export function AppProvider({ children }) {
   // Derive userRole from route pathname:
   const userRole = pathname?.startsWith("/vendor")
     ? "vendor"
-    : ["/order", "/queue", "/orders", "/my-orders"].some((p) => pathname?.startsWith(p))
+    : ["/order", "/queue", "/orders", "/my-orders", "/account"].some((p) => pathname?.startsWith(p))
     ? "student"
     : null;
 
@@ -149,12 +152,15 @@ export function AppProvider({ children }) {
     ? "queue"
     : pathname?.startsWith("/orders") || pathname?.startsWith("/my-orders")
     ? "my-orders"
+    : pathname?.startsWith("/account")
+    ? "account"
     : "order";
 
   const handleSetStudentTab = (tab) => {
     if (tab === "order") router.push("/order");
     else if (tab === "queue") router.push("/queue");
     else if (tab === "my-orders") router.push("/orders");
+    else if (tab === "account") router.push("/account");
   };
 
   const handleSetUserRole = (role) => {
@@ -166,6 +172,147 @@ export function AppProvider({ children }) {
   const totalCartCount = Array.isArray(cart)
     ? cart.reduce((sum, item) => sum + (item?.quantity || 1), 0)
     : 0;
+
+  // Global Cart State & Helpers (for routes other than /order)
+  const [cartRemarks, setCartRemarks] = useState("");
+  const [cartPaymentMethod, setCartPaymentMethod] = useState("Cash");
+  const [submittingOrder, setSubmittingOrder] = useState(false);
+  const [isUpiModalOpen, setIsUpiModalOpen] = useState(false);
+  const [isOrderSuccessOpen, setIsOrderSuccessOpen] = useState(false);
+  const [lastPlacedOrder, setLastPlacedOrder] = useState(null);
+  const [canteenModalItem, setCanteenModalItem] = useState(null);
+  const [isCanteenModalOpen, setIsCanteenModalOpen] = useState(false);
+
+  const cartTotal = Array.isArray(cart)
+    ? cart.reduce(
+        (sum, item) =>
+          sum + (item.price || item.basePrice || 0) * (item.quantity || 1),
+        0
+      )
+    : 0;
+
+  const handleIncreaseCartQuantity = (menuItemId) => {
+    setCart((prev) =>
+      prev.map((i) =>
+        i.menuItemId === menuItemId
+          ? { ...i, quantity: (i.quantity || 1) + 1 }
+          : i
+      )
+    );
+  };
+
+  const handleDecreaseCartQuantity = (menuItemId) => {
+    setCart((prev) =>
+      prev
+        .map((i) =>
+          i.menuItemId === menuItemId
+            ? { ...i, quantity: (i.quantity || 1) - 1 }
+            : i
+        )
+        .filter((i) => i.quantity > 0)
+    );
+  };
+
+  const handleRemoveFromCart = (menuItemId) => {
+    setCart((prev) => prev.filter((i) => i.menuItemId !== menuItemId));
+  };
+
+  const submitGlobalOrder = async (paidOnline = false) => {
+    try {
+      setSubmittingOrder(true);
+      setIsUpiModalOpen(false);
+
+      const distinctCanteens = Array.from(
+        new Set(cart.map((i) => i.canteen?.name || "Food Court near 34 Block"))
+      );
+      const canteenSummary = distinctCanteens.join(", ");
+      const counterSummary = Array.from(
+        new Set(cart.map((i) => i.canteen?.counter || "Counter 1"))
+      ).join(", ");
+      const firstValidCanteen =
+        cart.find((i) => i.canteen?.id && i.canteen?.id !== "all")?.canteen ||
+        canteens[0];
+
+      const orderPayload = {
+        studentName: studentProfile?.name || "Student",
+        studentEmail: studentProfile?.email || "",
+        studentPhone: studentProfile?.phone || "",
+        paymentMethod: cartPaymentMethod,
+        remarks: cartRemarks.trim(),
+        canteenId: firstValidCanteen?.id || "foodcourt-34",
+        canteenName:
+          canteenSummary && !canteenSummary.includes("All Canteens")
+            ? canteenSummary
+            : firstValidCanteen?.name || "Food Court near 34 Block",
+        counterName:
+          counterSummary || firstValidCanteen?.counter || "Counter 1 (Fast Dispatch)",
+        items: cart.map((item) => {
+          const itemCanteen =
+            item.canteen?.id !== "all" ? item.canteen : firstValidCanteen;
+          return {
+            menuItemId: item.menuItemId,
+            quantity: item.quantity,
+            price: item.price,
+            canteenId: itemCanteen?.id || "foodcourt-34",
+            canteenName: itemCanteen?.name || "Food Court near 34 Block",
+            counterName: itemCanteen?.counter || "Counter 1"
+          };
+        })
+      };
+
+      const res = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(orderPayload)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to place order");
+
+      if (paidOnline) {
+        await fetch(`/api/orders/${data._id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ paymentStatus: "Paid" })
+        });
+        data.paymentStatus = "Paid";
+      }
+
+      try {
+        localStorage.setItem("canteenGo_lastToken", data.tokenNumber);
+        const myIds = JSON.parse(
+          localStorage.getItem("canteenGo_myOrderIds") || "[]"
+        );
+        if (!myIds.includes(data._id)) {
+          myIds.push(data._id);
+          localStorage.setItem("canteenGo_myOrderIds", JSON.stringify(myIds));
+        }
+      } catch {}
+
+      setCart([]);
+      try {
+        localStorage.removeItem("canteenGo_studentCart");
+      } catch {}
+
+      setIsMobileCartOpen(false);
+      setLastPlacedOrder(data);
+      setIsOrderSuccessOpen(true);
+      return data;
+    } catch (err) {
+      alert(err.message || "Could not place order");
+    } finally {
+      setSubmittingOrder(false);
+    }
+  };
+
+  const handleGlobalPlaceOrder = (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!cart || cart.length === 0) return;
+    if (cartPaymentMethod === "UPI") {
+      setIsUpiModalOpen(true);
+      return;
+    }
+    submitGlobalOrder(false);
+  };
 
   return (
     <AppContext.Provider
@@ -200,7 +347,7 @@ export function AppProvider({ children }) {
             setStudentTab={handleSetStudentTab}
             cartCount={totalCartCount}
             studentProfile={studentProfile}
-            onOpenProfile={() => setIsProfileModalOpen(true)}
+            onOpenProfile={() => router.push("/account")}
             onLogout={handleLogout}
           />
         )}
@@ -211,14 +358,86 @@ export function AppProvider({ children }) {
 
         {pathname !== "/" && <Footer />}
 
-        <StudentProfileModal
-          isOpen={isProfileModalOpen}
-          initialProfile={studentProfile}
-          onSave={handleSaveStudentProfile}
-          onClose={handleCloseProfileModal}
-          onBackToHome={handleBackToHome}
-          onLogout={handleLogout}
-        />
+        {/* Global Cart Sheet for routes other than /order */}
+        {pathname !== "/order" && userRole === "student" && (
+          <>
+            <MobileStudentCartSheet
+              isOpen={Boolean(isMobileCartOpen)}
+              onClose={() => setIsMobileCartOpen(false)}
+              cart={cart}
+              cartTotal={cartTotal}
+              onIncrease={handleIncreaseCartQuantity}
+              onDecrease={handleDecreaseCartQuantity}
+              onRemove={handleRemoveFromCart}
+              studentName={studentProfile?.name || ""}
+              studentProfile={studentProfile}
+              remarks={cartRemarks}
+              setRemarks={setCartRemarks}
+              paymentMethod={cartPaymentMethod}
+              setPaymentMethod={setCartPaymentMethod}
+              onSubmit={handleGlobalPlaceOrder}
+              onPlaceOrder={submitGlobalOrder}
+              submitting={submittingOrder}
+              canteensList={canteens}
+              onOpenCanteenModal={(item) => {
+                setCanteenModalItem(item);
+                setIsCanteenModalOpen(true);
+              }}
+              onChangeCanteen={(newCanteen) => {
+                setCart((prev) =>
+                  prev.map((i) => ({ ...i, canteen: newCanteen }))
+                );
+              }}
+              onBrowseMenu={() => {
+                setIsMobileCartOpen(false);
+                router.push("/order");
+              }}
+            />
+
+            <UpiModal
+              isOpen={isUpiModalOpen}
+              onClose={() => setIsUpiModalOpen(false)}
+              amount={cartTotal}
+              onPaymentSuccess={() => submitGlobalOrder(true)}
+            />
+
+            <OrderSuccessOverlay
+              isOpen={isOrderSuccessOpen}
+              isSubmitting={submittingOrder}
+              order={lastPlacedOrder}
+              onClose={() => setIsOrderSuccessOpen(false)}
+              onGoToYourOrders={() => {
+                setIsOrderSuccessOpen(false);
+                router.push("/orders");
+              }}
+              onTrackOrder={() => {
+                setIsOrderSuccessOpen(false);
+                router.push("/queue");
+              }}
+            />
+
+            <ChooseCanteenModal
+              isOpen={isCanteenModalOpen}
+              onClose={() => setIsCanteenModalOpen(false)}
+              selectedCanteen={canteenModalItem?.canteen}
+              onSelectCanteen={(newCanteen) => {
+                if (canteenModalItem) {
+                  setCart((prev) =>
+                    prev.map((it) =>
+                      it.menuItemId === canteenModalItem.menuItemId
+                        ? { ...it, canteen: newCanteen }
+                        : it
+                    )
+                  );
+                }
+                setIsCanteenModalOpen(false);
+              }}
+              targetItem={canteenModalItem}
+              cartItems={cart}
+              canteens={canteens}
+            />
+          </>
+        )}
       </div>
     </AppContext.Provider>
   );

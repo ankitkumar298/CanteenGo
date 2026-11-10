@@ -22,6 +22,7 @@ export default function OrdersRoute() {
         router.push("/queue");
       }}
       onOrderMore={() => router.push("/order")}
+      onOpenAccount={() => router.push("/account")}
     />
   );
 }

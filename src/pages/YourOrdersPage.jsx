@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import StatusBadge from "../components/StatusBadge";
-import StudentMobileBottomNav from "../components/StudentMobileBottomNav";
+import StudentMobileBottomNav from "../components/mobile/StudentMobileBottomNav";
 import {
   ReceiptIcon,
   ShieldCheckIcon,
@@ -26,6 +26,7 @@ import {
 export default function YourOrdersPage({
   onGoToQueue,
   onOrderMore,
+  onOpenAccount,
   studentProfile,
   onOpenProfile,
   onLogout
@@ -1350,9 +1351,9 @@ export default function YourOrdersPage({
         setStudentTab={(tab) => {
           if (tab === "order") onOrderMore && onOrderMore();
           else if (tab === "queue") onGoToQueue && onGoToQueue();
+          else if (tab === "account") onOpenAccount && onOpenAccount();
         }}
-        cartCount={0}
-        onToggleCart={() => onOrderMore && onOrderMore()}
+        onOpenProfile={onOpenProfile}
       />
     </div>
   );

@@ -34,6 +34,103 @@ export default function NotificationBell({ studentProfile }) {
     } catch {}
   };
 
+  // Touch / Pointer Drag-down & Exit Animation States
+  const [dragOffset, setDragOffset] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
+  const dragStartYRef = useRef(0);
+  const currentDragYRef = useRef(0);
+  const isClosingRef = useRef(false);
+
+  const handleCloseWithAnimation = () => {
+    if (isClosingRef.current) return;
+    isClosingRef.current = true;
+    setIsClosing(true);
+    setDragOffset(0);
+
+    setTimeout(() => {
+      setIsClosing(false);
+      isClosingRef.current = false;
+      setIsOpen(false);
+    }, 280);
+  };
+
+  const handlePointerDown = (e) => {
+    if (isClosingRef.current) return;
+    if (e.button && e.button !== 0) return;
+    const startY = e.clientY;
+    dragStartYRef.current = startY;
+    currentDragYRef.current = startY;
+    setIsDragging(true);
+
+    const onPointerMove = (moveEvt) => {
+      currentDragYRef.current = moveEvt.clientY;
+      const deltaY = moveEvt.clientY - startY;
+      if (deltaY > 0) {
+        setDragOffset(deltaY);
+      } else {
+        setDragOffset(deltaY * 0.15);
+      }
+    };
+
+    const onPointerUp = (upEvt) => {
+      setIsDragging(false);
+      const deltaY = upEvt.clientY - startY;
+      if (deltaY > 55) {
+        handleCloseWithAnimation();
+      } else {
+        setDragOffset(0);
+      }
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", onPointerUp);
+      window.removeEventListener("pointercancel", onPointerUp);
+    };
+
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", onPointerUp);
+    window.addEventListener("pointercancel", onPointerUp);
+  };
+
+  const handleTouchStart = (e) => {
+    if (isClosingRef.current) return;
+    const startY = e.touches[0].clientY;
+    dragStartYRef.current = startY;
+    currentDragYRef.current = startY;
+    setIsDragging(true);
+  };
+
+  const handleTouchMove = (e) => {
+    if (!isDragging || isClosingRef.current) return;
+    const currentY = e.touches[0].clientY;
+    currentDragYRef.current = currentY;
+    const deltaY = currentY - dragStartYRef.current;
+    if (deltaY > 0) {
+      setDragOffset(deltaY);
+    } else {
+      setDragOffset(deltaY * 0.15);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (!isDragging || isClosingRef.current) return;
+    setIsDragging(false);
+    const deltaY = currentDragYRef.current - dragStartYRef.current;
+    if (deltaY > 55) {
+      handleCloseWithAnimation();
+    } else {
+      setDragOffset(0);
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      setIsClosing(false);
+      setDragOffset(0);
+      setIsDragging(false);
+      isClosingRef.current = false;
+    }
+  }, [isOpen]);
+
   // Close dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -270,12 +367,39 @@ export default function NotificationBell({ studentProfile }) {
       {isOpen && (
         <>
           <div
-            className="nav-notif-mobile-backdrop"
-            onClick={() => setIsOpen(false)}
+            className={`nav-notif-mobile-backdrop ${isClosing ? "backdrop-closing" : ""}`}
+            onClick={handleCloseWithAnimation}
             aria-hidden="true"
           />
-          <div className="nav-notif-dropdown">
-            <div className="notif-mobile-drag-handle" aria-hidden="true" />
+          <div
+            className={`nav-notif-dropdown ${isClosing ? "sheet-closing" : ""} ${isDragging ? "sheet-dragging" : ""}`}
+            style={{
+              transform: isClosing
+                ? "translateY(100%)"
+                : dragOffset > 0
+                ? `translateY(${dragOffset}px)`
+                : undefined,
+              transition: isDragging
+                ? "none"
+                : "transform 0.28s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.22s ease"
+            }}
+          >
+            {/* Top Interactive Drag Handle Zone for Mobile Bottom Sheet */}
+            <div
+              className="sheet-drag-handle-zone notif-mobile-drag-handle-zone"
+              onPointerDown={handlePointerDown}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+              onClick={handleCloseWithAnimation}
+              role="button"
+              tabIndex={0}
+              aria-label="Drag down or tap to close notifications"
+              title="Drag down or tap to close"
+            >
+              <div className="notif-mobile-drag-handle" aria-hidden="true" />
+            </div>
+
             <div className="nav-notif-header">
               <div className="notif-header-title">
                 <span className="notif-title-text">Notifications</span>
@@ -298,7 +422,7 @@ export default function NotificationBell({ studentProfile }) {
                 <button
                   type="button"
                   className="btn-notif-close-mobile"
-                  onClick={() => setIsOpen(false)}
+                  onClick={handleCloseWithAnimation}
                   title="Close notifications"
                   aria-label="Close"
                 >

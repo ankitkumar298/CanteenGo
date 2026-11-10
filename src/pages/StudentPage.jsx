@@ -4,8 +4,9 @@ import StatusBadge from "../components/StatusBadge";
 import UpiModal from "../components/UpiModal";
 import OrderSuccessOverlay from "../components/OrderSuccessOverlay";
 import ChooseCanteenModal from "../components/ChooseCanteenModal";
-import MobileStudentCartSheet from "../components/MobileStudentCartSheet";
-import StudentMobileBottomNav from "../components/StudentMobileBottomNav";
+import MobileStudentCartSheet from "../components/mobile/MobileStudentCartSheet";
+import DesktopCheckoutModal from "../components/DesktopCheckoutModal";
+import StudentMobileBottomNav from "../components/mobile/StudentMobileBottomNav";
 import { CAMPUS_CANTEENS, DEFAULT_CANTEEN, getCanteenItemPrice, isCanteenOpenNow, getItemEstimateTime, getItemPriceForCanteen, isItemAvailableAtCanteen } from "../data/canteens";
 import { useAppContext } from "@/context/AppContext";
 import {
@@ -58,6 +59,19 @@ export default function StudentPage({
     return "";
   });
   const [paymentMethod, setPaymentMethod] = useState("Cash");
+  const [studentPhone, setStudentPhone] = useState(() => {
+    try {
+      return studentProfile?.phone || localStorage.getItem("canteenGo_studentPhone") || "";
+    } catch {}
+    return studentProfile?.phone || "";
+  });
+  const [isDesktopCheckoutOpen, setIsDesktopCheckoutOpen] = useState(false);
+
+  useEffect(() => {
+    if (studentProfile?.phone && !studentPhone) {
+      setStudentPhone(studentProfile.phone);
+    }
+  }, [studentProfile]);
 
   useEffect(() => {
     try {
@@ -504,10 +518,9 @@ export default function StudentPage({
     };
   }, [totalCartCount]);
 
-  const submitOrderToServer = async (paidOnline = false) => {
+  const submitOrderToServer = async (paidOnline = false, extraDetails = {}) => {
     try {
       setIsUpiModalOpen(false);
-      setIsOverlayOpen(true);
       setSubmittingOrder(true);
 
       const distinctCanteens = Array.from(
@@ -529,12 +542,17 @@ export default function StudentPage({
       const firstValidCanteen = cart.find((i) => i.canteen?.id && i.canteen?.id !== "all")?.canteen ||
         (selectedCanteen?.id !== "all" ? selectedCanteen : defaultCanteenObj);
 
+      const finalName = (extraDetails?.studentName || studentName || studentProfile?.name || "Student").trim();
+      const finalPhone = (extraDetails?.studentPhone || studentPhone || studentProfile?.phone || "").trim();
+      const finalRemarks = extraDetails?.remarks !== undefined ? extraDetails.remarks : remarks;
+      const finalPayment = extraDetails?.paymentMethod || (paidOnline ? "UPI" : paymentMethod);
+
       const orderPayload = {
-        studentName: studentName.trim() || studentProfile?.name || "Student",
+        studentName: finalName,
         studentEmail: studentProfile?.email || "",
-        studentPhone: studentProfile?.phone || "",
-        paymentMethod,
-        remarks: remarks.trim(),
+        studentPhone: finalPhone,
+        paymentMethod: finalPayment,
+        remarks: finalRemarks ? finalRemarks.trim() : "",
         canteenId: firstValidCanteen?.id || "foodcourt-34",
         canteenName: canteenSummary && !canteenSummary.includes("All Canteens") ? canteenSummary : (firstValidCanteen?.name || "Food Court near 34 Block"),
         counterName: counterSummary || firstValidCanteen?.counter || "Counter 1 (Fast Dispatch)",
@@ -594,28 +612,25 @@ export default function StudentPage({
         } catch {
           // localStorage fallback
         }
-      }, 1000);
+      }, 500);
+
+      return data;
     } catch (err) {
       setErrorMessage(err.message);
       setIsOverlayOpen(false);
       setSubmittingOrder(false);
+      throw err;
     }
   };
 
   const handlePlaceOrderClick = (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     setErrorMessage("");
     setSuccessMessage("");
 
-    const activeName = studentName.trim() || studentProfile?.name?.trim();
-    if (!activeName) {
-      if (onOpenProfile) onOpenProfile();
-      setErrorMessage("Please enter your name or student profile to place an order.");
-      return;
-    }
-
     if (cart.length === 0) {
       setErrorMessage("Your cart is empty. Please add items from the menu.");
+      showToast("Your cart is empty. Please add items from the menu.", "warning");
       return;
     }
 
@@ -623,15 +638,14 @@ export default function StudentPage({
       const closedNames = cartClosedCanteens.length > 0
         ? cartClosedCanteens.map((c) => c.canteen.name).join(", ")
         : currentCanteen.name;
-      setErrorMessage(`Cannot place order: ${closedNames} is currently closed. Please change your pickup canteen.`);
+      const msg = `Cannot place order: ${closedNames} is currently closed. Please change your pickup canteen.`;
+      setErrorMessage(msg);
+      showToast(msg, "warning");
       return;
     }
 
-    if (paymentMethod === "UPI") {
-      setIsUpiModalOpen(true);
-    } else {
-      submitOrderToServer(false);
-    }
+    // Open desktop 3-step checkout overlay modal
+    setIsDesktopCheckoutOpen(true);
   };
 
   // DYNAMIC CATEGORIES: Extracted directly from menu items in MongoDB + Combos option
@@ -933,12 +947,15 @@ export default function StudentPage({
         onRemove={handleRemoveFromCart}
         studentName={studentName}
         setStudentName={setStudentName}
+        studentPhone={studentPhone}
+        setStudentPhone={setStudentPhone}
         studentProfile={studentProfile}
         remarks={remarks}
         setRemarks={setRemarks}
         paymentMethod={paymentMethod}
         setPaymentMethod={setPaymentMethod}
         onSubmit={handlePlaceOrderClick}
+        onPlaceOrder={submitOrderToServer}
         submitting={submittingOrder}
         selectedCanteen={selectedCanteen}
         currentCanteen={currentCanteen}
@@ -961,6 +978,33 @@ export default function StudentPage({
           setIsCanteenModalOpen(true);
         }}
         liveStatsMap={liveCanteenStats}
+        onBrowseMenu={() => {
+          if (setIsMobileCartOpen) setIsMobileCartOpen(false);
+          if (setActiveTab) setActiveTab("order");
+        }}
+      />
+
+      {/* Desktop 3-Step Checkout Overlay Modal */}
+      <DesktopCheckoutModal
+        isOpen={isDesktopCheckoutOpen}
+        onClose={() => setIsDesktopCheckoutOpen(false)}
+        cart={cart}
+        cartTotal={cartTotal}
+        studentName={studentName}
+        setStudentName={setStudentName}
+        studentPhone={studentPhone}
+        setStudentPhone={setStudentPhone}
+        studentProfile={studentProfile}
+        remarks={remarks}
+        setRemarks={setRemarks}
+        paymentMethod={paymentMethod}
+        setPaymentMethod={setPaymentMethod}
+        selectedCanteen={selectedCanteen}
+        currentCanteen={currentCanteen}
+        liveStatsMap={liveCanteenStats}
+        onPlaceOrder={submitOrderToServer}
+        onViewInOrders={() => setActiveTab && setActiveTab("my-orders")}
+        onTrackInQueue={() => setActiveTab && setActiveTab("queue")}
       />
 
       {/* Mobile Floating Mini Cart Bar (< 768px - shows temporarily for 2.5s alert on add to cart) */}
@@ -1490,47 +1534,18 @@ export default function StudentPage({
                       Change
                     </button>
                   </div>
-                  {!studentProfile?.phone && (
-                    <div className="form-group">
-                      <label className="form-label" htmlFor="studentNameInput">
-                        Student Name (For Token Call):
-                      </label>
-                      <input
-                        id="studentNameInput"
-                        type="text"
-                        className="form-input"
-                        placeholder="e.g. Ankit Verma"
-                        value={studentName}
-                        onChange={(e) => setStudentName(e.target.value)}
-                      />
-                    </div>
-                  )}
 
-                  {/* Special Remarks / Instructions with Placeholder */}
-                  <div className="form-group cart-remarks-group">
-                    <label className="form-label" htmlFor="orderRemarksInput" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span>📝 Cooking Remarks / Note:</span>
-                      <span style={{ fontSize: "0.75rem", fontWeight: "normal", color: "#94a3b8" }}>Optional</span>
-                    </label>
-                    <input
-                      id="orderRemarksInput"
-                      type="text"
-                      className="form-input cart-remarks-input"
-                      placeholder="e.g. Extra spicy, bina pyaz, less sugar, pack separately..."
-                      value={remarks}
-                      onChange={(e) => setRemarks(e.target.value)}
-                      maxLength={140}
-                    />
-                  </div>
-
-                  <div className="form-group">
+                  {/* Payment Method Selector in Cart */}
+                  <div className="form-group" style={{ marginTop: "14px" }}>
                     <label className="form-label">Select Payment Option:</label>
                     <div className="payment-options-grid">
                       <div
                         className={`payment-option-card ${paymentMethod === "Cash" ? "selected" : ""}`}
                         onClick={() => setPaymentMethod("Cash")}
+                        role="button"
+                        tabIndex={0}
                       >
-                        <CashIcon size={24} className="pay-icon" />
+                        <CashIcon size={22} className="pay-icon" />
                         <div>
                           <div className="pay-title">Cash Counter</div>
                           <div className="pay-sub">Pay at pickup</div>
@@ -1540,8 +1555,10 @@ export default function StudentPage({
                       <div
                         className={`payment-option-card ${paymentMethod === "UPI" ? "selected" : ""}`}
                         onClick={() => setPaymentMethod("UPI")}
+                        role="button"
+                        tabIndex={0}
                       >
-                        <QrIcon size={24} className="pay-icon" />
+                        <QrIcon size={22} className="pay-icon" />
                         <div>
                           <div className="pay-title">UPI QR Code</div>
                           <div className="pay-sub">Fast Scan & Pay</div>
@@ -1594,17 +1611,18 @@ export default function StudentPage({
                     </div>
                   )}
 
+                  {/* Proceed to 3-Step Overlay Checkout */}
                   <button
                     type="submit"
                     className={`btn btn-primary btn-checkout ${isCartCanteenClosed ? "btn-checkout-disabled-closed" : ""}`}
                     disabled={submittingOrder || isCartCanteenClosed}
-                    title={isCartCanteenClosed ? "Canteen is currently closed" : "Confirm & Place Order"}
+                    title={isCartCanteenClosed ? "Canteen is currently closed" : "Proceed to 3-Step Checkout"}
                   >
                     {isCartCanteenClosed ? (
                       <span>✕ Canteen Closed ({currentCanteenStatus.nextOpenText || "Outside Hours"})</span>
                     ) : (
                       <>
-                        <span>Confirm & Place Order (₹{cartTotal})</span>
+                        <span>Proceed to Checkout (₹{cartTotal})</span>
                         <span className="btn-arrow">→</span>
                       </>
                     )}

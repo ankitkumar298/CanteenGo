@@ -26,7 +26,7 @@ import DeclineOrderModal from "../components/DeclineOrderModal";
 import VendorLiveQueueBoard from "../components/VendorLiveQueueBoard";
 import VendorItemSalesView from "../components/VendorItemSalesView";
 import EditMenuItemModal from "../components/EditMenuItemModal";
-import MobileVendorMoreSheet from "../components/MobileVendorMoreSheet";
+import MobileVendorMoreSheet from "../components/mobile/MobileVendorMoreSheet";
 
 // Preset fast-pick image shortcuts for the vendor
 const PHOTO_PRESETS = [

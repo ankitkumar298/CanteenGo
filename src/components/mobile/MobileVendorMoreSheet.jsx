@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { RefreshIcon } from "./Icons";
+import { RefreshIcon } from "../Icons";
 
 export default function MobileVendorMoreSheet({
   isOpen,
