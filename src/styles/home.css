@@ -7,7 +7,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #fdf6ee;
+  background-color: #f8fafc;
+  background: radial-gradient(circle at 50% 30%, #ffffff 0%, #f8fafc 55%, #f1f5f9 100%);
   padding: 16px 20px;
   box-sizing: border-box;
   min-height: 100vh;
@@ -25,25 +26,38 @@
   gap: 14px;
   padding: 20px 16px;
   box-sizing: border-box;
-  background-color: #fdf6ee;
+  background-color: #f8fafc;
+  background: radial-gradient(circle at 50% 30%, #ffffff 0%, #f8fafc 55%, #f1f5f9 100%);
   position: relative;
   overflow: hidden;
   margin: auto;
 }
 
-/* Atmospheric blurred food doodle wallpaper (zero black lines) */
+/* Crisp, ultra-clean subtle background (No yellow wallpaper) */
 .auth-page-outer::before {
   content: "";
-  position: fixed;
-  top: -12px;
-  left: -12px;
-  right: -12px;
-  bottom: -12px;
-  background-image: url('/images/food-doodle-bg.png');
-  background-repeat: repeat;
-  background-size: 680px auto;
-  filter: blur(2.5px);
-  opacity: 0.88;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: radial-gradient(#e2e8f0 1.2px, transparent 1.2px);
+  background-size: 24px 24px;
+  opacity: 0.45;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.auth-page-outer::after {
+  content: "";
+  position: absolute;
+  width: 650px;
+  height: 650px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(234, 88, 12, 0.05) 0%, rgba(255, 255, 255, 0) 70%);
+  top: -150px;
+  left: 50%;
+  transform: translateX(-50%);
   pointer-events: none;
   z-index: 0;
 }
@@ -58,11 +72,11 @@
   max-height: 840px;
   background: #ffffff;
   border-radius: 24px;
-  box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.16), 0 0 1px 1px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.1), 0 0 0 1px rgba(226, 232, 240, 0.9);
   overflow: hidden;
   position: relative;
   z-index: 1;
-  border: 1px solid rgba(234, 88, 12, 0.12);
+  border: 1px solid #e2e8f0;
   box-sizing: border-box;
 }
 
