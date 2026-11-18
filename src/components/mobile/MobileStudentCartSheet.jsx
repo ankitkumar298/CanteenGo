@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import TimeSlotPicker from "../TimeSlotPicker";
 import {
   CartIcon,
   PlusIcon,
@@ -62,12 +63,46 @@ export default function MobileStudentCartSheet({
   const sheetRef = useRef(null);
 
   const activeCanteenName =
-    selectedCanteen?.name || currentCanteen?.name || "34 Block Food Court";
+    selectedCanteen?.name || currentCanteen?.name || "Sports Complex Canteen";
 
   // Steps: 0 ("Your Cart") | 1 (Confirm Items - Non-editable) | 2 (Details & Pay) | 3 (Payment) | "ordering" | "placed"
   const [step, setStep] = useState(0);
   const [loadingStep, setLoadingStep] = useState(0);
   const [placedOrder, setPlacedOrder] = useState(null);
+  const [canteenNotes, setCanteenNotes] = useState({});
+  const isCodBlocked =
+    studentProfile?.codStatus === "temporarily_blocked" ||
+    studentProfile?.codStatus === "prepaid_only" ||
+    (studentProfile?.noShowCount !== undefined && studentProfile?.noShowCount >= 3);
+
+  const canteenGroups = useMemo(() => {
+    const map = {};
+    for (const item of cart) {
+      const c =
+        item.canteen?.id && item.canteen?.id !== "all"
+          ? item.canteen
+          : selectedCanteen?.id !== "all"
+          ? selectedCanteen
+          : currentCanteen || {
+              id: "foodcourt-34",
+              name: "Sports Complex Canteen",
+              shortName: "Sports Complex Canteen",
+              counter: "Counter 1"
+            };
+      const cId = c.id || c.canteenId || "foodcourt-34";
+      if (!map[cId]) {
+        map[cId] = {
+          canteenId: cId,
+          canteen: c,
+          name: c.shortName || c.name || "Canteen",
+          counter: c.counter || "Counter 1",
+          items: []
+        };
+      }
+      map[cId].items.push(item);
+    }
+    return Object.values(map);
+  }, [cart, selectedCanteen, currentCanteen]);
 
   // UPI State
   const [upiSecondsRemaining, setUpiSecondsRemaining] = useState(299);
@@ -82,6 +117,8 @@ export default function MobileStudentCartSheet({
   const [localPhone, setLocalPhone] = useState(() => studentPhone || studentProfile?.phone || "");
   const [isEditingPhone, setIsEditingPhone] = useState(false);
   const [phoneError, setPhoneError] = useState("");
+  const [selectedPickupSlot, setSelectedPickupSlot] = useState("");
+  const [slotError, setSlotError] = useState("");
 
   // Sync name & phone from prop/profile
   useEffect(() => {
@@ -281,6 +318,8 @@ export default function MobileStudentCartSheet({
     }
     setPhoneError("");
 
+    setSlotError("");
+
     if (setStudentName) setStudentName(trimmed);
     if (setStudentPhone) setStudentPhone(cleanPhone);
     try {
@@ -290,30 +329,24 @@ export default function MobileStudentCartSheet({
     setStep(3);
   };
 
-  // Real ordering stages across 4 seconds (1 second each)
+  // Real ordering stages across 4 seconds
   const ORDERING_STAGES = [
     {
       icon: "📡",
       title: `Sending Order to ${activeCanteenName}...`,
       subtitle: "Connecting directly with live kitchen terminal",
-      progress: "25%"
+      progress: "33%"
     },
     {
-      icon: "👨‍🍳",
-      title: "Chef Accepted Your Order!",
-      subtitle: "Stove fired up & assembling fresh ingredients",
-      progress: "55%"
+      icon: "🕒",
+      title: `Scheduling Pickup (${selectedPickupSlot || "Time Slot"})...`,
+      subtitle: "Registering your requested collection window",
+      progress: "66%"
     },
     {
-      icon: "🔥",
-      title: "Cooking Your Meal Hot & Fresh...",
-      subtitle: "Preparing food with care • Packaging for dispatch",
-      progress: "82%"
-    },
-    {
-      icon: "🎟️",
-      title: "Generating Live Pickup Token...",
-      subtitle: "Allocating Counter 1 dispatch slot on queue board",
+      icon: "📋",
+      title: "Order Sent for Vendor Approval!",
+      subtitle: "Awaiting canteen confirmation • Token will issue on acceptance",
       progress: "100%"
     }
   ];
@@ -339,11 +372,13 @@ export default function MobileStudentCartSheet({
           studentName: currentActiveName,
           studentPhone: cleanPhone,
           remarks: (remarks || "").trim(),
-          paymentMethod: isPaidOnline ? "UPI" : paymentMethod
+          canteenNotes: canteenNotes,
+          paymentMethod: isPaidOnline ? "UPI" : paymentMethod,
+          pickupSlot: (selectedPickupSlot?.trim() || "Immediate Pickup")
         });
       } else {
         const distinctCanteens = Array.from(
-          new Set(cart.map((i) => i.canteen?.name || selectedCanteen?.name || "Food Court near 34 Block"))
+          new Set(cart.map((i) => i.canteen?.name || selectedCanteen?.name || "Sports Complex Canteen"))
         );
         const canteenSummary = distinctCanteens.join(", ");
         const firstValidCanteen = cart.find((i) => i.canteen?.id && i.canteen?.id !== "all")?.canteen ||
@@ -355,15 +390,16 @@ export default function MobileStudentCartSheet({
           studentPhone: cleanPhone,
           paymentMethod: isPaidOnline ? "UPI" : "Cash",
           remarks: remarks ? remarks.trim() : "",
+          pickupSlot: (selectedPickupSlot?.trim() || "Immediate Pickup"),
           canteenId: firstValidCanteen?.id || "foodcourt-34",
-          canteenName: canteenSummary && !canteenSummary.includes("All Canteens") ? canteenSummary : (firstValidCanteen?.name || "Food Court near 34 Block"),
+          canteenName: canteenSummary && !canteenSummary.includes("All Canteens") ? canteenSummary : (firstValidCanteen?.name || "Sports Complex Canteen"),
           counterName: firstValidCanteen?.counter || "Counter 1 (Fast Dispatch)",
           items: cart.map((item) => ({
             menuItemId: item.menuItemId,
             quantity: item.quantity,
             price: item.price,
             canteenId: item.canteen?.id || "foodcourt-34",
-            canteenName: item.canteen?.name || "Food Court near 34 Block",
+            canteenName: item.canteen?.name || "Sports Complex Canteen",
             counterName: item.canteen?.counter || "Counter 1"
           }))
         };
@@ -374,7 +410,7 @@ export default function MobileStudentCartSheet({
           body: JSON.stringify(orderPayload)
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.message || "Failed to place order");
+        if (!res.ok) throw new Error(data.error || data.message || "Failed to place order");
 
         if (isPaidOnline) {
           await fetch(`/api/orders/${data._id}`, {
@@ -901,21 +937,83 @@ export default function MobileStudentCartSheet({
                 )}
               </div>
 
-              {/* Section 2: Cooking Note (Optional) */}
-              <div className="checkout-form-card">
-                <label className="checkout-input-label" htmlFor="checkoutCookingNote">
-                  <span>📝 Cooking Note (Optional):</span>
-                </label>
-                <input
-                  id="checkoutCookingNote"
-                  type="text"
-                  className="form-input"
-                  placeholder="e.g. Extra spicy, bina pyaz, pack separately..."
-                  value={remarks}
-                  onChange={(e) => setRemarks && setRemarks(e.target.value)}
-                  maxLength={140}
+              {/* Section 1C: Pickup Time Slot Selection */}
+              <div className="checkout-form-card" style={{ padding: "12px" }}>
+                <TimeSlotPicker
+                  selectedSlot={selectedPickupSlot}
+                  onSelectSlot={(slot) => {
+                    setSelectedPickupSlot(slot);
+                    if (slotError) setSlotError("");
+                  }}
+                  canteen={selectedCanteen || currentCanteen}
+                  error={slotError}
                 />
               </div>
+
+              {/* Section 2: Cooking Note (Optional) */}
+              {canteenGroups.length > 1 ? (
+                <div className="checkout-form-card">
+                  <label className="checkout-input-label">
+                    <span>📝 Cooking Notes per Canteen:</span>
+                    <span style={{ fontSize: "0.72rem", fontWeight: "400", color: "#64748b", marginLeft: "6px" }}>
+                      (Sent only to respective kitchen)
+                    </span>
+                  </label>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "4px" }}>
+                    {canteenGroups.map((grp) => (
+                      <div
+                        key={grp.canteenId}
+                        style={{
+                          background: "#f8fafc",
+                          border: "1px solid #e2e8f0",
+                          borderRadius: "10px",
+                          padding: "8px 10px"
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            marginBottom: "4px"
+                          }}
+                        >
+                          <strong style={{ fontSize: "0.82rem", color: "#0f172a" }}>📍 {grp.name}</strong>
+                          <span style={{ fontSize: "0.7rem", color: "#64748b" }}>
+                            {grp.items.map((i) => `${i.name} ×${i.quantity}`).join(", ")}
+                          </span>
+                        </div>
+                        <input
+                          type="text"
+                          className="form-input"
+                          placeholder={`Note for ${grp.name}...`}
+                          value={canteenNotes[grp.canteenId] || ""}
+                          onChange={(e) =>
+                            setCanteenNotes((prev) => ({ ...prev, [grp.canteenId]: e.target.value }))
+                          }
+                          maxLength={140}
+                          style={{ fontSize: "0.8rem", padding: "7px 10px" }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="checkout-form-card">
+                  <label className="checkout-input-label" htmlFor="checkoutCookingNote">
+                    <span>📝 Cooking Note (Optional):</span>
+                  </label>
+                  <input
+                    id="checkoutCookingNote"
+                    type="text"
+                    className="form-input"
+                    placeholder="e.g. Extra spicy, bina pyaz, pack separately..."
+                    value={remarks}
+                    onChange={(e) => setRemarks && setRemarks(e.target.value)}
+                    maxLength={140}
+                  />
+                </div>
+              )}
 
               {/* Section 3: Select Mode of Payment */}
               <div className="checkout-payment-section">
@@ -945,13 +1043,17 @@ export default function MobileStudentCartSheet({
 
                 {/* Option B: Cash on Counter */}
                 <div
-                  className={`checkout-mode-card ${paymentMethod === "Cash" ? "selected" : ""}`}
-                  onClick={() => setPaymentMethod && setPaymentMethod("Cash")}
+                  className={`checkout-mode-card ${paymentMethod === "Cash" && !isCodBlocked ? "selected" : ""} ${isCodBlocked ? "disabled" : ""}`}
+                  onClick={() => {
+                    if (isCodBlocked) return;
+                    setPaymentMethod && setPaymentMethod("Cash");
+                  }}
                   role="button"
                   tabIndex={0}
+                  style={isCodBlocked ? { opacity: 0.55, cursor: "not-allowed", background: "#f8fafc" } : {}}
                 >
                   <div className="mode-card-radio">
-                    <span className={`radio-dot ${paymentMethod === "Cash" ? "active" : ""}`} />
+                    <span className={`radio-dot ${paymentMethod === "Cash" && !isCodBlocked ? "active" : ""}`} />
                   </div>
                   <div className="mode-card-icon-wrap cash">
                     <CashIcon size={24} />
@@ -959,9 +1061,19 @@ export default function MobileStudentCartSheet({
                   <div className="mode-card-content">
                     <div className="mode-card-title-row">
                       <strong>Cash on Counter</strong>
-                      <span className="mode-badge-orange">Pay at Pickup</span>
+                      {isCodBlocked ? (
+                        <span className="mode-badge-orange" style={{ background: "#fef2f2", color: "#dc2626", border: "1px solid #fca5a5" }}>
+                          🚫 Temporarily Blocked
+                        </span>
+                      ) : (
+                        <span className="mode-badge-orange">Pay at Pickup</span>
+                      )}
                     </div>
-                    <span className="mode-card-desc">Pay exact cash at counter when food is ready</span>
+                    <span className="mode-card-desc">
+                      {isCodBlocked
+                        ? "Restricted due to verified no-shows. Please use UPI."
+                        : "Pay exact cash at counter when food is ready"}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -1263,32 +1375,68 @@ export default function MobileStudentCartSheet({
           {step === "placed" && placedOrder && (
             <div className="mobile-placed-card-view">
               <div className="placed-celebration-head">
-                <div className="placed-green-circle">
+                <div className="placed-green-circle" style={!placedOrder.tokenNumber ? { background: "#ea580c" } : undefined}>
                   <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="20 6 9 17 4 12" />
                   </svg>
                 </div>
-                <h2 className="placed-title">Order Confirmed!</h2>
-                <p className="placed-subtitle">Your meal is being prepared hot & fresh</p>
+                <h2 className="placed-title">
+                  {placedOrder.tokenNumber ? "Order Confirmed!" : "Order Submitted for Approval!"}
+                </h2>
+                <p className="placed-subtitle">
+                  {placedOrder.tokenNumber
+                    ? "Your meal is being prepared hot & fresh"
+                    : "Sent to kitchen • Token issued upon vendor acceptance"}
+                </p>
               </div>
 
-              {/* Huge Bold Token Number Banner */}
-              <div className="placed-token-banner">
-                <div className="token-banner-left">
-                  <span className="token-banner-label">PICKUP TOKEN</span>
-                  <strong className="token-banner-number">{placedOrder.tokenNumber}</strong>
+              {/* Token Number Banner or Awaiting Approval Banner */}
+              {placedOrder.tokenNumber ? (
+                <div className="placed-token-banner">
+                  <div className="token-banner-left">
+                    <span className="token-banner-label">PICKUP TOKEN</span>
+                    <strong className="token-banner-number">{placedOrder.tokenNumber}</strong>
+                  </div>
+                  <div className="token-banner-divider" />
+                  <div className="token-banner-right">
+                    <span className="token-wait-label">ESTIMATED TIME</span>
+                    <strong className="token-wait-val">
+                      ~ {placedOrder.estimatedPrepTime || 8} min
+                    </strong>
+                  </div>
                 </div>
-                <div className="token-banner-divider" />
-                <div className="token-banner-right">
-                  <span className="token-wait-label">ESTIMATED TIME</span>
-                  <strong className="token-wait-val">
-                    ~ {placedOrder.estimatedPrepTime || 8} min
+              ) : (
+                <div
+                  className="placed-token-banner pending-approval-banner"
+                  style={{
+                    background: "linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%)",
+                    border: "1.5px dashed #ea580c",
+                    flexDirection: "column",
+                    padding: "16px",
+                    gap: "6px",
+                    textAlign: "center"
+                  }}
+                >
+                  <span style={{ fontSize: "0.75rem", fontWeight: 800, color: "#9a3412", letterSpacing: "0.5px" }}>
+                    TOKEN NUMBER STATUS
+                  </span>
+                  <strong style={{ fontSize: "1.2rem", color: "#c2410c" }}>
+                    ⏳ Awaiting Kitchen Acceptance
                   </strong>
+                  <span style={{ fontSize: "0.8rem", color: "#7c2d12" }}>
+                    Token will be assigned once vendor reviews and accepts your order.
+                  </span>
                 </div>
-              </div>
+              )}
 
               {/* Pickup & Meta Details */}
               <div className="placed-meta-box">
+                <div className="placed-meta-row slot-row" style={{ background: "#fff7ed", padding: "10px", borderRadius: "8px" }}>
+                  <span className="meta-row-label" style={{ color: "#ea580c", fontWeight: 700 }}>🕒 Pickup Slot</span>
+                  <strong className="meta-row-val" style={{ color: "#9a3412" }}>
+                    {placedOrder.pickupSlot || selectedPickupSlot || "Standard Window"}
+                  </strong>
+                </div>
                 <div className="placed-meta-row">
                   <span className="meta-row-label">📍 Pickup Counter</span>
                   <strong className="meta-row-val">{placedOrder.counterName || "Counter 1 (Fast Dispatch)"}</strong>

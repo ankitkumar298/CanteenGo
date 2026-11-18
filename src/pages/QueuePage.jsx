@@ -49,6 +49,45 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
   const [liveNotification, setLiveNotification] = useState(null);
   const prevTrackedStatusRef = useRef(null);
 
+  // Status transition tracking for smooth column animations (right-to-left slide flow)
+  const prevOrderStatusesRef = useRef(new Map());
+  const [transitionEvents, setTransitionEvents] = useState({});
+
+  useEffect(() => {
+    if (!orders || orders.length === 0) return;
+    const prevMap = prevOrderStatusesRef.current;
+    const newEvents = {};
+    let hasNewEvents = false;
+
+    orders.forEach((o) => {
+      if (!o._id) return;
+      const prevStatus = prevMap.get(o._id);
+      if (!prevStatus) {
+        if (prevMap.size > 0 && (o.orderStatus === "Pending" || o.orderStatus === "Accepted")) {
+          newEvents[o._id] = "enter-queue";
+          hasNewEvents = true;
+        }
+      } else if (prevStatus !== o.orderStatus) {
+        if (o.orderStatus === "Preparing") {
+          newEvents[o._id] = "to-prep";
+          hasNewEvents = true;
+        } else if (o.orderStatus === "Ready" || o.orderStatus === "Ready for Pickup") {
+          newEvents[o._id] = "to-ready";
+          hasNewEvents = true;
+        }
+      }
+      prevMap.set(o._id, o.orderStatus);
+    });
+
+    if (hasNewEvents) {
+      setTransitionEvents((prev) => ({ ...prev, ...newEvents }));
+      const timer = setTimeout(() => {
+        setTransitionEvents({});
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [orders]);
+
   // Search & Filter state
   const [searchToken, setSearchToken] = useState("");
 
@@ -57,6 +96,9 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
 
   // Mobile-only 3-stage toggle: "next" (default), "preparing", "ready"
   const [mobileQueueStage, setMobileQueueStage] = useState("next");
+
+  // Next in Queue expand toggle (Pehle 5 dikhein, button click karne par baaki add hon)
+  const [isQueueExpanded, setIsQueueExpanded] = useState(false);
 
   // Student profile token shortcut
   const savedLastToken = (() => {
@@ -156,7 +198,7 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
       }
     }
 
-    if (targetId === "foodcourt-34" && (order.canteenName?.match(/34\s*Block/i) || order.canteenId?.includes("34"))) return true;
+    if (targetId === "foodcourt-34" && (order.canteenName?.match(/34\s*Block|Sports\s*Complex/i) || order.canteenId?.includes("34"))) return true;
     if (targetId === "nk-foodcourt" && (order.canteenName?.match(/NK/i) || order.canteenId?.includes("nk"))) return true;
     if (targetId === "main-canteen" && (order.canteenName?.match(/Main\s*Canteen/i) || order.canteenId?.includes("main"))) return true;
     if (targetId === "library-cafe" && (order.canteenName?.match(/Library/i) || order.canteenId?.includes("library"))) return true;
@@ -303,10 +345,10 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
     }
   };
 
-  const pendingOrders = orders.filter((o) => o.orderStatus === "Pending");
-  const preparingOrders = orders.filter((o) => o.orderStatus === "Preparing");
-  const readyOrders = orders.filter((o) => o.orderStatus === "Ready");
-  const completedOrders = orders.filter((o) => o.orderStatus === "Completed").slice(0, 10);
+  const pendingOrders = orders.filter((o) => (o.orderStatus === "Pending" || o.orderStatus === "Accepted") && Boolean(o.tokenNumber));
+  const preparingOrders = orders.filter((o) => o.orderStatus === "Preparing" && Boolean(o.tokenNumber));
+  const readyOrders = orders.filter((o) => (o.orderStatus === "Ready" || o.orderStatus === "Ready for Pickup") && Boolean(o.tokenNumber));
+  const completedOrders = orders.filter((o) => o.orderStatus === "Completed" && Boolean(o.tokenNumber)).slice(0, 10);
 
   // Find user's tracked order if search token is entered
   const trackedOrder = searchToken.trim()
@@ -364,17 +406,22 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
     return null;
   };
 
-  // Calculate step progress for tracked order (0 to 4)
+  // Calculate step progress for tracked order (0 to 5)
   const getProgressStep = (status) => {
     switch (status) {
+      case "Pending Approval":
       case "Pending":
         return 1;
-      case "Preparing":
+      case "Accepted":
         return 2;
-      case "Ready":
+      case "Preparing":
         return 3;
-      case "Completed":
+      case "Ready":
+      case "Ready for Pickup":
+      case "Missed Pickup":
         return 4;
+      case "Completed":
+        return 5;
       default:
         return 0;
     }
@@ -571,7 +618,7 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
                   </div>
 
                   <div className="tracked-status-callout">
-                    {trackedOrder.orderStatus === "Ready" && (
+                    {(trackedOrder.orderStatus === "Ready" || trackedOrder.orderStatus === "Ready for Pickup") && (
                       <div className="status-notice notice-ready">
                         <span className="notice-icon">🎉</span>
                         <div>
@@ -589,12 +636,41 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
                         </div>
                       </div>
                     )}
-                    {trackedOrder.orderStatus === "Pending" && (
+                    {trackedOrder.orderStatus === "Accepted" && (
+                      <div className="status-notice notice-preparing" style={{ background: "#eff6ff", borderColor: "#bfdbfe" }}>
+                        <span className="notice-icon">✓</span>
+                        <div>
+                          <strong className="notice-title" style={{ color: "#1d4ed8" }}>ACCEPTED BY VENDOR (TOKEN #{trackedOrder.tokenNumber})</strong>
+                          <p className="notice-hindi" style={{ color: "#1e40af" }}>Vendor ne aapka order accept kar liya hai! Jald kitchen me preparation shuru hogi.</p>
+                        </div>
+                      </div>
+                    )}
+                    {(trackedOrder.orderStatus === "Pending Approval" || (trackedOrder.orderStatus === "Pending" && !trackedOrder.tokenNumber)) && (
+                      <div className="status-notice notice-pending" style={{ background: "#fffbeb", borderColor: "#fde68a" }}>
+                        <span className="notice-icon">⏳</span>
+                        <div>
+                          <strong className="notice-title" style={{ color: "#b45309" }}>AWAITING VENDOR APPROVAL</strong>
+                          <p className="notice-hindi" style={{ color: "#92400e" }}>Aapka order vendor review ke liye bheja gaya hai. Accept hote hi token generate hoga.</p>
+                        </div>
+                      </div>
+                    )}
+                    {trackedOrder.orderStatus === "Pending" && trackedOrder.tokenNumber && (
                       <div className="status-notice notice-pending">
                         <span className="notice-icon">⏳</span>
                         <div>
                           <strong className="notice-title">IN QUEUE (NEXT IN LINE)</strong>
                           <p className="notice-hindi">Aapka order line me hai. Chef jald hi banana shuru karenge.</p>
+                        </div>
+                      </div>
+                    )}
+                    {trackedOrder.orderStatus === "Rejected" && (
+                      <div className="status-notice notice-missed" style={{ background: "#fef2f2", borderColor: "#fecaca" }}>
+                        <span className="notice-icon">✕</span>
+                        <div>
+                          <strong className="notice-title" style={{ color: "#b91c1c" }}>ORDER REJECTED BY VENDOR</strong>
+                          <p className="notice-hindi" style={{ color: "#991b1b" }}>
+                            {trackedOrder.rejectionReason || "Kitchen unable to process"}. Koi token generate nahi hua.
+                          </p>
                         </div>
                       </div>
                     )}
@@ -677,7 +753,7 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
                       {trackedOrder.counterName || "Counter 1 (Express Pickup)"}
                     </div>
                     <small className="stat-card-sub">
-                      {trackedOrder.canteenName || "Food Court near 34 Block"}
+                      {trackedOrder.canteenName || "Sports Complex Canteen"}
                     </small>
                   </div>
 
@@ -1402,12 +1478,31 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
     return orders.filter((o) => matchesCanteen(o, selectedBoardCanteen));
   }, [orders, selectedBoardCanteen, selectedBoardCanteenId]);
 
+  // Now Preparing:
+  // "preparing me bhi 2 hi dusre ka dikhe jab uske 2 baad tumhara ho tabhi wana khali"
   const boardPreparingOrders = useMemo(() => {
-    return boardOrders.filter((o) => o.orderStatus === "Preparing");
+    const allPrep = boardOrders.filter((o) => o.orderStatus === "Preparing");
+    const myIndices = allPrep
+      .map((o, idx) => (isMyOrder(o) ? idx : -1))
+      .filter((idx) => idx !== -1);
+
+    if (myIndices.length === 0) {
+      // User has no order in preparing -> empty!
+      return [];
+    }
+
+    const firstMyIdx = myIndices[0];
+    const lastMyIdx = myIndices[myIndices.length - 1];
+    const startIdx = Math.max(0, firstMyIdx - 2);
+    return allPrep.slice(startIdx, lastMyIdx + 1);
   }, [boardOrders]);
 
+  // Ready for Pickup:
+  // "ready me sirf you wala hi dikhe dusre ka token nhi"
   const boardReadyOrders = useMemo(() => {
-    return boardOrders.filter((o) => o.orderStatus === "Ready");
+    return boardOrders
+      .filter((o) => o.orderStatus === "Ready")
+      .filter((o) => isMyOrder(o));
   }, [boardOrders]);
 
   const boardPendingOrders = useMemo(() => {
@@ -1479,8 +1574,8 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
 
             // Map short clean labels
             let label = canteen.shortName || canteen.name;
-            if (cId.includes("34")) label = "Food Court (34 Block)";
-            else if (cId.includes("nk") || label.toLowerCase().includes("nk")) label = "NK Food Court";
+            if (cId.includes("34") || cId.includes("sport")) label = "Sports Complex Canteen";
+            else if (cId.includes("nk") || label.toLowerCase().includes("nk")) label = "NK Canteen";
             else if (cId.includes("main") || label.toLowerCase().includes("main")) label = "Main Canteen";
             else if (cId.includes("sac") || label.toLowerCase().includes("activity")) label = "SAC Canteen";
             else if (cId.includes("sport") || label.toLowerCase().includes("sport")) label = "Sports Canteen";
@@ -1615,16 +1710,18 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
             {boardPreparingOrders.length === 0 ? (
               <div className="cq-empty-state">
                 <span className="empty-icon">👨‍🍳</span>
-                <p>No orders cooking on stove</p>
-                <small>Kitchen is ready for next orders</small>
+                <p>No orders cooking on stove for you</p>
+                <small>Tokens will appear here when your turn is on stove</small>
               </div>
             ) : (
-              boardPreparingOrders.map((ord) => {
+              boardPreparingOrders.map((ord, idx) => {
                 const isMine = isMyOrder(ord);
+                const isRecentlyPrep = transitionEvents[ord._id] === "to-prep";
                 return (
                   <div
                     key={ord._id}
-                    className={`cq-prep-card ${isMine ? "is-my-order-prep" : ""}`}
+                    className={`cq-prep-card ${isMine ? "is-my-order-prep" : ""} ${isRecentlyPrep ? "cq-moved-to-prep" : ""}`}
+                    style={{ animationDelay: `${Math.min(idx, 5) * 0.05}s` }}
                   >
                     {/* Left Ticket Pill */}
                     <div className="cq-ticket-badge prep">
@@ -1677,16 +1774,18 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
             {boardReadyOrders.length === 0 ? (
               <div className="cq-empty-state">
                 <span className="empty-icon">🔔</span>
-                <p>All ready orders collected</p>
-                <small>Tokens ready for pickup appear here</small>
+                <p>No ready orders for you right now</p>
+                <small>Your token will appear here when ready at counter</small>
               </div>
             ) : (
-              boardReadyOrders.map((ord) => {
+              boardReadyOrders.map((ord, idx) => {
                 const isMine = isMyOrder(ord);
+                const isRecentlyReady = transitionEvents[ord._id] === "to-ready";
                 return (
                   <div
                     key={ord._id}
-                    className={`cq-ready-card ${isMine ? "is-my-order-ready" : ""}`}
+                    className={`cq-ready-card ${isMine ? "is-my-order-ready" : ""} ${isRecentlyReady ? "cq-moved-to-ready" : ""}`}
+                    style={{ animationDelay: `${Math.min(idx, 5) * 0.05}s` }}
                   >
                     {/* Left Ticket Pill */}
                     <div className="cq-ticket-badge ready">
@@ -1743,29 +1842,54 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
                 <small>Order now for instant preparation</small>
               </div>
             ) : (
-              boardPendingOrders.slice(0, 6).map((ord, idx) => {
-                const isMine = isMyOrder(ord);
-                const itemCount = ord.items?.reduce((s, it) => s + it.quantity, 0) || 1;
-                return (
-                  <div
-                    key={ord._id}
-                    className={`cq-queue-row ${isMine ? "is-my-order-queue" : ""}`}
-                  >
-                    <span className="cq-q-pos">#{idx + 1}</span>
-                    <div className="cq-ticket-badge queue">
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                        <path d="M2 5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4V5z"></path>
-                        <line x1="12" y1="3" x2="12" y2="15" strokeDasharray="2 2"></line>
-                      </svg>
-                      <span>{ord.tokenNumber}</span>
+              <>
+                {(isQueueExpanded ? boardPendingOrders : boardPendingOrders.slice(0, 5)).map((ord, idx) => {
+                  const isMine = isMyOrder(ord);
+                  const itemCount = ord.items?.reduce((s, it) => s + it.quantity, 0) || 1;
+                  const isRecentlyNew = transitionEvents[ord._id] === "enter-queue";
+                  return (
+                    <div
+                      key={ord._id}
+                      className={`cq-queue-row ${isMine ? "is-my-order-queue" : ""} ${isRecentlyNew ? "cq-moved-enter-queue" : ""}`}
+                      style={{ animationDelay: `${Math.min(idx, 6) * 0.04}s` }}
+                    >
+                      <span className="cq-q-pos">#{idx + 1}</span>
+                      <div className="cq-ticket-badge queue">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <path d="M2 5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4V5z"></path>
+                          <line x1="12" y1="3" x2="12" y2="15" strokeDasharray="2 2"></line>
+                        </svg>
+                        <span>{ord.tokenNumber}</span>
+                      </div>
+                      <span className="cq-q-items">📦 {itemCount} item{itemCount > 1 ? "s" : ""}</span>
+                      <span className="cq-q-wait-pill">~{(idx + 1) * 3} min wait</span>
+                      <span className="cq-q-private">🔒 Private</span>
+                      {isMine && <span className="cq-mine-tag queue">YOU</span>}
                     </div>
-                    <span className="cq-q-items">📦 {itemCount} item{itemCount > 1 ? "s" : ""}</span>
-                    <span className="cq-q-wait-pill">~{(idx + 1) * 3} min wait</span>
-                    <span className="cq-q-private">🔒 Private</span>
-                    {isMine && <span className="cq-mine-tag queue">YOU</span>}
-                  </div>
-                );
-              })
+                  );
+                })}
+
+                {boardPendingOrders.length > 5 && !isQueueExpanded && (
+                  <button
+                    type="button"
+                    className="cq-queue-expand-btn"
+                    onClick={() => setIsQueueExpanded(true)}
+                  >
+                    <span>+ {boardPendingOrders.length - 5} more (Click to expand)</span>
+                    <span className="cq-expand-arrow">›</span>
+                  </button>
+                )}
+
+                {boardPendingOrders.length > 5 && isQueueExpanded && (
+                  <button
+                    type="button"
+                    className="cq-queue-collapse-btn"
+                    onClick={() => setIsQueueExpanded(false)}
+                  >
+                    <span>▲ Click to collapse</span>
+                  </button>
+                )}
+              </>
             )}
           </div>
         </div>

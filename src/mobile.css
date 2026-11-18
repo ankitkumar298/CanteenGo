@@ -3809,7 +3809,26 @@
     min-width: 0 !important;
     width: 100% !important;
     box-sizing: border-box !important;
-    overflow: hidden !important;
+  }
+
+  /* Mobile scrollable queue container: fits ~5 items cleanly, touch scrollable */
+  .cq-col.col-queue .cq-col-body {
+    max-height: 275px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding-right: 3px !important;
+    scroll-behavior: smooth !important;
+  }
+
+  .cq-col.col-prep .cq-col-body,
+  .cq-col.col-ready .cq-col-body {
+    max-height: 360px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding-right: 3px !important;
+    scroll-behavior: smooth !important;
   }
 
   .cq-prep-card,
@@ -3887,7 +3906,65 @@
     gap: 6px !important;
     font-size: 0.72rem !important;
     border-radius: 10px !important;
-    flex-wrap: wrap !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    box-shadow: none !important;
+  }
+
+  .cq-queue-expand-btn {
+    padding: 8px 10px !important;
+    font-size: 0.76rem !important;
+    border-radius: 10px !important;
+    box-shadow: none !important;
+  }
+
+  .cq-queue-collapse-btn {
+    padding: 7px 10px !important;
+    font-size: 0.72rem !important;
+    border-radius: 8px !important;
+    box-shadow: none !important;
+  }
+
+  /* Mobile Smooth Slide Animations without horizontal overscroll */
+  @keyframes cqSlideInFromRight {
+    0% {
+      opacity: 0;
+      transform: translateX(35px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes cqSlideLeftToPrep {
+    0% {
+      opacity: 0;
+      transform: translateX(35px) scale(0.97);
+    }
+    100% {
+      opacity: 1;
+      transform: translateX(0) scale(1);
+    }
+  }
+
+  @keyframes cqSlideLeftToReady {
+    0% {
+      opacity: 0;
+      transform: translateX(35px) scale(0.97);
+    }
+    100% {
+      opacity: 1;
+      transform: translateX(0) scale(1);
+    }
+  }
+
+  .cq-queue-scroll-hint {
+    font-size: 0.68rem !important;
+    padding: 5px 8px !important;
   }
 
   .cq-q-pos {
@@ -4058,10 +4135,36 @@
     line-height: 1.2 !important;
   }
 
+  .order-row-title-line {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 6px !important;
+    width: 100% !important;
+  }
+
+  .order-row-badge-inline {
+    transform: scale(0.85) !important;
+    transform-origin: right center !important;
+    flex-shrink: 0 !important;
+  }
+
   .order-row-sub-canteen {
-    font-size: 0.7rem !important;
-    margin-top: 0 !important;
+    font-size: 0.72rem !important;
+    margin-top: 1px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
     gap: 4px !important;
+  }
+
+  .order-slot-inline-pill {
+    font-size: 0.68rem !important;
+    padding: 2px 5px !important;
+    gap: 3px !important;
   }
 
   .order-row-qty-price {
@@ -5239,4 +5342,59 @@
   font-size: 0.72rem;
   color: #ea580c;
   font-weight: 700;
+}
+
+/* Embedded Live Tracker Stepper in Mobile Order Cards */
+@media (max-width: 640px) {
+  .order-timeline-stepper-modern.embedded-card-tracker {
+    padding: 10px 6px !important;
+    border-radius: 12px !important;
+    margin: 8px 0 6px 0 !important;
+  }
+  .embedded-card-tracker .stepper-circle-icon {
+    width: 28px !important;
+    height: 28px !important;
+  }
+  .embedded-card-tracker .stepper-circle-icon svg {
+    width: 13px !important;
+    height: 13px !important;
+  }
+  .embedded-card-tracker .stepper-connector-bar {
+    top: -13px !important;
+    margin: 0 -3px !important;
+    height: 2.5px !important;
+  }
+  .embedded-card-tracker .stepper-step-title {
+    font-size: 0.68rem !important;
+    margin-top: 1px !important;
+  }
+  .embedded-card-tracker .stepper-step-time {
+    font-size: 0.58rem !important;
+    max-width: 58px !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .embedded-card-tracker .stepper-circle-icon {
+    width: 24px !important;
+    height: 24px !important;
+  }
+  .embedded-card-tracker .stepper-circle-icon svg {
+    width: 11px !important;
+    height: 11px !important;
+  }
+  .embedded-card-tracker .stepper-connector-bar {
+    top: -11px !important;
+    height: 2px !important;
+  }
+  .embedded-card-tracker .stepper-step-title {
+    font-size: 0.62rem !important;
+  }
+  .embedded-card-tracker .stepper-step-time {
+    font-size: 0.52rem !important;
+    max-width: 48px !important;
+  }
 }

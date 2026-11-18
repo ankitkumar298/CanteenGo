@@ -217,86 +217,104 @@ export function AppProvider({ children }) {
     setCart((prev) => prev.filter((i) => i.menuItemId !== menuItemId));
   };
 
-  const submitGlobalOrder = async (paidOnline = false) => {
+  const submitGlobalOrder = async (paidOnline = false, extraDetails = {}) => {
     try {
       setSubmittingOrder(true);
       setIsUpiModalOpen(false);
 
-      const distinctCanteens = Array.from(
-        new Set(cart.map((i) => i.canteen?.name || "Food Court near 34 Block"))
-      );
-      const canteenSummary = distinctCanteens.join(", ");
-      const counterSummary = Array.from(
-        new Set(cart.map((i) => i.canteen?.counter || "Counter 1"))
-      ).join(", ");
-      const firstValidCanteen =
-        cart.find((i) => i.canteen?.id && i.canteen?.id !== "all")?.canteen ||
-        canteens[0];
+      const finalName = (extraDetails?.studentName || studentProfile?.name || "Student").trim();
+      const finalPhone = (extraDetails?.studentPhone || studentProfile?.phone || "").trim();
+      const finalRemarks = extraDetails?.remarks !== undefined ? extraDetails.remarks : cartRemarks;
+      const finalPayment = extraDetails?.paymentMethod || cartPaymentMethod;
+      const finalPickupSlot = (extraDetails?.pickupSlot || "Immediate Pickup").trim();
+      const canteenNotes = extraDetails?.canteenNotes || {};
 
-      const orderPayload = {
-        studentName: studentProfile?.name || "Student",
-        studentEmail: studentProfile?.email || "",
-        studentPhone: studentProfile?.phone || "",
-        paymentMethod: cartPaymentMethod,
-        remarks: cartRemarks.trim(),
-        canteenId: firstValidCanteen?.id || "foodcourt-34",
-        canteenName:
-          canteenSummary && !canteenSummary.includes("All Canteens")
-            ? canteenSummary
-            : firstValidCanteen?.name || "Food Court near 34 Block",
-        counterName:
-          counterSummary || firstValidCanteen?.counter || "Counter 1 (Fast Dispatch)",
-        items: cart.map((item) => {
-          const itemCanteen =
-            item.canteen?.id !== "all" ? item.canteen : firstValidCanteen;
-          return {
-            menuItemId: item.menuItemId,
-            quantity: item.quantity,
-            price: item.price,
-            canteenId: itemCanteen?.id || "foodcourt-34",
-            canteenName: itemCanteen?.name || "Food Court near 34 Block",
-            counterName: itemCanteen?.counter || "Counter 1"
+      const canteenGroupsMap = {};
+      for (const item of cart) {
+        const itemCanteen = (item.canteen?.id && item.canteen?.id !== "all") ? item.canteen : (canteens[0] || { id: "foodcourt-34", name: "Sports Complex Canteen", counter: "Counter 1" });
+        const cId = itemCanteen?.id || itemCanteen?.canteenId || "foodcourt-34";
+
+        if (!canteenGroupsMap[cId]) {
+          canteenGroupsMap[cId] = {
+            canteenId: cId,
+            canteenName: itemCanteen?.name || "Sports Complex Canteen",
+            counterName: itemCanteen?.counter || "Counter 1",
+            items: []
           };
-        })
-      };
-
-      const res = await fetch("/api/orders", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(orderPayload)
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Failed to place order");
-
-      if (paidOnline) {
-        await fetch(`/api/orders/${data._id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ paymentStatus: "Paid" })
+        }
+        canteenGroupsMap[cId].items.push({
+          menuItemId: item.menuItemId,
+          quantity: item.quantity,
+          price: item.price,
+          canteenId: cId,
+          canteenName: itemCanteen?.name || "Sports Complex Canteen",
+          counterName: itemCanteen?.counter || "Counter 1"
         });
-        data.paymentStatus = "Paid";
+      }
+
+      const groups = Object.values(canteenGroupsMap);
+      const createdOrders = [];
+
+      for (const grp of groups) {
+        const grpNote = (canteenNotes[grp.canteenId] !== undefined && canteenNotes[grp.canteenId] !== "")
+          ? canteenNotes[grp.canteenId]
+          : (groups.length === 1 ? finalRemarks : "");
+
+        const orderPayload = {
+          studentName: finalName,
+          studentEmail: studentProfile?.email || "",
+          studentPhone: finalPhone,
+          paymentMethod: finalPayment,
+          remarks: (grpNote || "").trim(),
+          pickupSlot: finalPickupSlot,
+          canteenId: grp.canteenId,
+          canteenName: grp.canteenName,
+          counterName: grp.counterName,
+          items: grp.items
+        };
+
+        const res = await fetch("/api/orders", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(orderPayload)
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || data.message || `Failed to place order for ${grp.canteenName}`);
+
+        if (paidOnline) {
+          await fetch(`/api/orders/${data._id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ paymentStatus: "Paid" })
+          });
+          data.paymentStatus = "Paid";
+        }
+        createdOrders.push(data);
       }
 
       try {
-        localStorage.setItem("canteenGo_lastToken", data.tokenNumber);
-        const myIds = JSON.parse(
-          localStorage.getItem("canteenGo_myOrderIds") || "[]"
-        );
-        if (!myIds.includes(data._id)) {
-          myIds.push(data._id);
-          localStorage.setItem("canteenGo_myOrderIds", JSON.stringify(myIds));
+        const myIds = JSON.parse(localStorage.getItem("canteenGo_myOrderIds") || "[]");
+        for (const ord of createdOrders) {
+          if (!myIds.includes(ord._id)) myIds.unshift(ord._id);
         }
-      } catch {}
+        localStorage.setItem("canteenGo_myOrderIds", JSON.stringify(myIds));
+      } catch (e) {}
+
+      const primaryOrder = createdOrders[0];
+      const compositeOrder = {
+        ...primaryOrder,
+        isMultiCanteen: createdOrders.length > 1,
+        orders: createdOrders,
+        canteenName: createdOrders.map((o) => o.canteenName).join(" & "),
+        counterName: createdOrders.map((o) => o.counterName).join(" • "),
+        items: cart,
+        totalAmount: cart.reduce((sum, i) => sum + i.price * i.quantity, 0)
+      };
 
       setCart([]);
-      try {
-        localStorage.removeItem("canteenGo_studentCart");
-      } catch {}
-
-      setIsMobileCartOpen(false);
-      setLastPlacedOrder(data);
-      setIsOrderSuccessOpen(true);
-      return data;
+      setCartRemarks("");
+      setSubmittingOrder(false);
+      return compositeOrder;
     } catch (err) {
       alert(err.message || "Could not place order");
     } finally {

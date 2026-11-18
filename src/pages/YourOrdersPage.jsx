@@ -23,6 +23,18 @@ import {
   CupIcon
 } from "../components/Icons";
 
+function formatPickupSlot(slot) {
+  if (!slot) return null;
+  const clean = slot.replace(/\s*\((Standard|Standard Pickup)\)/gi, "").trim();
+  if (!clean || clean.toLowerCase() === "immediate" || clean.toLowerCase() === "immediate pickup") {
+    return "Immediate Pickup";
+  }
+  if ((clean.includes("AM") || clean.includes("PM") || clean.includes(":")) && !clean.toLowerCase().startsWith("slot")) {
+    return `Slot: ${clean}`;
+  }
+  return clean;
+}
+
 export default function YourOrdersPage({
   onGoToQueue,
   onOrderMore,
@@ -234,15 +246,15 @@ export default function YourOrdersPage({
 
   // Requirement 8: Status stage filtering with counts
   const filteredOrders = searchedOrders.filter((o) => {
-    if (filter === "active") return ["Pending", "Preparing"].includes(o.orderStatus);
-    if (filter === "ready") return o.orderStatus === "Ready";
+    if (filter === "active") return ["Pending Approval", "Pending", "Accepted", "Preparing"].includes(o.orderStatus);
+    if (filter === "ready") return ["Ready", "Ready for Pickup"].includes(o.orderStatus);
     if (filter === "missed") return o.orderStatus === "Missed Pickup";
     if (filter === "completed") return o.orderStatus === "Completed";
-    if (filter === "cancelled") return o.orderStatus === "Cancelled";
+    if (filter === "cancelled") return ["Cancelled", "Rejected"].includes(o.orderStatus);
     return true;
   });
 
-  // Requirement 5: Cancellation only for eligible orders (orderStatus === "Pending")
+  // Requirement 5: Cancellation only for eligible orders (orderStatus === "Pending Approval" or "Pending")
   const handleCancelOrder = async (orderId) => {
     try {
       setCancellingId(orderId);
@@ -258,7 +270,7 @@ export default function YourOrdersPage({
       }
 
       setMessage({
-        text: `✓ Order Token ${data.tokenNumber} has been successfully cancelled.`,
+        text: `✓ Order has been successfully cancelled.`,
         type: "success"
       });
       setOrderToCancel(null);
@@ -277,14 +289,14 @@ export default function YourOrdersPage({
       const res = await fetch(`/api/orders/${orderId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderStatus: "Ready" })
+        body: JSON.stringify({ orderStatus: "Ready for Pickup" })
       });
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Failed to reschedule order");
 
       setMessage({
-        text: `✓ Token ${data.tokenNumber} has been re-queued for pickup! Please head to Counter.`,
+        text: `✓ Token ${data.tokenNumber || ""} has been re-queued for pickup! Please head to Counter.`,
         type: "success"
       });
       fetchOrders();
@@ -295,26 +307,154 @@ export default function YourOrdersPage({
     }
   };
 
-  // Requirement 3: Synchronized progress timeline step calculation
+  // Requirement 3: Synchronized progress timeline step calculation (1: Placed, 2: Accepted, 3: Preparing, 4: Ready, 5: Completed)
   const getProgressStep = (status) => {
     switch (status) {
+      case "Pending Approval":
       case "Pending":
         return 1;
-      case "Preparing":
+      case "Accepted":
         return 2;
-      case "Ready":
-      case "Missed Pickup":
+      case "Preparing":
         return 3;
-      case "Completed":
+      case "Ready":
+      case "Ready for Pickup":
+      case "Pickup Expired":
+      case "Missed Pickup":
         return 4;
+      case "Completed":
+        return 5;
       default:
         return 1;
     }
   };
 
+  // Live Tracker Horizontal Stepper for Order Cards (with proper layout and animations)
+  const renderLiveTracker = (order) => {
+    const isCompleted = order.orderStatus === "Completed";
+    const isCancelled = order.orderStatus === "Cancelled";
+    const isRejected = order.orderStatus === "Rejected";
+    const isNoShow = order.orderStatus === "No-Show";
+    const isExpired = order.orderStatus === "Pickup Expired";
+    const step = getProgressStep(order.orderStatus);
+
+    if (isNoShow) {
+      return (
+        <div className="order-row-status-alert rejected" onClick={(e) => e.stopPropagation()} style={{ borderColor: "#fca5a5", background: "#fef2f2" }}>
+          <span className="alert-icon" style={{ background: "#dc2626", color: "#fff" }}>✕</span>
+          <div className="alert-text">
+            <strong style={{ color: "#991b1b" }}>Order Cancelled (No-Show Verified)</strong>
+            <span style={{ color: "#7f1d1d" }}>You did not collect this order within the 10-minute pickup window. Strike recorded on Order Trust Score.</span>
+          </div>
+        </div>
+      );
+    }
+
+    if (isExpired) {
+      return (
+        <div className="order-row-status-alert expired" onClick={(e) => e.stopPropagation()} style={{ borderColor: "#fde047", background: "#fefce8" }}>
+          <span className="alert-icon" style={{ background: "#ca8a04", color: "#fff" }}>⚠️</span>
+          <div className="alert-text">
+            <strong style={{ color: "#854d0e" }}>10-Minute Pickup Window Expired</strong>
+            <span style={{ color: "#713f12" }}>Please collect at {order.counterName || "Counter"} immediately before the order is marked as No-Show.</span>
+          </div>
+        </div>
+      );
+    }
+
+    if (isRejected) {
+      return (
+        <div className="order-row-status-alert rejected" onClick={(e) => e.stopPropagation()}>
+          <span className="alert-icon">✕</span>
+          <div className="alert-text">
+            <strong>Order Rejected by Kitchen</strong>
+            <span>{order.rejectionReason || "Kitchen unable to prepare at this time."}</span>
+          </div>
+        </div>
+      );
+    }
+
+    if (isCancelled) {
+      return (
+        <div className="order-row-status-alert cancelled" onClick={(e) => e.stopPropagation()}>
+          <span className="alert-icon">✕</span>
+          <div className="alert-text">
+            <strong>Order Cancelled</strong>
+            <span>Order was cancelled before kitchen preparation.</span>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="order-timeline-stepper-modern five-steps embedded-card-tracker">
+        {/* Step 1: Placed */}
+        <div className={`stepper-node-col ${step >= 1 ? "done" : ""}`}>
+          <div className="stepper-circle-icon done">
+            <CheckCircleIcon size={14} />
+          </div>
+          <strong className="stepper-step-title">Placed</strong>
+          <span className="stepper-step-time">
+            {new Date(order.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+          </span>
+        </div>
+
+        <div className={`stepper-connector-bar ${step > 1 ? "done" : step === 1 ? "active-flow" : ""}`} />
+
+        {/* Step 2: Accepted */}
+        <div className={`stepper-node-col ${step === 2 ? "active" : step > 2 ? "done" : ""}`}>
+          <div className={`stepper-circle-icon ${step === 2 ? "active" : step > 2 ? "done" : ""}`}>
+            {order.tokenNumber ? <CheckCircleIcon size={14} /> : <ClockIcon size={14} />}
+          </div>
+          <strong className="stepper-step-title">Accepted</strong>
+          <span className="stepper-step-time">
+            {order.tokenNumber ? `Token #${order.tokenNumber}` : "Awaiting vendor"}
+          </span>
+        </div>
+
+        <div className={`stepper-connector-bar ${step > 2 ? "done" : step === 2 ? "active-flow" : ""}`} />
+
+        {/* Step 3: Preparing */}
+        <div className={`stepper-node-col ${step === 3 ? "active" : step > 3 ? "done" : ""}`}>
+          <div className={`stepper-circle-icon ${step === 3 ? "active" : step > 3 ? "done" : ""}`}>
+            <ChefIcon size={14} />
+          </div>
+          <strong className="stepper-step-title">Preparing</strong>
+          <span className="stepper-step-time">
+            {step === 3 ? "Cooking fresh" : "Kitchen prepared"}
+          </span>
+        </div>
+
+        <div className={`stepper-connector-bar ${step > 3 ? "done" : step === 3 ? "active-flow" : ""}`} />
+
+        {/* Step 4: Ready */}
+        <div className={`stepper-node-col ${step === 4 ? "active pulse" : step > 4 ? "done" : ""}`}>
+          <div className={`stepper-circle-icon ${step === 4 ? "active pulse" : step > 4 ? "done" : ""}`}>
+            <BagIcon size={14} />
+          </div>
+          <strong className="stepper-step-title">Ready</strong>
+          <span className="stepper-step-time">
+            {step === 4 ? "Ready for pickup!" : order.counterName || "Counter 1"}
+          </span>
+        </div>
+
+        <div className={`stepper-connector-bar ${step >= 5 ? "done" : step === 4 ? "active-flow" : ""}`} />
+
+        {/* Step 5: Collected */}
+        <div className={`stepper-node-col ${step >= 5 ? "done" : ""}`}>
+          <div className={`stepper-circle-icon ${step >= 5 ? "done" : ""}`}>
+            <CheckCircleIcon size={14} />
+          </div>
+          <strong className="stepper-step-title">Collected</strong>
+          <span className="stepper-step-time">Completed</span>
+        </div>
+      </div>
+    );
+  };
+
   // Requirement 4: Estimated pickup time only for active orders when a valid estimate exists
   const getEstimatedPickupInfo = (order) => {
-    if (!["Pending", "Preparing"].includes(order.orderStatus)) return null;
+    if (!["Pending Approval", "Pending", "Accepted", "Preparing"].includes(order.orderStatus)) return null;
     if (!order.createdAt) return null;
 
     const prepMins = (order.estimatedPrepTime || 6) + (order.delayMinutes || 0);
@@ -332,12 +472,16 @@ export default function YourOrdersPage({
     return { remainingMins, readyTimeStr };
   };
 
-  const formatTokenNum = (token) => {
-    if (!token) return "#T-100";
-    const str = String(token).trim();
-    if (str.startsWith("#")) return str;
-    if (str.startsWith("T-")) return `#${str}`;
-    return `#T-${str}`;
+  const formatTokenNum = (token, status, id) => {
+    if (token) {
+      const str = String(token).trim();
+      if (str.startsWith("#")) return str;
+      if (str.startsWith("T-")) return `#${str}`;
+      return `#T-${str}`;
+    }
+    if (status === "Rejected") return "✕ Rejected";
+    if (status === "Pending Approval" || status === "Pending") return "⏳ Awaiting Token";
+    return id ? `#${String(id).slice(-6).toUpperCase()}` : "Token Pending";
   };
 
   const formatOrderDate = (dateString) => {
@@ -368,8 +512,36 @@ export default function YourOrdersPage({
   };
 
   const getStatusCue = (order, etaInfo) => {
-    if (order.orderStatus === "Ready") {
-      return <span className="status-cue-ready">Collect at {order.counterName || "Counter 1"}</span>;
+    if (order.orderStatus === "Ready" || order.orderStatus === "Ready for Pickup") {
+      const readyTime = order.readyAt ? new Date(order.readyAt).getTime() : (order.createdAt ? new Date(order.createdAt).getTime() : Date.now());
+      const elapsedMins = Math.floor((Date.now() - readyTime) / 60000);
+      const remainingPickupMins = Math.max(0, 10 - elapsedMins);
+      if (elapsedMins >= 10) {
+        return (
+          <span className="status-cue-expired" style={{ color: "#dc2626", fontWeight: "700" }}>
+            ⚠️ 10-Min Pickup Expired • Collect immediately at counter before marked No-Show!
+          </span>
+        );
+      }
+      return (
+        <span className="status-cue-ready">
+          Collect at {order.counterName || "Counter 1"} • ⏱️ ~{remainingPickupMins}m window left
+        </span>
+      );
+    }
+    if (order.orderStatus === "Pickup Expired") {
+      return (
+        <span className="status-cue-expired" style={{ color: "#dc2626", fontWeight: "700" }}>
+          ⚠️ Pickup Window Expired • Collect immediately at {order.counterName || "Counter 1"}!
+        </span>
+      );
+    }
+    if (order.orderStatus === "No-Show") {
+      return (
+        <span className="status-cue-rejected" style={{ color: "#991b1b", fontWeight: "700" }}>
+          ✕ Cancelled (No-Show Verified) • Strike recorded on Order Trust Score
+        </span>
+      );
     }
     if (order.orderStatus === "Preparing") {
       return (
@@ -378,8 +550,26 @@ export default function YourOrdersPage({
         </span>
       );
     }
-    if (order.orderStatus === "Pending") {
-      return <span className="status-cue-pending">Order placed • Waiting for kitchen</span>;
+    if (order.orderStatus === "Accepted") {
+      return (
+        <span className="status-cue-accepted" style={{ color: "#2563eb", fontWeight: "700" }}>
+          ✓ Accepted by Vendor • Kitchen queued
+        </span>
+      );
+    }
+    if (order.orderStatus === "Pending Approval" || (order.orderStatus === "Pending" && !order.tokenNumber)) {
+      return (
+        <span className="status-cue-pending" style={{ color: "#ea580c", fontWeight: "700" }}>
+          ⏳ Awaiting Vendor Approval • Token will generate upon acceptance
+        </span>
+      );
+    }
+    if (order.orderStatus === "Rejected") {
+      return (
+        <span className="status-cue-rejected" style={{ color: "#dc2626", fontWeight: "700" }}>
+          ✕ Rejected: {order.rejectionReason || "Declined by kitchen"}
+        </span>
+      );
     }
     if (order.orderStatus === "Missed Pickup") {
       return <span className="status-cue-missed">Missed call • Reschedule available</span>;
@@ -404,33 +594,54 @@ export default function YourOrdersPage({
   // Full detailed order card (opened only when a student clicks "View Details" on an order)
   const renderOrderDetailCard = (order) => {
     const isMissed = order.orderStatus === "Missed Pickup";
-    const isReady = order.orderStatus === "Ready";
+    const isReady = order.orderStatus === "Ready" || order.orderStatus === "Ready for Pickup";
     const isCompleted = order.orderStatus === "Completed";
     const isCancelled = order.orderStatus === "Cancelled";
-    const isPending = order.orderStatus === "Pending";
-    const isActive = !isCompleted && !isCancelled;
+    const isRejected = order.orderStatus === "Rejected";
+    const isPendingApproval = order.orderStatus === "Pending Approval" || (order.orderStatus === "Pending" && !order.tokenNumber);
+    const isAccepted = order.orderStatus === "Accepted";
+    const isPreparing = order.orderStatus === "Preparing";
+    const isActive = !isCompleted && !isCancelled && !isRejected;
     const etaInfo = getEstimatedPickupInfo(order);
     const isPinVisible = Boolean(visiblePins[order._id]);
 
     return (
       <div
-        className={`my-order-card card-premium-order ${isMissed ? "order-card-missed" : ""} ${isReady ? "order-card-ready" : ""} ${isCompleted ? "order-card-completed" : ""} ${isCancelled ? "order-card-cancelled" : ""}`}
+        className={`my-order-card card-premium-order ${isMissed ? "order-card-missed" : ""} ${isReady ? "order-card-ready" : ""} ${isCompleted ? "order-card-completed" : ""} ${isCancelled || isRejected ? "order-card-cancelled" : ""}`}
       >
         {/* 1. Header: Order #T-XXX, Status Badge, Datetime & Action Buttons */}
         <div className="order-main-header">
           <div className="order-main-header-left">
             <div className="order-title-and-badge">
-              <h3 className="order-main-token">Order #{order.tokenNumber}</h3>
+              {order.tokenNumber ? (
+                <h3 className="order-main-token">Token #{order.tokenNumber}</h3>
+              ) : isRejected ? (
+                <h3 className="order-main-token" style={{ color: "#dc2626" }}>
+                  Order #{String(order._id || "").slice(-6).toUpperCase()} (Rejected)
+                </h3>
+              ) : (
+                <h3 className="order-main-token">
+                  Order #{String(order._id || "").slice(-6).toUpperCase()}
+                  <span style={{ fontSize: "0.82rem", fontWeight: "600", color: "#ea580c", marginLeft: "6px" }}>
+                    (Pending Approval)
+                  </span>
+                </h3>
+              )}
               <StatusBadge status={order.orderStatus} type="order" />
             </div>
             <p className="order-placed-datetime">
               Placed on {new Date(order.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })} at {new Date(order.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
             </p>
+            {/* Scheduled Pickup Time Slot Badge */}
+            <div className="order-slot-pill-row" style={{ marginTop: "6px", display: "inline-flex", alignItems: "center", gap: "6px", background: "#f8fafc", border: "1px solid #cbd5e1", padding: "3px 10px", borderRadius: "6px", color: "#0f172a", fontSize: "0.82rem", fontWeight: "600" }}>
+              <span>🕒 Pickup Slot:</span>
+              <strong>{formatPickupSlot(order.pickupSlot) || "Immediate Pickup"}</strong>
+            </div>
           </div>
 
           {/* Header Actions: Track Live, QR Code, Cancel Order */}
           <div className="order-main-header-actions">
-            {onGoToQueue && isActive && (
+            {onGoToQueue && isActive && order.tokenNumber && (
               <button
                 type="button"
                 className="btn-order-action-link"
@@ -441,22 +652,24 @@ export default function YourOrdersPage({
                 <span>Track Live</span>
               </button>
             )}
-            <button
-              type="button"
-              className="btn-order-action-link btn-qr-action"
-              onClick={() => setSelectedQrOrder(order)}
-              title="Open Digital QR Code for Pickup"
-            >
-              <QrIcon size={15} />
-              <span>QR Code</span>
-            </button>
-            {isPending && (
+            {order.tokenNumber && (
+              <button
+                type="button"
+                className="btn-order-action-link btn-qr-action"
+                onClick={() => setSelectedQrOrder(order)}
+                title="Open Digital QR Code for Pickup"
+              >
+                <QrIcon size={15} />
+                <span>QR Code</span>
+              </button>
+            )}
+            {isPendingApproval && (
               <button
                 type="button"
                 className="btn-order-action-cancel"
                 onClick={() => setOrderToCancel(order)}
                 disabled={cancellingId === order._id}
-                title="Cancel this order before kitchen starts preparing"
+                title="Cancel this order before vendor approval"
               >
                 {cancellingId === order._id ? "Cancelling..." : "✕ Cancel Order"}
               </button>
@@ -509,60 +722,101 @@ export default function YourOrdersPage({
               </div>
             </div>
           </>
+        ) : isRejected ? (
+          <div className="order-compact-timeline-bar rejected" style={{ background: "#fef2f2", border: "1px solid #fecaca", padding: "14px 18px", borderRadius: "12px", display: "flex", alignItems: "flex-start", gap: "12px" }}>
+            <span style={{ fontSize: "1.4rem", color: "#dc2626", lineHeight: 1 }}>✕</span>
+            <div>
+              <strong style={{ color: "#991b1b", fontSize: "0.95rem", display: "block" }}>Order Rejected by Canteen Kitchen</strong>
+              <p style={{ margin: "3px 0 0", color: "#b91c1c", fontSize: "0.85rem" }}>
+                Reason: <strong>{order.rejectionReason || "Unavailable to prepare at this time"}</strong>
+              </p>
+              <span style={{ fontSize: "0.78rem", color: "#7f1d1d", display: "block", marginTop: "4px" }}>
+                No token was generated. You can order fresh from this or another canteen anytime.
+              </span>
+            </div>
+          </div>
         ) : isCancelled ? (
           <div className="order-compact-timeline-bar cancelled">
             <span className="cancelled-indicator-cross">✕</span>
             <span>Order Cancelled before kitchen preparation</span>
           </div>
         ) : (
-          <div className="order-timeline-stepper-modern">
-            {/* Step 1: Placed */}
-            <div className={`stepper-node-col ${getProgressStep(order.orderStatus) >= 1 ? "done" : ""}`}>
-              <div className="stepper-circle-icon done">
-                <CheckCircleIcon size={15} />
+          <div>
+            <div className="order-timeline-stepper-modern five-steps">
+              {/* Step 1: Placed */}
+              <div className={`stepper-node-col ${getProgressStep(order.orderStatus) >= 1 ? "done" : ""}`}>
+                <div className="stepper-circle-icon done">
+                  <CheckCircleIcon size={15} />
+                </div>
+                <strong className="stepper-step-title">Placed</strong>
+                <span className="stepper-step-time">
+                  {new Date(order.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                </span>
               </div>
-              <strong className="stepper-step-title">Order Placed</strong>
-              <span className="stepper-step-time">
-                {new Date(order.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-              </span>
+
+              <div className={`stepper-connector-bar ${getProgressStep(order.orderStatus) >= 2 ? "done" : ""}`} />
+
+              {/* Step 2: Accepted & Token Generated */}
+              <div className={`stepper-node-col ${getProgressStep(order.orderStatus) === 2 ? "active" : getProgressStep(order.orderStatus) > 2 ? "done" : ""}`}>
+                <div className={`stepper-circle-icon ${getProgressStep(order.orderStatus) === 2 ? "active" : getProgressStep(order.orderStatus) > 2 ? "done" : ""}`}>
+                  {order.tokenNumber ? <CheckCircleIcon size={15} /> : <ClockIcon size={15} />}
+                </div>
+                <strong className="stepper-step-title">Accepted</strong>
+                <span className="stepper-step-time">
+                  {order.tokenNumber ? `Token #${order.tokenNumber}` : "Awaiting vendor"}
+                </span>
+              </div>
+
+              <div className={`stepper-connector-bar ${getProgressStep(order.orderStatus) >= 3 ? "done" : ""}`} />
+
+              {/* Step 3: Preparing */}
+              <div className={`stepper-node-col ${getProgressStep(order.orderStatus) === 3 ? "active" : getProgressStep(order.orderStatus) > 3 ? "done" : ""}`}>
+                <div className={`stepper-circle-icon ${getProgressStep(order.orderStatus) === 3 ? "active" : getProgressStep(order.orderStatus) > 3 ? "done" : ""}`}>
+                  <ChefIcon size={15} />
+                </div>
+                <strong className="stepper-step-title">Preparing</strong>
+                <span className="stepper-step-time">
+                  {getProgressStep(order.orderStatus) === 3 ? "Cooking fresh" : "Kitchen prepared"}
+                </span>
+              </div>
+
+              <div className={`stepper-connector-bar ${getProgressStep(order.orderStatus) >= 4 ? "done" : ""}`} />
+
+              {/* Step 4: Ready at Counter */}
+              <div className={`stepper-node-col ${getProgressStep(order.orderStatus) === 4 ? "active pulse" : getProgressStep(order.orderStatus) > 4 ? "done" : ""}`}>
+                <div className={`stepper-circle-icon ${getProgressStep(order.orderStatus) === 4 ? "active pulse" : getProgressStep(order.orderStatus) > 4 ? "done" : ""}`}>
+                  <BagIcon size={15} />
+                </div>
+                <strong className="stepper-step-title">Ready</strong>
+                <span className="stepper-step-time">
+                  {getProgressStep(order.orderStatus) === 4 ? "Ready for pickup!" : order.counterName || "Counter 1"}
+                </span>
+              </div>
+
+              <div className={`stepper-connector-bar ${getProgressStep(order.orderStatus) >= 5 ? "done" : ""}`} />
+
+              {/* Step 5: Collected */}
+              <div className={`stepper-node-col ${getProgressStep(order.orderStatus) >= 5 ? "done" : ""}`}>
+                <div className={`stepper-circle-icon ${getProgressStep(order.orderStatus) >= 5 ? "done" : ""}`}>
+                  <CheckCircleIcon size={15} />
+                </div>
+                <strong className="stepper-step-title">Collected</strong>
+                <span className="stepper-step-time">Completed</span>
+              </div>
             </div>
 
-            <div className={`stepper-connector-bar ${getProgressStep(order.orderStatus) >= 2 ? "done" : ""}`} />
-
-            {/* Step 2: Preparing */}
-            <div className={`stepper-node-col ${getProgressStep(order.orderStatus) === 2 ? "active" : getProgressStep(order.orderStatus) > 2 ? "done" : ""}`}>
-              <div className={`stepper-circle-icon ${getProgressStep(order.orderStatus) === 2 ? "active" : getProgressStep(order.orderStatus) > 2 ? "done" : ""}`}>
-                <ChefIcon size={15} />
+            {/* Awaiting Vendor Approval Banner */}
+            {isPendingApproval && (
+              <div style={{ background: "#fffbeb", border: "1px solid #fef3c7", padding: "12px 16px", borderRadius: "10px", marginTop: "14px", display: "flex", alignItems: "center", gap: "10px" }}>
+                <span style={{ fontSize: "1.2rem" }}>⏳</span>
+                <div>
+                  <strong style={{ color: "#92400e", fontSize: "0.88rem" }}>Order Pending Vendor Approval</strong>
+                  <p style={{ margin: "2px 0 0", color: "#b45309", fontSize: "0.8rem" }}>
+                    Your order has been routed to <strong>{order.canteenName || "the vendor"}</strong>. A unique token number will be generated immediately once the vendor accepts your order.
+                  </p>
+                </div>
               </div>
-              <strong className="stepper-step-title">Preparing</strong>
-              <span className="stepper-step-time">
-                {getProgressStep(order.orderStatus) === 2 ? "Your items are being prepared" : "Kitchen prepared"}
-              </span>
-            </div>
-
-            <div className={`stepper-connector-bar ${getProgressStep(order.orderStatus) >= 3 ? "done" : ""}`} />
-
-            {/* Step 3: Ready at Counter */}
-            <div className={`stepper-node-col ${getProgressStep(order.orderStatus) === 3 ? "active pulse" : getProgressStep(order.orderStatus) > 3 ? "done" : ""}`}>
-              <div className={`stepper-circle-icon ${getProgressStep(order.orderStatus) === 3 ? "active pulse" : getProgressStep(order.orderStatus) > 3 ? "done" : ""}`}>
-                <BagIcon size={15} />
-              </div>
-              <strong className="stepper-step-title">Ready at Counter</strong>
-              <span className="stepper-step-time">
-                {getProgressStep(order.orderStatus) === 3 ? "Ready for collection!" : order.counterName || "Counter 1"}
-              </span>
-            </div>
-
-            <div className={`stepper-connector-bar ${getProgressStep(order.orderStatus) >= 4 ? "done" : ""}`} />
-
-            {/* Step 4: Collected */}
-            <div className={`stepper-node-col ${getProgressStep(order.orderStatus) >= 4 ? "done" : ""}`}>
-              <div className={`stepper-circle-icon ${getProgressStep(order.orderStatus) >= 4 ? "done" : ""}`}>
-                <CheckCircleIcon size={15} />
-              </div>
-              <strong className="stepper-step-title">Collected</strong>
-              <span className="stepper-step-time">Completed</span>
-            </div>
+            )}
           </div>
         )}
 
@@ -851,7 +1105,9 @@ export default function YourOrdersPage({
             </button>
             <div className="order-detail-nav-token">
               <span className="nav-token-label">Viewing Order</span>
-              <strong className="nav-token-num">#{selectedOrder.tokenNumber}</strong>
+              <strong className="nav-token-num">
+                {selectedOrder.tokenNumber ? `#${selectedOrder.tokenNumber}` : `#${String(selectedOrder._id || "").slice(-6).toUpperCase()}`}
+              </strong>
             </div>
           </div>
 
@@ -875,14 +1131,14 @@ export default function YourOrdersPage({
                 className={`filter-chip ${filter === "active" ? "active" : ""}`}
                 onClick={() => setFilter("active")}
               >
-                Active In Kitchen ({myOrders.filter((o) => ["Pending", "Preparing"].includes(o.orderStatus)).length})
+                Active In Kitchen ({myOrders.filter((o) => ["Pending Approval", "Pending", "Accepted", "Preparing"].includes(o.orderStatus)).length})
               </button>
               <button
                 type="button"
                 className={`filter-chip filter-ready ${filter === "ready" ? "active" : ""}`}
                 onClick={() => setFilter("ready")}
               >
-                Ready at Counter ({myOrders.filter((o) => o.orderStatus === "Ready").length})
+                Ready at Counter ({myOrders.filter((o) => ["Ready", "Ready for Pickup"].includes(o.orderStatus)).length})
               </button>
               <button
                 type="button"
@@ -898,13 +1154,13 @@ export default function YourOrdersPage({
               >
                 Completed ({myOrders.filter((o) => o.orderStatus === "Completed").length})
               </button>
-              {myOrders.some((o) => o.orderStatus === "Cancelled") && (
+              {myOrders.some((o) => ["Cancelled", "Rejected"].includes(o.orderStatus)) && (
                 <button
                   type="button"
                   className={`filter-chip ${filter === "cancelled" ? "active" : ""}`}
                   onClick={() => setFilter("cancelled")}
                 >
-                  Cancelled ({myOrders.filter((o) => o.orderStatus === "Cancelled").length})
+                  Rejected / Cancelled ({myOrders.filter((o) => ["Cancelled", "Rejected"].includes(o.orderStatus)).length})
                 </button>
               )}
             </div>
@@ -914,11 +1170,11 @@ export default function YourOrdersPage({
               <div className="orders-mobile-filter-btn">
                 <span className="filter-btn-text">
                   {filter === "all" && `All Orders (${myOrders.length})`}
-                  {filter === "active" && `Active In Kitchen (${myOrders.filter((o) => ["Pending", "Preparing"].includes(o.orderStatus)).length})`}
-                  {filter === "ready" && `Ready at Counter (${myOrders.filter((o) => o.orderStatus === "Ready").length})`}
+                  {filter === "active" && `Active In Kitchen (${myOrders.filter((o) => ["Pending Approval", "Pending", "Accepted", "Preparing"].includes(o.orderStatus)).length})`}
+                  {filter === "ready" && `Ready at Counter (${myOrders.filter((o) => ["Ready", "Ready for Pickup"].includes(o.orderStatus)).length})`}
                   {filter === "missed" && `⚠️ Missed (${myOrders.filter((o) => o.orderStatus === "Missed Pickup").length})`}
                   {filter === "completed" && `Completed (${myOrders.filter((o) => o.orderStatus === "Completed").length})`}
-                  {filter === "cancelled" && `Cancelled (${myOrders.filter((o) => o.orderStatus === "Cancelled").length})`}
+                  {filter === "cancelled" && `Rejected / Cancelled (${myOrders.filter((o) => ["Cancelled", "Rejected"].includes(o.orderStatus)).length})`}
                 </span>
                 <span className="filter-btn-arrow">▾</span>
                 <select
@@ -928,12 +1184,12 @@ export default function YourOrdersPage({
                   aria-label="Filter Orders"
                 >
                   <option value="all">All Orders ({myOrders.length})</option>
-                  <option value="active">Active In Kitchen ({myOrders.filter((o) => ["Pending", "Preparing"].includes(o.orderStatus)).length})</option>
-                  <option value="ready">Ready at Counter ({myOrders.filter((o) => o.orderStatus === "Ready").length})</option>
+                  <option value="active">Active In Kitchen ({myOrders.filter((o) => ["Pending Approval", "Pending", "Accepted", "Preparing"].includes(o.orderStatus)).length})</option>
+                  <option value="ready">Ready at Counter ({myOrders.filter((o) => ["Ready", "Ready for Pickup"].includes(o.orderStatus)).length})</option>
                   <option value="missed">⚠️ Missed ({myOrders.filter((o) => o.orderStatus === "Missed Pickup").length})</option>
                   <option value="completed">Completed ({myOrders.filter((o) => o.orderStatus === "Completed").length})</option>
-                  {myOrders.some((o) => o.orderStatus === "Cancelled") && (
-                    <option value="cancelled">Cancelled ({myOrders.filter((o) => o.orderStatus === "Cancelled").length})</option>
+                  {myOrders.some((o) => ["Cancelled", "Rejected"].includes(o.orderStatus)) && (
+                    <option value="cancelled">Rejected / Cancelled ({myOrders.filter((o) => ["Cancelled", "Rejected"].includes(o.orderStatus)).length})</option>
                   )}
                 </select>
               </div>
@@ -1036,13 +1292,18 @@ export default function YourOrdersPage({
                             e.target.src = "/images/samosa.jpg";
                           }}
                         />
-                        <strong className="order-row-token-text">{formatTokenNum(order.tokenNumber)}</strong>
+                        <strong className="order-row-token-text">
+                          {formatTokenNum(order.tokenNumber, order.orderStatus, order._id)}
+                        </strong>
                       </div>
 
                       {/* Center Order Info */}
                       <div className="order-row-info-col">
                         <div className="order-row-title-line">
                           <h4 className="order-row-item-title">{getOrderItemsSummary(order)}</h4>
+                          <div className="order-row-badge-inline">
+                            <StatusBadge status={order.orderStatus} type="order" />
+                          </div>
                         </div>
                         <div className="order-row-sub-canteen">
                           <span>{order.canteenName || "Main Canteen"}</span>
@@ -1053,6 +1314,15 @@ export default function YourOrdersPage({
                           <span>Qty: {totalQty}</span>
                           <span className="dot-sep">•</span>
                           <span className="row-price-val">₹{order.totalAmount}</span>
+                          {order.pickupSlot && (
+                            <>
+                              <span className="dot-sep">•</span>
+                              <span className="order-slot-inline-pill" title="Pickup Schedule">
+                                <ClockIcon size={11} />
+                                <span>{formatPickupSlot(order.pickupSlot)}</span>
+                              </span>
+                            </>
+                          )}
                         </div>
                         {cue && <div className="order-row-cue-line">{cue}</div>}
 
@@ -1107,12 +1377,10 @@ export default function YourOrdersPage({
                           </div>
                         )}
                       </div>
-
-                      {/* Right Status Badge */}
-                      <div className="order-row-badge-col">
-                        <StatusBadge status={order.orderStatus} type="order" />
-                      </div>
                     </div>
+
+                    {/* Requirement: Live Tracker Stepper embedded directly on order card */}
+                    {renderLiveTracker(order)}
 
                     {/* Bottom Card Footer */}
                     <div className="order-row-bottom-footer">

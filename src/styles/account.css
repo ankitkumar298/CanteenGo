@@ -1,0 +1,461 @@
+/* ==========================================================================
+   STUDENT PROFILE SETUP MODAL & PERSONAL IDENTITY SYSTEM
+   ========================================================================== */
+
+/* Profile Setup Modal */
+.student-profile-card {
+  @apply max-w-[460px] w-[90%] rounded-[24px] p-[26px] flex flex-col gap-4;
+}
+
+.profile-modal-header {
+  @apply flex items-center gap-3.5;
+}
+
+.profile-badge-icon {
+  @apply w-12 h-12 rounded-[14px] bg-orange-100 border-[1.5px] border-orange-200 flex items-center justify-center shrink-0;
+}
+
+.student-profile-form {
+  @apply flex flex-col gap-3.5;
+}
+
+.profile-security-note {
+  @apply flex items-center gap-2 bg-slate-50 p-2 sm:p-3 rounded-[10px] border border-slate-200 text-slate-500 text-[0.78rem];
+}
+
+.btn-logout-banner {
+  @apply inline-flex items-center gap-1.5 bg-rose-50 border border-rose-200 text-rose-600 font-bold cursor-pointer rounded-lg py-1.5 px-3 text-[0.8rem] transition-all duration-200 hover:bg-red-600 hover:text-white hover:border-red-600;
+}
+
+.btn-logout-action {
+  @apply inline-flex items-center gap-1.5 bg-rose-50 border-[1.5px] border-rose-200 text-rose-600 font-bold text-[0.85rem] py-2.5 px-4 rounded-lg cursor-pointer transition-all duration-200 hover:bg-rose-600 hover:text-white hover:border-rose-600;
+}
+
+.btn-logout-inline {
+  @apply !text-rose-600 !border-rose-200 !bg-rose-50 hover:!bg-rose-600 hover:!text-white hover:!border-rose-600;
+}
+
+
+/* ==========================================================================
+   DEDICATED ACCOUNT PAGE (MOBILE-FIRST) - TAILWIND @APPLY ARCHITECTURE
+   ========================================================================== */
+
+.account-page-container {
+  @apply min-h-screen bg-slate-50 pb-[110px] max-w-[680px] mx-auto relative;
+}
+
+.account-top-bar {
+  @apply sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-100 flex items-center justify-between py-3 px-4 sm:px-5;
+}
+
+.btn-account-back {
+  @apply bg-slate-100 border border-slate-200 rounded-full text-slate-600 text-[0.84rem] font-bold py-1.5 px-3.5 cursor-pointer transition-all duration-200 hover:bg-orange-50 hover:text-orange-600 hover:border-orange-300;
+}
+
+.account-top-title {
+  @apply m-0 text-[1.15rem] font-extrabold text-slate-900;
+}
+
+.account-status-badge {
+  @apply inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-[0.74rem] font-bold py-1 px-2.5 rounded-full;
+}
+
+.account-status-dot {
+  @apply w-[7px] h-[7px] rounded-full bg-emerald-600 shadow-[0_0_0_2px_rgba(22,163,74,0.25)];
+  animation: pulseDot 1.4s infinite;
+}
+
+.account-page-content {
+  @apply p-4 flex flex-col gap-4;
+}
+
+/* Alerts */
+.account-alert {
+  @apply flex items-center gap-2.5 py-3 px-4 rounded-[14px] text-[0.88rem] font-semibold;
+  animation: slideUpFade 0.25s ease-out;
+}
+
+.account-alert.success-alert {
+  @apply bg-emerald-50 border border-emerald-300 text-emerald-700;
+}
+
+.account-alert.error-alert {
+  @apply bg-red-50 border border-red-200 text-red-700;
+}
+
+/* 1. Hero Card */
+.account-hero-card {
+  @apply bg-gradient-to-br from-white to-orange-50/40 border-[1.5px] border-orange-200 rounded-[22px] p-5 shadow-[0_8px_24px_rgba(234,88,12,0.08)] flex items-center gap-4 relative;
+}
+
+.account-avatar-wrapper {
+  @apply relative shrink-0;
+}
+
+.account-avatar-circle {
+  @apply w-[62px] h-[62px] rounded-full bg-gradient-to-br from-orange-600 to-orange-500 text-white flex items-center justify-center text-[1.45rem] font-black tracking-wide shadow-[0_6px_16px_rgba(234,88,12,0.3)];
+}
+
+.account-avatar-check {
+  @apply absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-emerald-600 border-2 border-white text-white text-[11px] font-black flex items-center justify-center;
+}
+
+.account-hero-info {
+  @apply flex-1 min-w-0;
+}
+
+.account-hero-name {
+  @apply m-0 mb-1.5 text-[1.25rem] font-extrabold text-slate-900 truncate;
+}
+
+.account-hero-badges {
+  @apply flex flex-wrap gap-1.5;
+}
+
+.hero-id-chip,
+.hero-phone-chip {
+  @apply inline-flex items-center gap-1 bg-white border border-slate-200 rounded-full py-[3px] px-2 text-[0.72rem] font-bold text-slate-600;
+}
+
+.btn-edit-all-hero {
+  @apply inline-flex items-center gap-1.5 bg-orange-600 text-white border-0 rounded-xl py-2 px-3 text-[0.8rem] font-bold cursor-pointer shrink-0 shadow-[0_3px_10px_rgba(234,88,12,0.28)] transition-all duration-200 hover:bg-orange-700 hover:-translate-y-0.5;
+}
+
+/* 2. Section Card */
+.account-section-card {
+  @apply bg-white border border-slate-200 rounded-[20px] p-[18px] shadow-[0_2px_10px_rgba(15,23,42,0.04)];
+}
+
+.account-section-header {
+  @apply flex items-center justify-between gap-3 mb-3.5;
+}
+
+.account-section-titles {
+  @apply flex flex-col;
+}
+
+.account-section-header h4 {
+  @apply m-0 mb-0.5 text-[1.05rem] font-extrabold text-slate-900;
+}
+
+.account-section-hint {
+  @apply text-[0.76rem] text-slate-400;
+}
+
+.btn-edit-profile-header {
+  @apply inline-flex items-center gap-1.5 bg-orange-50 border-[1.5px] border-orange-300 text-orange-600 rounded-full py-1.5 px-3.5 text-[0.8rem] font-bold cursor-pointer transition-all duration-200 shrink-0 hover:bg-orange-600 hover:text-white hover:border-orange-600 hover:-translate-y-0.5;
+}
+
+.btn-cancel-profile-header {
+  @apply inline-flex items-center gap-1 bg-slate-100 border border-slate-300 text-slate-600 rounded-full py-1 px-3 text-[0.78rem] font-bold cursor-pointer transition-all duration-200 shrink-0 hover:bg-slate-200 hover:text-slate-900;
+}
+
+/* Fields List */
+.account-fields-list {
+  @apply flex flex-col gap-3;
+}
+
+.account-field-row {
+  @apply flex items-center gap-3 py-3 px-3.5 bg-slate-50 border border-slate-200 rounded-[14px] transition-all duration-200;
+}
+
+.account-field-row.editing {
+  @apply bg-orange-50/30 border-orange-300 shadow-[0_4px_14px_rgba(234,88,12,0.08)];
+}
+
+.field-row-icon {
+  @apply w-[38px] h-[38px] rounded-[10px] bg-orange-50 text-orange-600 flex items-center justify-center shrink-0;
+}
+
+.field-row-icon.phone-icon {
+  @apply bg-blue-50 text-blue-600;
+}
+
+.field-row-icon.email-icon {
+  @apply bg-pink-50 text-pink-600;
+}
+
+.field-row-icon.id-icon {
+  @apply bg-emerald-50 text-emerald-600;
+}
+
+.field-row-icon.password-icon {
+  @apply bg-amber-50 text-amber-600;
+}
+
+.field-empty-pill {
+  @apply inline-flex items-center gap-1 text-[0.8rem] font-semibold text-rose-600 bg-rose-50 border border-dashed border-rose-300 py-[3px] px-2.5 rounded-lg w-fit;
+}
+
+.field-prompt-btn {
+  @apply inline-flex items-center gap-1 text-[0.84rem] font-bold text-orange-600 bg-orange-50 border border-dashed border-orange-300 py-1.5 px-3 rounded-lg cursor-pointer w-fit transition-all duration-200 hover:bg-orange-600 hover:text-white hover:border-solid hover:border-orange-600 hover:-translate-y-0.5;
+}
+
+.password-input-inline-wrap {
+  @apply flex items-center relative w-full;
+}
+
+.password-input-inline-wrap .password-input {
+  @apply pr-[68px];
+}
+
+.btn-toggle-pwd-visibility {
+  @apply absolute right-1.5 top-1/2 -translate-y-1/2 bg-slate-100 border border-slate-300 text-slate-600 text-[0.72rem] font-bold py-1 px-2.5 rounded-md cursor-pointer transition-all duration-200 hover:bg-slate-200 hover:text-slate-900;
+}
+
+.password-display-row {
+  @apply flex items-center gap-2 flex-wrap;
+}
+
+.password-dots {
+  @apply tracking-widest text-[1.05rem] text-slate-700 m-0 font-mono;
+}
+
+.field-secure-badge {
+  @apply text-[0.72rem] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 py-0.5 px-2 rounded-md;
+}
+
+.field-input-hint {
+  @apply text-[0.72rem] text-slate-500 mt-1 block;
+}
+
+.field-row-content {
+  @apply flex-1 min-w-0 flex flex-col gap-[3px];
+}
+
+.field-label {
+  @apply text-[0.72rem] font-bold text-slate-400 tracking-[0.3px] uppercase;
+}
+
+.field-value {
+  @apply text-[0.95rem] text-slate-900 truncate;
+}
+
+.account-input {
+  @apply w-full py-2 px-2.5 border-[1.5px] border-slate-300 rounded-[10px] text-[0.92rem] text-slate-900 outline-none bg-white transition-all duration-200 focus:border-orange-600 focus:ring-2 focus:ring-orange-600/15;
+}
+
+.phone-input-inline-wrap {
+  @apply flex items-center border-[1.5px] border-slate-300 rounded-[10px] bg-white overflow-hidden focus-within:border-orange-600 focus-within:ring-2 focus-within:ring-orange-600/15;
+}
+
+.phone-prefix {
+  @apply py-2 px-2.5 bg-slate-100 border-r border-slate-200 text-[0.82rem] font-bold text-slate-600;
+}
+
+.phone-input {
+  @apply !border-0 !shadow-none flex-1 !p-2 !outline-none;
+}
+
+/* Bulk Edit Actions */
+.bulk-edit-actions-row {
+  @apply flex gap-2.5 mt-3.5 pt-3.5 border-t border-slate-100;
+}
+
+.btn-bulk-cancel {
+  @apply py-2.5 px-4 rounded-xl bg-slate-100 border border-slate-300 text-slate-600 text-[0.88rem] font-bold cursor-pointer hover:bg-slate-200 transition-colors duration-200;
+}
+
+.btn-bulk-save {
+  @apply flex-1 py-2.5 px-[18px] rounded-xl bg-gradient-to-br from-orange-600 to-orange-700 border-0 text-white text-[0.92rem] font-extrabold cursor-pointer shadow-[0_4px_12px_rgba(234,88,12,0.35)] transition-all duration-200 hover:-translate-y-0.5;
+}
+
+/* Shortcuts */
+.shortcuts-card .shortcuts-title {
+  @apply m-0 mb-3 text-[1.02rem] font-extrabold text-slate-900;
+}
+
+.shortcuts-grid {
+  @apply flex flex-col gap-2;
+}
+
+.account-shortcut-btn {
+  @apply flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-[14px] cursor-pointer text-left transition-all duration-200 w-full hover:bg-white hover:border-slate-300 hover:-translate-y-0.5;
+}
+
+.shortcut-icon-box {
+  @apply w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0;
+}
+
+.shortcut-icon-box.orders { @apply bg-orange-50 text-orange-600; }
+.shortcut-icon-box.queue { @apply bg-emerald-50 text-emerald-600; }
+.shortcut-icon-box.menu { @apply bg-blue-50 text-blue-600; }
+
+.shortcut-texts {
+  @apply flex-1 min-w-0 flex flex-col;
+}
+
+.shortcut-texts strong {
+  @apply text-[0.92rem] text-slate-900;
+}
+
+.shortcut-texts span {
+  @apply text-[0.74rem] text-slate-500;
+}
+
+.shortcut-arrow {
+  @apply text-slate-400 transition-transform duration-200;
+}
+
+.account-shortcut-btn:hover .shortcut-arrow {
+  @apply translate-x-1 text-orange-600;
+}
+
+/* Security / Trust */
+.security-card {
+  @apply flex flex-col gap-3;
+}
+
+.security-item {
+  @apply flex items-start gap-2.5;
+}
+
+.security-badge-icon {
+  @apply w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 text-[11px] font-black flex items-center justify-center shrink-0 mt-0.5;
+}
+
+.security-item strong {
+  @apply text-[0.85rem] text-slate-900 block;
+}
+
+.security-item p {
+  @apply text-[0.76rem] text-slate-500 m-0 mt-0.5 leading-snug;
+}
+
+/* Logout */
+.account-logout-wrap {
+  @apply mt-1;
+}
+
+.btn-account-logout {
+  @apply w-full p-3 rounded-[14px] border-[1.5px] border-red-200 bg-red-50 text-red-600 text-[0.92rem] font-extrabold cursor-pointer flex items-center justify-center gap-2 transition-all duration-200 hover:bg-red-100 hover:border-red-300 hover:-translate-y-0.5;
+}
+
+/* ==========================================================================
+   Order Trust Score & COD Status Card (Account Page)
+   ========================================================================== */
+.account-trust-score-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 18px 20px;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+  margin-bottom: 18px;
+  transition: all 0.2s ease;
+}
+
+.account-trust-score-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+}
+
+.trust-score-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.trust-score-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.trust-score-icon {
+  font-size: 1.3rem;
+  width: 38px;
+  height: 38px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.trust-score-title {
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.trust-score-subtitle {
+  font-size: 0.74rem;
+  color: #64748b;
+  display: block;
+}
+
+.trust-score-status-badge {
+  font-size: 0.74rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+  letter-spacing: 0.01em;
+}
+
+.trust-score-status-badge.badge-safe {
+  background: #f0fdf4;
+  color: #16a34a;
+  border: 1px solid #bbf7d0;
+}
+
+.trust-score-status-badge.badge-warning {
+  background: #fffbeb;
+  color: #d97706;
+  border: 1px solid #fde68a;
+}
+
+.trust-score-status-badge.badge-final-warning {
+  background: #fff7ed;
+  color: #ea580c;
+  border: 1px solid #fed7aa;
+}
+
+.trust-score-status-badge.badge-blocked {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.trust-score-chances-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 6px 0 2px 0;
+}
+
+.trust-score-chances-val {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+.trust-score-chances-val.text-danger {
+  color: #dc2626;
+}
+
+.trust-prepaid-only-tag {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fca5a5;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+.trust-score-notice {
+  font-size: 0.82rem;
+  color: #000000;
+  opacity: 0.6;
+  margin-top: 6px;
+  line-height: 1.4;
+  font-weight: 500;
+}

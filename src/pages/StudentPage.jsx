@@ -523,98 +523,135 @@ export default function StudentPage({
       setIsUpiModalOpen(false);
       setSubmittingOrder(true);
 
-      const distinctCanteens = Array.from(
-        new Set(
-          cart.map(
-            (i) => i.canteen?.name || selectedCanteen?.name || "Food Court near 34 Block"
-          )
-        )
-      );
-      const canteenSummary = distinctCanteens.join(", ");
-      const counterSummary = Array.from(
-        new Set(
-          cart.map(
-            (i) => i.canteen?.counter || selectedCanteen?.counter || "Counter 1"
-          )
-        )
-      ).join(", ");
-
-      const firstValidCanteen = cart.find((i) => i.canteen?.id && i.canteen?.id !== "all")?.canteen ||
-        (selectedCanteen?.id !== "all" ? selectedCanteen : defaultCanteenObj);
-
       const finalName = (extraDetails?.studentName || studentName || studentProfile?.name || "Student").trim();
       const finalPhone = (extraDetails?.studentPhone || studentPhone || studentProfile?.phone || "").trim();
       const finalRemarks = extraDetails?.remarks !== undefined ? extraDetails.remarks : remarks;
       const finalPayment = extraDetails?.paymentMethod || (paidOnline ? "UPI" : paymentMethod);
+      const finalPickupSlot = (extraDetails?.pickupSlot || "Immediate Pickup").trim();
+      const canteenNotes = extraDetails?.canteenNotes || {};
 
-      const orderPayload = {
-        studentName: finalName,
-        studentEmail: studentProfile?.email || "",
-        studentPhone: finalPhone,
-        paymentMethod: finalPayment,
-        remarks: finalRemarks ? finalRemarks.trim() : "",
-        canteenId: firstValidCanteen?.id || "foodcourt-34",
-        canteenName: canteenSummary && !canteenSummary.includes("All Canteens") ? canteenSummary : (firstValidCanteen?.name || "Food Court near 34 Block"),
-        counterName: counterSummary || firstValidCanteen?.counter || "Counter 1 (Fast Dispatch)",
-        items: cart.map((item) => {
-          const itemCanteen = item.canteen?.id !== "all" ? item.canteen : firstValidCanteen;
-          return {
-            menuItemId: item.menuItemId,
-            quantity: item.quantity,
-            price: item.price,
-            canteenId: itemCanteen?.id || "foodcourt-34",
-            canteenName: itemCanteen?.name || "Food Court near 34 Block",
-            counterName: itemCanteen?.counter || "Counter 1"
+      // 1. Group cart items strictly by individual canteen
+      const canteenGroupsMap = {};
+      for (const item of cart) {
+        const itemCanteen = (item.canteen?.id && item.canteen?.id !== "all")
+          ? item.canteen
+          : (selectedCanteen?.id !== "all" ? selectedCanteen : defaultCanteenObj);
+        const cId = itemCanteen?.id || itemCanteen?.canteenId || "foodcourt-34";
+
+        if (!canteenGroupsMap[cId]) {
+          canteenGroupsMap[cId] = {
+            canteenId: cId,
+            canteenName: itemCanteen?.name || "Sports Complex Canteen",
+            counterName: itemCanteen?.counter || "Counter 1",
+            items: []
           };
-        })
+        }
+        canteenGroupsMap[cId].items.push({
+          menuItemId: item.menuItemId,
+          quantity: item.quantity,
+          price: item.price,
+          canteenId: cId,
+          canteenName: itemCanteen?.name || "Sports Complex Canteen",
+          counterName: itemCanteen?.counter || "Counter 1"
+        });
+      }
+
+      const groups = Object.values(canteenGroupsMap);
+      if (groups.length === 0) {
+        throw new Error("Cart is empty or no valid canteen found.");
+      }
+
+      // 2. Dispatch a separate order for EACH canteen
+      // This guarantees each kitchen receives ONLY its particular items and particular notes!
+      const createdOrders = [];
+      for (const grp of groups) {
+        const grpNote = (canteenNotes[grp.canteenId] !== undefined && canteenNotes[grp.canteenId] !== "")
+          ? canteenNotes[grp.canteenId]
+          : (groups.length === 1 ? finalRemarks : "");
+
+        const orderPayload = {
+          studentName: finalName,
+          studentEmail: studentProfile?.email || "",
+          studentPhone: finalPhone,
+          paymentMethod: finalPayment,
+          remarks: (grpNote || "").trim(),
+          pickupSlot: finalPickupSlot,
+          canteenId: grp.canteenId,
+          canteenName: grp.canteenName,
+          counterName: grp.counterName,
+          items: grp.items
+        };
+
+        const res = await fetch("/api/orders", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(orderPayload)
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          const detail = data.error || data.message || `Failed to place order for ${grp.canteenName}`;
+          throw new Error(detail);
+        }
+
+        if (paidOnline) {
+          await fetch(`/api/orders/${data._id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ paymentStatus: "Paid" })
+          });
+          data.paymentStatus = "Paid";
+        }
+
+        createdOrders.push(data);
+      }
+
+      // 3. Register all created orders in student's localStorage
+      try {
+        const myIds = JSON.parse(localStorage.getItem("canteenGo_myOrderIds") || "[]");
+        for (const ord of createdOrders) {
+          if (!myIds.includes(ord._id)) {
+            myIds.unshift(ord._id);
+          }
+        }
+        localStorage.setItem("canteenGo_myOrderIds", JSON.stringify(myIds));
+        if (createdOrders[0]?.tokenNumber) {
+          localStorage.setItem("canteenGo_lastToken", createdOrders[0].tokenNumber);
+        }
+      } catch (e) {}
+
+      // 4. Build response composite for modals
+      const primaryOrder = createdOrders[0];
+      const compositeOrder = {
+        ...primaryOrder,
+        isMultiCanteen: createdOrders.length > 1,
+        orders: createdOrders,
+        canteenName: createdOrders.map((o) => o.canteenName).join(" & "),
+        counterName: createdOrders.map((o) => o.counterName).join(" • "),
+        items: cart,
+        totalAmount: cart.reduce((sum, i) => sum + i.price * i.quantity, 0)
       };
 
-      const res = await fetch("/api/orders", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(orderPayload)
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.message || "Failed to place order");
-      }
-
-      if (paidOnline) {
-        await fetch(`/api/orders/${data._id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ paymentStatus: "Paid" })
-        });
-        data.paymentStatus = "Paid";
-      }
-
-      // Smooth transition to token card
       setTimeout(() => {
-        setLastPlacedOrder(data);
+        setLastPlacedOrder(compositeOrder);
         setSubmittingOrder(false);
         if (setIsMobileCartOpen) setIsMobileCartOpen(false);
-        setSuccessMessage(`Order Placed! Your Pickup Token is ${data.tokenNumber}`);
+        setSuccessMessage(
+          createdOrders.length > 1
+            ? `🎉 ${createdOrders.length} Orders Placed! Sent separately to each canteen kitchen.`
+            : primaryOrder.tokenNumber
+            ? `Order Placed! Your Pickup Token is #${primaryOrder.tokenNumber}`
+            : `Order Placed! Sent for kitchen approval • Pickup Slot: ${primaryOrder.pickupSlot || finalPickupSlot}`
+        );
         setCart([]);
         setRemarks("");
         try {
           localStorage.removeItem("canteenGo_studentCart");
           localStorage.removeItem("canteenGo_orderRemarks");
         } catch {}
-        try {
-          localStorage.setItem("canteenGo_lastToken", data.tokenNumber);
-          const myIds = JSON.parse(localStorage.getItem("canteenGo_myOrderIds") || "[]");
-          if (!myIds.includes(data._id)) {
-            myIds.unshift(data._id);
-            localStorage.setItem("canteenGo_myOrderIds", JSON.stringify(myIds));
-          }
-        } catch {
-          // localStorage fallback
-        }
       }, 500);
 
-      return data;
+      return compositeOrder;
     } catch (err) {
       setErrorMessage(err.message);
       setIsOverlayOpen(false);

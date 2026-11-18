@@ -161,7 +161,7 @@ export async function POST(request) {
     const resolvedIsVeg = resolvedFoodType === "veg";
 
     const resolvedCanteenId = canteenId || "foodcourt-34";
-    const resolvedCanteenName = canteenName || "Food Court near 34 Block";
+    const resolvedCanteenName = canteenName || "Sports Complex Canteen";
     const resolvedAvailableCanteens = Array.isArray(availableCanteens) && availableCanteens.length > 0
       ? availableCanteens
       : [resolvedCanteenId];

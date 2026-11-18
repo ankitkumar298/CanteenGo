@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
+import TimeSlotPicker from "./TimeSlotPicker";
 import {
   CartIcon,
   ClockIcon,
@@ -49,6 +50,8 @@ export default function DesktopCheckoutModal({
   const [isEditingPhone, setIsEditingPhone] = useState(false);
   const [nameError, setNameError] = useState("");
   const [phoneError, setPhoneError] = useState("");
+  const [selectedPickupSlot, setSelectedPickupSlot] = useState("");
+  const [slotError, setSlotError] = useState("");
 
   // UPI payment state
   const [upiSecondsRemaining, setUpiSecondsRemaining] = useState(299);
@@ -58,6 +61,40 @@ export default function DesktopCheckoutModal({
   // Ordering 4-second animation state
   const [loadingStep, setLoadingStep] = useState(0);
   const [placedOrder, setPlacedOrder] = useState(null);
+  const [canteenNotes, setCanteenNotes] = useState({});
+  const isCodBlocked =
+    studentProfile?.codStatus === "temporarily_blocked" ||
+    studentProfile?.codStatus === "prepaid_only" ||
+    (studentProfile?.noShowCount !== undefined && studentProfile?.noShowCount >= 3);
+
+  const canteenGroups = useMemo(() => {
+    const map = {};
+    for (const item of cart) {
+      const c =
+        item.canteen?.id && item.canteen?.id !== "all"
+          ? item.canteen
+          : selectedCanteen?.id !== "all"
+          ? selectedCanteen
+          : currentCanteen || {
+              id: "foodcourt-34",
+              name: "Sports Complex Canteen",
+              shortName: "Sports Complex Canteen",
+              counter: "Counter 1"
+            };
+      const cId = c.id || c.canteenId || "foodcourt-34";
+      if (!map[cId]) {
+        map[cId] = {
+          canteenId: cId,
+          canteen: c,
+          name: c.shortName || c.name || "Canteen",
+          counter: c.counter || "Counter 1",
+          items: []
+        };
+      }
+      map[cId].items.push(item);
+    }
+    return Object.values(map);
+  }, [cart, selectedCanteen, currentCanteen]);
 
   // Reset or initialize when opened
   useEffect(() => {
@@ -69,6 +106,8 @@ export default function DesktopCheckoutModal({
       setIsEditingPhone(!p); // If no phone is present, open in edit mode automatically
       setNameError("");
       setPhoneError("");
+      setSelectedPickupSlot("");
+      setSlotError("");
       setUpiSecondsRemaining(299);
       setUpiPaymentState("idle");
       setPlacedOrder(null);
@@ -119,7 +158,7 @@ export default function DesktopCheckoutModal({
   if (!isOpen) return null;
 
   const activeCanteenName =
-    selectedCanteen?.name || currentCanteen?.name || "34 Block Food Court";
+    selectedCanteen?.name || currentCanteen?.name || "Sports Complex Canteen";
   const activeCanteenCounter =
     selectedCanteen?.counter || currentCanteen?.counter || "Counter 1";
 
@@ -162,6 +201,8 @@ export default function DesktopCheckoutModal({
     }
     setPhoneError("");
 
+    setSlotError("");
+
     if (setStudentName) setStudentName(trimmedName);
     if (setStudentPhone) setStudentPhone(cleanPhone);
     try {
@@ -177,24 +218,18 @@ export default function DesktopCheckoutModal({
       icon: "📡",
       title: `Sending Order to ${activeCanteenName}...`,
       subtitle: "Connecting directly with live kitchen terminal",
-      progress: "25%"
+      progress: "33%"
     },
     {
-      icon: "👨‍🍳",
-      title: "Chef Accepted Your Order!",
-      subtitle: "Stove fired up & assembling fresh ingredients",
-      progress: "55%"
+      icon: "🕒",
+      title: `Scheduling Pickup (${selectedPickupSlot || "Time Slot"})...`,
+      subtitle: "Registering your requested collection window",
+      progress: "66%"
     },
     {
-      icon: "🔥",
-      title: "Cooking Your Meal Hot & Fresh...",
-      subtitle: "Preparing food with care • Packaging for dispatch",
-      progress: "82%"
-    },
-    {
-      icon: "🎟️",
-      title: "Generating Live Pickup Token...",
-      subtitle: `Allocating ${activeCanteenCounter} dispatch slot on queue board`,
+      icon: "📋",
+      title: "Order Sent for Vendor Approval!",
+      subtitle: "Awaiting canteen confirmation • Token will issue on acceptance",
       progress: "100%"
     }
   ];
@@ -219,7 +254,9 @@ export default function DesktopCheckoutModal({
           studentName: trimmedName,
           studentPhone: cleanPhone,
           remarks: (remarks || "").trim(),
-          paymentMethod: isPaidOnline ? "UPI" : paymentMethod
+          canteenNotes: canteenNotes,
+          paymentMethod: isPaidOnline ? "UPI" : paymentMethod,
+          pickupSlot: (selectedPickupSlot?.trim() || "Immediate Pickup")
         });
       }
 
@@ -232,14 +269,18 @@ export default function DesktopCheckoutModal({
         clearTimeout(t3);
         setPlacedOrder(
           orderRes || {
-            _id: "demo-" + Date.now(),
-            tokenNumber: Math.floor(10 + Math.random() * 89),
+            _id: "order-" + Date.now(),
+            tokenNumber: null,
+            orderStatus: "Pending Approval",
+            vendorApprovalStatus: "Pending",
+            pickupSlot: (selectedPickupSlot?.trim() || "Immediate Pickup"),
             studentName: trimmedName,
             studentPhone: cleanPhone,
             paymentMethod: isPaidOnline ? "UPI" : paymentMethod,
             canteenName: activeCanteenName,
             counterName: activeCanteenCounter,
-            items: cart
+            items: cart,
+            totalAmount: cartTotal
           }
         );
         setStep("placed");
@@ -548,21 +589,96 @@ export default function DesktopCheckoutModal({
                   )}
                 </div>
 
-                {/* 3. Cooking Remarks / Special Instructions */}
-                <div className="desktop-form-group">
-                  <label className="desktop-field-label" htmlFor="desktopCookingNote">
-                    <span>📝 Cooking Note / Remarks (Optional):</span>
-                  </label>
-                  <input
-                    id="desktopCookingNote"
-                    type="text"
-                    className="form-input desktop-input"
-                    placeholder="e.g. Extra spicy, bina pyaz, less sugar, pack separately..."
-                    value={remarks}
-                    onChange={(e) => setRemarks && setRemarks(e.target.value)}
-                    maxLength={140}
+                {/* 2B. Preferred Pickup Time Slot Selection */}
+                <div className="desktop-form-group timeslot-group-wrap">
+                  <TimeSlotPicker
+                    selectedSlot={selectedPickupSlot}
+                    onSelectSlot={(slot) => {
+                      setSelectedPickupSlot(slot);
+                      if (slotError) setSlotError("");
+                    }}
+                    canteen={selectedCanteen || currentCanteen}
+                    error={slotError}
                   />
                 </div>
+
+                {/* 3. Cooking Remarks / Special Instructions */}
+                {canteenGroups.length > 1 ? (
+                  <div className="desktop-form-group">
+                    <label className="desktop-field-label">
+                      <span>📝 Cooking Notes per Canteen:</span>
+                      <span style={{ fontSize: "0.74rem", fontWeight: "400", color: "#64748b", marginLeft: "6px" }}>
+                        (Each note goes strictly to its own canteen)
+                      </span>
+                    </label>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "4px" }}>
+                      {canteenGroups.map((grp) => (
+                        <div
+                          key={grp.canteenId}
+                          style={{
+                            background: "#f8fafc",
+                            border: "1px solid #e2e8f0",
+                            borderRadius: "10px",
+                            padding: "10px 12px"
+                          }}
+                        >
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                              marginBottom: "6px"
+                            }}
+                          >
+                            <strong
+                              style={{
+                                fontSize: "0.84rem",
+                                color: "#0f172a",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "6px"
+                              }}
+                            >
+                              <span>📍 {grp.name}</span>
+                              <span style={{ fontSize: "0.72rem", color: "#64748b", fontWeight: "500" }}>
+                                ({grp.counter})
+                              </span>
+                            </strong>
+                            <span style={{ fontSize: "0.72rem", color: "#64748b" }}>
+                              {grp.items.map((i) => `${i.name} ×${i.quantity}`).join(", ")}
+                            </span>
+                          </div>
+                          <input
+                            type="text"
+                            className="form-input desktop-input"
+                            placeholder={`Note for ${grp.name} (e.g. less spicy, pack separately)...`}
+                            value={canteenNotes[grp.canteenId] || ""}
+                            onChange={(e) =>
+                              setCanteenNotes((prev) => ({ ...prev, [grp.canteenId]: e.target.value }))
+                            }
+                            maxLength={140}
+                            style={{ fontSize: "0.82rem", padding: "8px 12px" }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="desktop-form-group">
+                    <label className="desktop-field-label" htmlFor="desktopCookingNote">
+                      <span>📝 Cooking Note / Remarks (Optional):</span>
+                    </label>
+                    <input
+                      id="desktopCookingNote"
+                      type="text"
+                      className="form-input desktop-input"
+                      placeholder="e.g. Extra spicy, bina pyaz, less sugar, pack separately..."
+                      value={remarks}
+                      onChange={(e) => setRemarks && setRemarks(e.target.value)}
+                      maxLength={140}
+                    />
+                  </div>
+                )}
 
                 {/* 4. Payment Mode Selection */}
                 <div className="desktop-form-group">
@@ -592,13 +708,17 @@ export default function DesktopCheckoutModal({
 
                     {/* Cash Option */}
                     <div
-                      className={`desktop-payment-card ${paymentMethod === "Cash" ? "selected" : ""}`}
-                      onClick={() => setPaymentMethod && setPaymentMethod("Cash")}
+                      className={`desktop-payment-card ${paymentMethod === "Cash" && !isCodBlocked ? "selected" : ""} ${isCodBlocked ? "disabled" : ""}`}
+                      onClick={() => {
+                        if (isCodBlocked) return;
+                        setPaymentMethod && setPaymentMethod("Cash");
+                      }}
                       role="button"
                       tabIndex={0}
+                      style={isCodBlocked ? { opacity: 0.55, cursor: "not-allowed", background: "#f8fafc" } : {}}
                     >
                       <div className="payment-radio-circle">
-                        <span className={`radio-dot ${paymentMethod === "Cash" ? "active" : ""}`} />
+                        <span className={`radio-dot ${paymentMethod === "Cash" && !isCodBlocked ? "active" : ""}`} />
                       </div>
                       <div className="payment-icon-wrap cash">
                         <CashIcon size={24} />
@@ -606,9 +726,19 @@ export default function DesktopCheckoutModal({
                       <div className="payment-info">
                         <div className="payment-title-row">
                           <strong>Cash Counter</strong>
-                          <span className="cash-badge">Pay at Counter</span>
+                          {isCodBlocked ? (
+                            <span className="instant-badge" style={{ background: "#fef2f2", color: "#dc2626", border: "1px solid #fca5a5" }}>
+                              🚫 Temporarily Blocked
+                            </span>
+                          ) : (
+                            <span className="cash-badge">Pay at Counter</span>
+                          )}
                         </div>
-                        <span className="payment-desc">Pay cash when collecting your food token</span>
+                        <span className="payment-desc">
+                          {isCodBlocked
+                            ? "Cash on Pickup restricted due to verified no-shows. Please pay via UPI."
+                            : "Pay cash when collecting your food token"}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -844,32 +974,57 @@ export default function DesktopCheckoutModal({
           {step === "placed" && placedOrder && (
             <div className="desktop-order-placed-panel">
               <div className="desktop-placed-card">
-                <div className="placed-celebration-badge">
+                <div className="placed-celebration-badge" style={!placedOrder.tokenNumber ? { background: "#fffbeb", color: "#b45309", borderColor: "#fde68a" } : undefined}>
                   <CheckCircleIcon size={32} />
-                  <span>Order Successfully Placed!</span>
+                  <span>{placedOrder.tokenNumber ? "Order Successfully Placed!" : "Order Submitted for Vendor Approval!"}</span>
                 </div>
 
-                <div className="placed-token-hero">
-                  <span className="token-label">YOUR PICKUP TOKEN</span>
-                  <div className="token-number-badge">
-                    #{placedOrder.tokenNumber}
+                {placedOrder.tokenNumber ? (
+                  <div className="placed-token-hero">
+                    <span className="token-label">YOUR PICKUP TOKEN</span>
+                    <div className="token-number-badge">
+                      #{placedOrder.tokenNumber}
+                    </div>
+                    <span className="token-callout-hint">
+                      Please listen for token #{placedOrder.tokenNumber} called for{" "}
+                      <strong>{placedOrder.studentName || localName}</strong>
+                    </span>
                   </div>
-                  <span className="token-callout-hint">
-                    Please listen for token #{placedOrder.tokenNumber} called for{" "}
-                    <strong>{placedOrder.studentName || localName}</strong>
-                  </span>
-                </div>
+                ) : (
+                  <div className="placed-token-hero pending-hero" style={{ background: "#fff7ed", border: "1.5px dashed #fdba74", borderRadius: "16px", padding: "18px 14px", margin: "16px 0" }}>
+                    <span className="token-label" style={{ color: "#c2410c", fontWeight: 800 }}>TOKEN NUMBER STATUS</span>
+                    <div className="token-number-badge pending-badge" style={{ background: "#ea580c", color: "#fff", fontSize: "1.25rem", padding: "8px 20px", borderRadius: "99px", display: "inline-block", margin: "8px auto" }}>
+                      ⏳ Awaiting Vendor Acceptance
+                    </div>
+                    <span className="token-callout-hint" style={{ color: "#7c2d12", display: "block", marginTop: "6px" }}>
+                      Your order is waiting for approval by <strong>{placedOrder.canteenName || activeCanteenName}</strong>. A token number will appear automatically as soon as accepted!
+                    </span>
+                  </div>
+                )}
 
                 <div className="placed-meta-grid">
+                  <div className="meta-card highlight-slot" style={{ border: "1.5px solid #fdba74", background: "#fff7ed" }}>
+                    <span className="meta-label" style={{ color: "#ea580c", fontWeight: 800 }}>Scheduled Pickup Slot</span>
+                    <strong className="meta-val" style={{ color: "#9a3412", fontSize: "1rem" }}>
+                      🕒 {placedOrder.pickupSlot || selectedPickupSlot}
+                    </strong>
+                    <span className="meta-sub">Please collect during this slot</span>
+                  </div>
                   <div className="meta-card">
                     <span className="meta-label">Pickup Location</span>
                     <strong className="meta-val">{placedOrder.canteenName || activeCanteenName}</strong>
                     <span className="meta-sub">{placedOrder.counterName || activeCanteenCounter}</span>
                   </div>
                   <div className="meta-card">
-                    <span className="meta-label">Estimated Wait</span>
-                    <strong className="meta-val">~8 - 12 mins</strong>
-                    <span className="meta-sub">Freshly prepared</span>
+                    <span className="meta-label">Kitchen Status</span>
+                    <strong className="meta-val">
+                      {placedOrder.orderStatus === "Accepted"
+                        ? "Accepted by Kitchen"
+                        : placedOrder.orderStatus === "Pending Approval"
+                        ? "Pending Approval"
+                        : "Preparing"}
+                    </strong>
+                    <span className="meta-sub">Freshly prepared on acceptance</span>
                   </div>
                   <div className="meta-card">
                     <span className="meta-label">Payment Status</span>

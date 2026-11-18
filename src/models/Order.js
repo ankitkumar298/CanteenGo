@@ -39,8 +39,11 @@ const orderItemSchema = new mongoose.Schema({
 const orderSchema = new mongoose.Schema({
   tokenNumber: {
     type: String,
-    required: true,
-    unique: true
+    default: null,
+    index: {
+      unique: true,
+      partialFilterExpression: { tokenNumber: { $type: "string" } }
+    }
   },
   studentName: {
     type: String,
@@ -63,10 +66,75 @@ const orderSchema = new mongoose.Schema({
     required: true,
     min: 0
   },
+  // Order Status Lifecycle:
+  // 1. Pending Approval (waiting for vendor action)
+  // 2. Accepted (vendor accepted, token generated)
+  // 3. Rejected (vendor declined, no token)
+  // 4. Preparing (vendor is cooking/assembling)
+  // 5. Ready for Pickup (food ready at counter, 10-min window started)
+  // 6. Pickup Expired (10-min window passed, awaiting vendor confirmation)
+  // 7. No-Show (vendor confirmed student didn't collect)
+  // 8. Completed (order picked up by student)
   orderStatus: {
     type: String,
-    enum: ["Pending", "Preparing", "Ready", "Completed", "Missed Pickup", "Cancelled"],
+    enum: [
+      "Pending Approval",
+      "Pending",
+      "Accepted",
+      "Preparing",
+      "Ready for Pickup",
+      "Ready",
+      "Pickup Expired",
+      "No-Show",
+      "Completed",
+      "Missed Pickup",
+      "Rejected",
+      "Cancelled"
+    ],
+    default: "Pending Approval"
+  },
+  // Timestamp when marked ready (starts 10-minute pickup window)
+  readyAt: {
+    type: Date,
+    default: null
+  },
+  pickupWindowMinutes: {
+    type: Number,
+    default: 10
+  },
+  isNoShow: {
+    type: Boolean,
+    default: false
+  },
+  noShowMarkedAt: {
+    type: Date,
+    default: null
+  },
+  // Time Slot Selection (Required before placing order)
+  pickupSlot: {
+    type: String,
+    required: true,
+    trim: true,
+    default: "Immediate Pickup"
+  },
+  // Vendor Approval System fields
+  vendorApprovalStatus: {
+    type: String,
+    enum: ["Pending", "Accepted", "Rejected"],
     default: "Pending"
+  },
+  approvedAt: {
+    type: Date,
+    default: null
+  },
+  rejectedAt: {
+    type: Date,
+    default: null
+  },
+  rejectionReason: {
+    type: String,
+    trim: true,
+    default: ""
   },
   pickupCode: {
     type: String,
@@ -82,7 +150,8 @@ const orderSchema = new mongoose.Schema({
   },
   canteenId: {
     type: String,
-    default: "foodcourt-34"
+    default: "foodcourt-34",
+    index: true
   },
   canteenName: {
     type: String,
@@ -140,9 +209,13 @@ const orderSchema = new mongoose.Schema({
   },
   createdAt: {
     type: Date,
-    default: Date.now
+    default: Date.now,
+    index: true
   }
 });
+
+orderSchema.index({ tokenNumber: 1 }, { unique: true, sparse: true });
+orderSchema.index({ canteenId: 1, orderStatus: 1 });
 
 if (mongoose.models && mongoose.models.Order) {
   delete mongoose.models.Order;

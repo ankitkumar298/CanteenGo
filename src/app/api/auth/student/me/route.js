@@ -40,6 +40,14 @@ export async function GET(request) {
       );
     }
 
+    // Auto-restore temporarily blocked COD if blocked duration has expired (e.g. after 7 days)
+    if (student.codStatus === "temporarily_blocked" && student.codBlockedUntil && new Date() > new Date(student.codBlockedUntil)) {
+      student.codStatus = "active";
+      student.noShowCount = 0;
+      student.codBlockedUntil = null;
+      await student.save();
+    }
+
     return NextResponse.json({
       authenticated: true,
       student: {
@@ -47,7 +55,10 @@ export async function GET(request) {
         name: student.name,
         phone: student.phone,
         email: student.email || "",
-        studentId: student.studentId || ""
+        studentId: student.studentId || "",
+        noShowCount: student.noShowCount || 0,
+        codStatus: student.codStatus || "active",
+        codBlockedUntil: student.codBlockedUntil || null
       }
     });
   } catch (error) {

@@ -1,12 +1,12 @@
 export const CAMPUS_CANTEENS = [
   {
     id: "foodcourt-34",
-    name: "Food Court near 34 Block",
-    shortName: "34 Block Food Court",
-    location: "34 Block · Ground Floor",
+    name: "Sports Complex Canteen",
+    shortName: "Sports Complex Canteen",
+    location: "Sports Complex · Ground Floor",
     counter: "Counter 1 (Fast Dispatch)",
     counterDetails: "Counter 1 • Express Delivery Lane",
-    directions: "Near 34 Block central lawn, east wing ground entrance",
+    directions: "Near Sports Complex central lawn, east wing ground entrance",
     walkingMinutes: 2,
     walkingText: "🚶 2 min walk (120m from Central Lawn)",
     distanceMeters: 120,
@@ -20,14 +20,14 @@ export const CAMPUS_CANTEENS = [
     nextOpenText: "",
     icon: "🏢",
     themeBg: "#064e3b",
-    tag: "Block 34",
-    description: "Ground floor near 34 block central corridor",
+    tag: "Sports Complex",
+    description: "Ground floor near Sports Complex central corridor",
     pickupGuide: "Order ready hone par counter display screen par token dekhein aur collect karein."
   },
   {
     id: "nk-foodcourt",
-    name: "NK Food Court Canteen",
-    shortName: "NK Food Court",
+    name: "NK Canteen",
+    shortName: "NK Canteen",
     location: "NK Block · Express Wing",
     counter: "Counter 2 (Quick Pickup)",
     counterDetails: "Counter 2 • Snacks & Quick Bite Desk",
@@ -45,7 +45,7 @@ export const CAMPUS_CANTEENS = [
     nextOpenText: "",
     icon: "🍽️",
     themeBg: "#ea580c",
-    tag: "NK Block",
+    tag: "NK Canteen",
     description: "NK Block grand dining square",
     pickupGuide: "Counter 2 par token flash hote hi collect karein."
   },
@@ -101,7 +101,7 @@ export const CAMPUS_CANTEENS = [
   }
 ];
 
-export const DEFAULT_CANTEEN = CAMPUS_CANTEENS[0]; // "Food Court near 34 Block"
+export const DEFAULT_CANTEEN = CAMPUS_CANTEENS[0]; // "Sports Complex Canteen"
 
 /**
  * Dynamically fetch all active canteens from MongoDB collection via API

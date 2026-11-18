@@ -25,6 +25,7 @@ export default function AccountPage({
 
   // Single edit mode toggle (clean, without individual buttons on each row)
   const [isEditing, setIsEditing] = useState(false);
+  const [profileData, setProfileData] = useState(studentProfile || null);
 
   // Form states
   const [name, setName] = useState("");
@@ -48,6 +49,7 @@ export default function AccountPage({
           setPhone(data.student.phone || "");
           setEmail(data.student.email || "");
           setStudentId(data.student.studentId || "");
+          setProfileData(data.student);
           if (onSaveProfile) onSaveProfile(data.student);
           else if (handleSaveStudentProfile) handleSaveStudentProfile(data.student);
         }
@@ -58,6 +60,7 @@ export default function AccountPage({
   // Sync state with profile prop
   useEffect(() => {
     if (studentProfile) {
+      setProfileData(studentProfile);
       setName(studentProfile?.name || "");
       setPhone(studentProfile?.phone || "");
       setEmail(studentProfile?.email || "");
@@ -232,6 +235,46 @@ export default function AccountPage({
             </div>
           </div>
         </div>
+
+        {/* Order Trust Score Section */}
+        {(() => {
+          const noShows = profileData?.noShowCount ?? studentProfile?.noShowCount ?? 0;
+          const chancesLeft = Math.max(0, 3 - noShows);
+          const codStatus = profileData?.codStatus || studentProfile?.codStatus || "active";
+          const isBlocked = codStatus === "temporarily_blocked" || codStatus === "prepaid_only" || chancesLeft === 0;
+
+          return (
+            <div className="account-trust-score-card">
+              <div className="trust-score-header">
+                <div className="trust-score-left">
+                  <span className="trust-score-icon">🛡️</span>
+                  <div>
+                    <h4 className="trust-score-title">Order Trust Score</h4>
+                    <span className="trust-score-subtitle">Campus Pickup & Cash Reliability</span>
+                  </div>
+                </div>
+                <span className={`trust-score-status-badge ${isBlocked ? "badge-blocked" : chancesLeft === 3 ? "badge-safe" : chancesLeft === 2 ? "badge-warning" : "badge-final-warning"}`}>
+                  {isBlocked ? "Temporarily Blocked" : chancesLeft === 3 ? "Active (Safe)" : chancesLeft === 2 ? "Warning (Strike 1/3)" : "Final Warning (Strike 2/3)"}
+                </span>
+              </div>
+
+              <div className="trust-score-chances-row">
+                <strong className={`trust-score-chances-val ${isBlocked ? "text-danger" : ""}`}>
+                  {isBlocked ? "Temporarily Blocked" : `${chancesLeft} chances left`}
+                </strong>
+                {isBlocked && (
+                  <span className="trust-prepaid-only-tag">Prepaid (UPI) Only</span>
+                )}
+              </div>
+
+              <p className="trust-score-notice">
+                {isBlocked
+                  ? "Cash on Pickup is temporarily restricted due to repeated no-shows. You can continue placing orders using UPI prepaid payment."
+                  : `${chancesLeft} more verified no-show may temporarily restrict Cash on Pickup.`}
+              </p>
+            </div>
+          );
+        })()}
 
         {/* 2. Account Details Card (Clean & Focused, NO specific mini-buttons) */}
         <form onSubmit={handleSave} className="account-section-card">

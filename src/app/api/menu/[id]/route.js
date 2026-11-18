@@ -45,7 +45,7 @@ export async function PUT(request, context) {
       updateData.basePrice = numericPrice;
     }
 
-    // Per-canteen availability toggle (e.g. NK Food Court marking sold out)
+    // Per-canteen availability toggle (e.g. NK Canteen marking sold out)
     if (data.canteenId && data.canteenAvailable !== undefined) {
       let soldOut = Array.isArray(existing.soldOutCanteens) ? [...existing.soldOutCanteens] : [];
       if (data.canteenAvailable === false) {
