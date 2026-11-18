@@ -139,7 +139,21 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
       return true;
     }
 
-    // 2. Matched by authenticated student account
+    // 2. Matched by student phone (exact clean mobile number match)
+    const activeStudentPhone = String(studentProfile?.phone || localStorage.getItem("canteenGo_studentPhone") || "").replace(/\D/g, "");
+    const cleanOrderPhone = String(order.studentPhone || "").replace(/\D/g, "");
+    if (activeStudentPhone && cleanOrderPhone && activeStudentPhone.length >= 7) {
+      if (activeStudentPhone === cleanOrderPhone) return true;
+    }
+
+    // 3. Matched by authenticated student email
+    const profileEmail = String(studentProfile?.email || localStorage.getItem("canteenGo_studentEmail") || "").trim().toLowerCase();
+    const orderEmail = String(order.studentEmail || "").trim().toLowerCase();
+    if (profileEmail && orderEmail && profileEmail === orderEmail && profileEmail.includes("@")) {
+      return true;
+    }
+
+    // 4. Matched by student account ID or name
     if (studentProfile) {
       if (
         studentProfile.studentId &&
@@ -149,29 +163,13 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
         return true;
       }
 
-      const cleanProfilePhone = String(studentProfile.phone || "").replace(/\D/g, "");
-      const cleanOrderPhone = String(order.studentPhone || "").replace(/\D/g, "");
-      const hasPhone = Boolean(cleanProfilePhone && cleanOrderPhone && cleanProfilePhone.length >= 7);
-      const isPhoneMatch = hasPhone && cleanProfilePhone === cleanOrderPhone;
-
-      const profileEmail = String(studentProfile.email || "").trim().toLowerCase();
-      const orderEmail = String(order.studentEmail || "").trim().toLowerCase();
-      const hasEmail = Boolean(profileEmail && orderEmail);
-      const isEmailMatch = hasEmail && profileEmail === orderEmail;
-
-      const profileName = String(studentProfile.name || "").trim().toLowerCase();
+      const profileName = String(studentProfile.name || localStorage.getItem("canteenGo_studentName") || "").trim().toLowerCase();
       const orderName = String(order.studentName || "").trim().toLowerCase();
-      const hasName = Boolean(profileName && orderName);
-      const isNameMatch = hasName && profileName === orderName;
-
-      // Email match with valid email format (e.g. user@college.edu)
-      if (isEmailMatch && profileEmail.includes("@")) return true;
-      // Phone AND Name match (requires both to avoid generic test phone collisions)
-      if (isPhoneMatch && isNameMatch) return true;
-      // Phone AND Email match
-      if (isPhoneMatch && isEmailMatch) return true;
-      // Email AND Name match
-      if (isEmailMatch && isNameMatch) return true;
+      if (profileName && orderName && profileName.length >= 3) {
+        if (profileName === orderName || orderName.includes(profileName) || profileName.includes(orderName)) {
+          return true;
+        }
+      }
     }
 
     return false;
@@ -1371,36 +1369,79 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
   const studentMatchedOrders = orders.filter((o) => isMyOrder(o));
 
   const activeStudentOrders = studentMatchedOrders.filter((o) =>
-    ["Pending", "Preparing", "Ready"].includes(o.orderStatus)
+    ["Pending Approval", "Pending", "Accepted", "Preparing", "Ready for Pickup", "Ready", "Pickup Expired"].includes(o.orderStatus)
   );
   const pastStudentOrders = studentMatchedOrders.filter((o) =>
-    ["Completed", "Missed Pickup"].includes(o.orderStatus)
+    ["Completed", "Missed Pickup", "Rejected", "Cancelled", "No-Show"].includes(o.orderStatus)
   );
 
   const [selectedStudentOrderId, setSelectedStudentOrderId] = useState(null);
 
-  // Selected Canteen for the Live Queue Display (defaults to "all" to match screenshot)
+  // Requirement: "sirf wahi canteen dikhao jisme mera order hai and all canteen hata do"
+  const myOrderCanteens = useMemo(() => {
+    const list = [];
+    const seen = new Set();
+
+    activeStudentOrders.forEach((order) => {
+      const cMatch = canteensList.find((c) => c.id !== "all" && c.name !== "All Canteens" && matchesCanteen(order, c));
+      const cId = cMatch ? (cMatch.id || cMatch.canteenId) : (order.canteenId || "nk-foodcourt");
+      const cName = cMatch ? (cMatch.shortName || cMatch.name) : (order.canteenName || "Canteen");
+
+      if (!seen.has(cId)) {
+        seen.add(cId);
+        list.push(cMatch || {
+          id: cId,
+          canteenId: cId,
+          name: cName,
+          shortName: cName,
+          counter: order.counterName || "Counter 1"
+        });
+      }
+    });
+
+    if (list.length > 0) {
+      return list;
+    }
+
+    // Fallback if student has NO active order placed yet: show real canteens (NEVER "All Canteens")
+    return canteensList.filter((c) => c.id !== "all" && c.name !== "All Canteens");
+  }, [activeStudentOrders, canteensList]);
+
+  // Selected Canteen for the Live Queue Display (never "all")
   const [selectedBoardCanteenId, setSelectedBoardCanteenId] = useState(() => {
-    if (selectedCanteen?.id) return selectedCanteen.id;
-    return "all";
+    if (activeStudentOrders.length > 0) {
+      const firstOrd = activeStudentOrders[0];
+      const match = canteensList.find((c) => c.id !== "all" && matchesCanteen(firstOrd, c));
+      if (match) return match.id || match.canteenId;
+      if (firstOrd.canteenId) return firstOrd.canteenId;
+    }
+    if (selectedCanteen?.id && selectedCanteen.id !== "all") return selectedCanteen.id;
+    const firstReal = canteensList.find((c) => c.id !== "all");
+    return firstReal ? (firstReal.id || firstReal.canteenId) : "nk-foodcourt";
   });
 
-  const selectedBoardCanteen = useMemo(() => {
-    if (selectedBoardCanteenId === "all") {
-      return { id: "all", name: "All Canteens", shortName: "All Canteens" };
+  // Keep selectedBoardCanteenId valid whenever myOrderCanteens changes
+  useEffect(() => {
+    if (myOrderCanteens.length > 0) {
+      const exists = myOrderCanteens.some(
+        (c) => (c.id || c.canteenId) === selectedBoardCanteenId
+      );
+      if (!exists || selectedBoardCanteenId === "all") {
+        setSelectedBoardCanteenId(myOrderCanteens[0].id || myOrderCanteens[0].canteenId);
+      }
     }
-    return (
-      canteensList.find((c) => (c.id || c.canteenId) === selectedBoardCanteenId) ||
-      canteensList[0] ||
-      CAMPUS_CANTEENS[0]
-    );
-  }, [canteensList, selectedBoardCanteenId]);
+  }, [myOrderCanteens, selectedBoardCanteenId]);
+
+  const selectedBoardCanteen = useMemo(() => {
+    const list = myOrderCanteens.length > 0 ? myOrderCanteens : canteensList.filter((c) => c.id !== "all");
+    const match = list.find((c) => (c.id || c.canteenId) === selectedBoardCanteenId);
+    return match || list[0] || CAMPUS_CANTEENS[0];
+  }, [myOrderCanteens, canteensList, selectedBoardCanteenId]);
 
   // Canteen-specific active student orders
   const canteenActiveStudentOrders = useMemo(() => {
-    if (selectedBoardCanteenId === "all") return activeStudentOrders;
     return activeStudentOrders.filter((o) => matchesCanteen(o, selectedBoardCanteen));
-  }, [activeStudentOrders, selectedBoardCanteen, selectedBoardCanteenId]);
+  }, [activeStudentOrders, selectedBoardCanteen]);
 
   const currentStudentOrder = useMemo(() => {
     if (selectedStudentOrderId) {
@@ -1472,11 +1513,10 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
     };
   }, []);
 
-  // Filter orders for the selected canteen (or all campus)
+  // Filter orders strictly for the selected canteen (no "all" fallback)
   const boardOrders = useMemo(() => {
-    if (selectedBoardCanteenId === "all") return orders;
     return orders.filter((o) => matchesCanteen(o, selectedBoardCanteen));
-  }, [orders, selectedBoardCanteen, selectedBoardCanteenId]);
+  }, [orders, selectedBoardCanteen]);
 
   // Now Preparing:
   // "preparing me bhi 2 hi dusre ka dikhe jab uske 2 baad tumhara ho tabhi wana khali"
@@ -1487,8 +1527,8 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
       .filter((idx) => idx !== -1);
 
     if (myIndices.length === 0) {
-      // User has no order in preparing -> empty!
-      return [];
+      // User has no order in preparing -> show user's prep orders if any
+      return allPrep.filter((o) => isMyOrder(o));
     }
 
     const firstMyIdx = myIndices[0];
@@ -1498,16 +1538,16 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
   }, [boardOrders]);
 
   // Ready for Pickup:
-  // "ready me sirf you wala hi dikhe dusre ka token nhi"
+  // "ready me sirf you wala hi dikhe dusre ka token nhi" (supports both "Ready" and "Ready for Pickup")
   const boardReadyOrders = useMemo(() => {
     return boardOrders
-      .filter((o) => o.orderStatus === "Ready")
+      .filter((o) => o.orderStatus === "Ready" || o.orderStatus === "Ready for Pickup")
       .filter((o) => isMyOrder(o));
   }, [boardOrders]);
 
   const boardPendingOrders = useMemo(() => {
     return boardOrders
-      .filter((o) => o.orderStatus === "Pending")
+      .filter((o) => ["Pending Approval", "Pending", "Accepted"].includes(o.orderStatus))
       .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
   }, [boardOrders]);
 
@@ -1555,38 +1595,29 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
         </div>
       </div>
 
-      {/* 2. SELECT CANTEEN BAR */}
+      {/* 2. SELECT CANTEEN BAR (Requirement: All Canteens removed, only shows canteens where student has orders) */}
       <div className="cq-canteen-bar">
         <span className="cq-canteen-label">Select Canteen:</span>
         <div className="cq-canteen-chips">
-          <button
-            type="button"
-            className={`cq-canteen-chip ${selectedBoardCanteenId === "all" ? "active" : ""}`}
-            onClick={() => setSelectedBoardCanteenId("all")}
-          >
-            <LayersIcon size={16} />
-            <span>All Canteens</span>
-          </button>
-
-          {canteensList.map((canteen) => {
+          {myOrderCanteens.map((canteen) => {
             const cId = canteen.id || canteen.canteenId;
             const isSelected = cId === selectedBoardCanteenId;
 
             // Map short clean labels
             let label = canteen.shortName || canteen.name;
-            if (cId.includes("34") || cId.includes("sport")) label = "Sports Complex Canteen";
+            if (cId.includes("34") || cId.includes("sport") || label.toLowerCase().includes("sport")) label = "Sports Complex Canteen";
             else if (cId.includes("nk") || label.toLowerCase().includes("nk")) label = "NK Canteen";
             else if (cId.includes("main") || label.toLowerCase().includes("main")) label = "Main Canteen";
             else if (cId.includes("sac") || label.toLowerCase().includes("activity")) label = "SAC Canteen";
-            else if (cId.includes("sport") || label.toLowerCase().includes("sport")) label = "Sports Canteen";
-            else if (cId.includes("library") || label.toLowerCase().includes("library")) label = "Library Cafe";
+            else if (cId.includes("library") || label.toLowerCase().includes("library") || label.toLowerCase().includes("cafe")) label = "Library Cafe";
 
             let icon = <StoreIcon size={16} />;
-            if (cId.includes("34")) icon = <UtensilsIcon size={16} />;
+            if (cId.includes("34") || label.toLowerCase().includes("sport")) icon = <UtensilsIcon size={16} />;
             else if (cId.includes("nk") || label.toLowerCase().includes("nk")) icon = <StoreIcon size={16} />;
             else if (cId.includes("main") || label.toLowerCase().includes("main")) icon = <StoreIcon size={16} />;
             else if (cId.includes("sac") || label.toLowerCase().includes("sac") || cId.includes("library") || label.toLowerCase().includes("cafe")) icon = <CupIcon size={16} />;
-            else if (cId.includes("sport") || label.toLowerCase().includes("sport")) icon = <RunningIcon size={16} />;
+
+            const activeOrdersInThisCanteen = activeStudentOrders.filter((o) => matchesCanteen(o, canteen)).length;
 
             return (
               <button
@@ -1597,6 +1628,22 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
               >
                 {icon}
                 <span>{label}</span>
+                {activeOrdersInThisCanteen > 0 && (
+                  <span
+                    className="cq-canteen-chip-order-badge"
+                    style={{
+                      background: isSelected ? "#ffffff" : "#ea580c",
+                      color: isSelected ? "#ea580c" : "#ffffff",
+                      borderRadius: "10px",
+                      padding: "1px 6px",
+                      fontSize: "0.72rem",
+                      fontWeight: "800",
+                      marginLeft: "4px"
+                    }}
+                  >
+                    {activeOrdersInThisCanteen}
+                  </span>
+                )}
               </button>
             );
           })}
@@ -1929,16 +1976,16 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
                   const isSel = currentStudentOrder?._id === ord._id;
                   const statusKey = ord.orderStatus === "Preparing"
                     ? "preparing"
-                    : ord.orderStatus === "Ready"
+                    : (ord.orderStatus === "Ready" || ord.orderStatus === "Ready for Pickup")
                     ? "ready"
                     : "queued";
                   const statusLabel = isSel
                     ? ord.orderStatus === "Preparing"
                       ? "In Progress"
-                      : ord.orderStatus
+                      : (ord.orderStatus === "Ready for Pickup" ? "Ready" : ord.orderStatus)
                     : ord.orderStatus === "Preparing"
                     ? "Preparing"
-                    : ord.orderStatus === "Ready"
+                    : (ord.orderStatus === "Ready" || ord.orderStatus === "Ready for Pickup")
                     ? "Ready"
                     : "Queued";
 
@@ -2045,12 +2092,12 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
                 <div className="cq-yo-items-title">
                   {currentStudentOrder.items?.map((it) => `${it.name} ×${it.quantity}`).join(", ") || "Fresh Canteen Meal"}
                 </div>
-                <div className={`cq-yo-status-tag status-${currentStudentOrder.orderStatus === "Preparing" ? "preparing" : currentStudentOrder.orderStatus === "Ready" ? "ready" : "queued"}`}>
+                <div className={`cq-yo-status-tag status-${currentStudentOrder.orderStatus === "Preparing" ? "preparing" : (currentStudentOrder.orderStatus === "Ready" || currentStudentOrder.orderStatus === "Ready for Pickup") ? "ready" : "queued"}`}>
                   <span className="cq-yo-tag-dot">●</span>
                   <span>
                     {currentStudentOrder.orderStatus === "Preparing"
                       ? "In Progress"
-                      : currentStudentOrder.orderStatus}
+                      : (currentStudentOrder.orderStatus === "Ready for Pickup" ? "Ready" : currentStudentOrder.orderStatus)}
                   </span>
                 </div>
               </div>
@@ -2088,7 +2135,7 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
                   <span className="cq-yo-meta-main">
                     {currentStudentOrder.orderStatus === "Preparing"
                       ? "Preparing at Kitchen"
-                      : currentStudentOrder.orderStatus === "Ready"
+                      : (currentStudentOrder.orderStatus === "Ready" || currentStudentOrder.orderStatus === "Ready for Pickup")
                       ? "Ready for Pickup"
                       : "In Kitchen Queue"}
                   </span>
