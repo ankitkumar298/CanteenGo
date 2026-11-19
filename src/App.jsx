@@ -238,7 +238,7 @@ export default function App() {
           canteenGo — Smart College Canteen Ordering & Live Queue
         </p>
         <p style={{ marginTop: "6px", color: "#94a3b8" }}>
-          B.Tech CSE Capstone Project • React (Vite) + Next.js App Router + MongoDB & Mongoose
+          Smart Campus Dining • High-Performance Real-Time Ordering System
         </p>
       </footer>
     </div>

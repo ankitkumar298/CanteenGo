@@ -85,7 +85,7 @@ export default function OrderSuccessOverlay({
               </div>
               <div className={`step-item ${loadingStep >= 1 ? "active" : ""}`}>
                 <span className="step-dot"></span>
-                <span>Verifying menu prices in MongoDB...</span>
+                <span>Verifying kitchen availability & pricing...</span>
               </div>
               <div className={`step-item ${loadingStep >= 2 ? "active" : ""}`}>
                 <span className="step-dot"></span>

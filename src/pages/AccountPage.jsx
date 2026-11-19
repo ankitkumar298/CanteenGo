@@ -149,7 +149,7 @@ export default function AccountPage({
       setNewPassword("");
       setShowPassword(false);
 
-      setSuccessMsg("✓ Profile & password updated directly in MongoDB database!");
+      setSuccessMsg("✓ Profile & password updated successfully!");
       setIsEditing(false);
       setTimeout(() => setSuccessMsg(""), 4000);
     } catch (err) {
@@ -481,7 +481,7 @@ export default function AccountPage({
 
               <div className="field-row-content">
                 <label className="field-label" htmlFor="accPasswordInput">
-                  {isEditing ? "Update Password (Direct MongoDB Update)" : "Account Password"}
+                  {isEditing ? "Update Password" : "Account Password"}
                 </label>
                 {isEditing ? (
                   <div className="password-input-inline-wrap">
@@ -507,12 +507,12 @@ export default function AccountPage({
                 ) : (
                   <div className="password-display-row">
                     <strong className="field-value password-dots">••••••••••••</strong>
-                    <span className="field-secure-badge">🔒 Stored in MongoDB</span>
+                    <span className="field-secure-badge">🔒 Encrypted & Secure</span>
                   </div>
                 )}
                 {isEditing && (
                   <span className="field-input-hint">
-                    Min 4 characters. Saves directly into MongoDB database.
+                    Min 4 characters. Keep your password confidential.
                   </span>
                 )}
               </div>

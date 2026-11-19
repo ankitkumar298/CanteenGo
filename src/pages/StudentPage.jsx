@@ -1185,7 +1185,7 @@ export default function StudentPage({
             {loadingMenu ? (
               <div className="menu-loading-state">
                 <div className="loading-spinner"></div>
-                <p>Loading fresh canteen items from MongoDB...</p>
+                <p>Loading fresh canteen items...</p>
               </div>
             ) : selectedCategory === "Combos" ? (
               filteredCombos.length === 0 && filteredMenu.length === 0 ? (

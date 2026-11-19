@@ -174,7 +174,7 @@ export async function PUT(request) {
 
     const response = NextResponse.json({
       success: true,
-      message: "Profile updated successfully in MongoDB database!",
+      message: "Profile updated successfully!",
       student: {
         _id: student._id.toString(),
         name: student.name,
