@@ -18865,10 +18865,10 @@ h4,
 }
 
 /* ==========================================================================
-   ULTRA-PREMIUM DARK MODE & THEME TOGGLE (CAMPUS EMBER & OBSIDIAN THEME)
+   THEME SWITCH CARD (LIGHT & DARK APPEARANCE CONTROLS)
    ========================================================================== */
 
-/* Profile Dark Mode Toggle Card */
+/* Profile Theme Switch Card (Default Light Mode Appearance) */
 .account-theme-card {
   background: #ffffff;
   border: 1.5px solid #fed7aa;
@@ -18986,7 +18986,7 @@ h4,
   line-height: 1.35;
 }
 
-/* Modern Luxury Toggle Switch */
+/* Modern iOS-Style Toggle Switch */
 .theme-toggle-switch {
   position: relative;
   width: 62px;
@@ -19038,38 +19038,47 @@ h4,
 }
 
 /* ==========================================================================
-   GLOBAL OBSIDIAN DARK THEME ENGINE (LUMINOUS, VIBRANT, LUXURIOUS)
+   COMPLETE DARK THEME ENGINE REDESIGN (SCOPED EXCLUSIVELY TO .dark-mode)
+   Light Mode above remains 100% UNTOUCHED and PRESERVED!
    ========================================================================== */
 
+/* --------------------------------------------------------------------------
+   0. ROOT TOKENS & CANVAS BACKGROUND
+   -------------------------------------------------------------------------- */
 html.dark-mode,
 body.dark-mode,
 [data-theme="dark"] {
-  --bg-page: #080c14;
-  --bg-card: #0f172a;
+  --primary: #f97316;
+  --primary-hover: #ea580c;
+  --primary-dark: #c2410c;
+  --primary-light: rgba(249, 115, 22, 0.15);
+  --primary-border: rgba(249, 115, 22, 0.4);
+  --bg-page: #06090e;
+  --bg-card: #0d1424;
   --text-main: #f8fafc;
   --text-muted: #94a3b8;
   --text-light: #64748b;
   --border-color: rgba(255, 255, 255, 0.08);
-  --primary-light: rgba(234, 88, 12, 0.16);
-  --primary-border: rgba(234, 88, 12, 0.4);
-  
-  /* Luminous atmospheric gradient background */
-  background: #080c14 !important;
+  --border-focus: #f97316;
+
+  background-color: #06090e !important;
   background-image: 
-    radial-gradient(circle at 50% 0%, rgba(234, 88, 12, 0.08) 0%, transparent 55%),
-    radial-gradient(circle at 100% 40%, rgba(2, 132, 199, 0.05) 0%, transparent 45%),
-    radial-gradient(circle at 0% 80%, rgba(234, 88, 12, 0.04) 0%, transparent 40%) !important;
+    radial-gradient(circle at 50% 0%, rgba(249, 115, 22, 0.08) 0%, transparent 60%),
+    radial-gradient(circle at 100% 30%, rgba(14, 165, 233, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 0% 70%, rgba(249, 115, 22, 0.04) 0%, transparent 50%) !important;
   background-attachment: fixed !important;
   color: #f8fafc !important;
 }
 
-/* 1. Global Glassmorphism Navbar */
+/* --------------------------------------------------------------------------
+   1. NAVIGATION BAR (AEROSPACE GLASSMORPHISM)
+   -------------------------------------------------------------------------- */
 .dark-mode .navbar {
-  background: rgba(11, 16, 27, 0.88) !important;
-  backdrop-filter: blur(16px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+  background: rgba(10, 15, 26, 0.88) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.6) !important;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.65) !important;
 }
 
 .dark-mode .brand-title {
@@ -19079,38 +19088,39 @@ body.dark-mode,
 
 .dark-mode .brand-highlight {
   color: #f97316 !important;
-  text-shadow: 0 0 12px rgba(249, 115, 22, 0.45);
+  text-shadow: 0 0 14px rgba(249, 115, 22, 0.5);
 }
 
 .dark-mode .brand-badge {
-  background: rgba(30, 41, 59, 0.8) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background: rgba(30, 41, 59, 0.85) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
   color: #94a3b8 !important;
 }
 
 .dark-mode .nav-btn {
   color: #cbd5e1 !important;
-  border-color: transparent !important;
+  border: 1px solid transparent !important;
+  transition: all 0.2s ease !important;
 }
 
 .dark-mode .nav-btn:hover {
   background: rgba(30, 41, 59, 0.8) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
   color: #ffffff !important;
 }
 
 .dark-mode .nav-btn.active {
-  background: rgba(234, 88, 12, 0.2) !important;
+  background: rgba(249, 115, 22, 0.18) !important;
   color: #fb923c !important;
-  border: 1px solid rgba(234, 88, 12, 0.4) !important;
-  box-shadow: 0 0 16px rgba(234, 88, 12, 0.25) !important;
+  border: 1px solid rgba(249, 115, 22, 0.45) !important;
+  box-shadow: 0 0 18px rgba(249, 115, 22, 0.28) !important;
 }
 
 .dark-mode .dropdown-menu {
-  background: #0f172a !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7) !important;
-  color: #f8fafc !important;
-  backdrop-filter: blur(16px) !important;
+  background: #0d1424 !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8) !important;
+  backdrop-filter: blur(20px) !important;
 }
 
 .dark-mode .dropdown-item {
@@ -19118,18 +19128,20 @@ body.dark-mode,
 }
 
 .dark-mode .dropdown-item:hover {
-  background: rgba(234, 88, 12, 0.15) !important;
+  background: rgba(249, 115, 22, 0.15) !important;
   color: #ffffff !important;
 }
 
-/* 2. Account Profile Page Luxury Dark Theme */
+/* --------------------------------------------------------------------------
+   2. PROFILE & ACCOUNT MANAGEMENT PAGE
+   -------------------------------------------------------------------------- */
 .dark-mode .account-page-container {
   background: transparent !important;
   color: #f8fafc !important;
 }
 
 .dark-mode .account-top-bar {
-  background: rgba(11, 16, 27, 0.85) !important;
+  background: rgba(10, 15, 26, 0.85) !important;
   backdrop-filter: blur(16px) !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
 }
@@ -19142,7 +19154,6 @@ body.dark-mode,
   background: rgba(30, 41, 59, 0.8) !important;
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
   color: #e2e8f0 !important;
-  transition: all 0.2s ease;
 }
 
 .dark-mode .btn-account-back:hover {
@@ -19151,10 +19162,10 @@ body.dark-mode,
 }
 
 .dark-mode .account-hero-card {
-  background: linear-gradient(135deg, rgba(17, 24, 39, 0.95) 0%, rgba(15, 23, 42, 0.9) 100%) !important;
-  border: 1.5px solid rgba(234, 88, 12, 0.3) !important;
-  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5), 0 0 25px rgba(234, 88, 12, 0.08) !important;
-  backdrop-filter: blur(12px) !important;
+  background: linear-gradient(135deg, rgba(17, 24, 39, 0.95) 0%, rgba(13, 20, 36, 0.92) 100%) !important;
+  border: 1.5px solid rgba(249, 115, 22, 0.32) !important;
+  box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.55), 0 0 28px rgba(249, 115, 22, 0.1) !important;
+  backdrop-filter: blur(14px) !important;
 }
 
 .dark-mode .account-hero-name {
@@ -19163,15 +19174,15 @@ body.dark-mode,
 
 .dark-mode .hero-id-chip,
 .dark-mode .hero-phone-chip {
-  background: rgba(15, 23, 42, 0.8) !important;
+  background: rgba(15, 23, 42, 0.85) !important;
   border: 1px solid rgba(255, 255, 255, 0.09) !important;
   color: #94a3b8 !important;
 }
 
 .dark-mode .account-trust-score-card {
-  background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(17, 24, 39, 0.9) 100%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4) !important;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(13, 20, 36, 0.92) 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.09) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45) !important;
   backdrop-filter: blur(12px) !important;
 }
 
@@ -19198,10 +19209,10 @@ body.dark-mode,
 }
 
 .dark-mode .account-theme-card {
-  background: linear-gradient(135deg, rgba(17, 24, 39, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%) !important;
-  border: 1.5px solid rgba(56, 189, 248, 0.35) !important;
-  box-shadow: 0 0 25px rgba(56, 189, 248, 0.12), 0 8px 30px rgba(0, 0, 0, 0.5) !important;
-  backdrop-filter: blur(12px) !important;
+  background: linear-gradient(135deg, rgba(17, 24, 39, 0.95) 0%, rgba(13, 20, 36, 0.95) 100%) !important;
+  border: 1.5px solid rgba(56, 189, 248, 0.38) !important;
+  box-shadow: 0 0 28px rgba(56, 189, 248, 0.14), 0 8px 32px rgba(0, 0, 0, 0.55) !important;
+  backdrop-filter: blur(14px) !important;
 }
 
 .dark-mode .theme-title {
@@ -19213,9 +19224,9 @@ body.dark-mode,
 }
 
 .dark-mode .account-section-card {
-  background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(17, 24, 39, 0.9) 100%) !important;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(13, 20, 36, 0.92) 100%) !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45) !important;
   backdrop-filter: blur(12px) !important;
 }
 
@@ -19228,15 +19239,15 @@ body.dark-mode,
 }
 
 .dark-mode .btn-edit-profile-header {
-  background: rgba(234, 88, 12, 0.15) !important;
-  border: 1px solid rgba(234, 88, 12, 0.4) !important;
+  background: rgba(249, 115, 22, 0.16) !important;
+  border: 1px solid rgba(249, 115, 22, 0.45) !important;
   color: #fb923c !important;
 }
 
 .dark-mode .btn-edit-profile-header:hover {
   background: #ea580c !important;
   color: #ffffff !important;
-  box-shadow: 0 0 16px rgba(234, 88, 12, 0.4) !important;
+  box-shadow: 0 0 18px rgba(234, 88, 12, 0.45) !important;
 }
 
 .dark-mode .btn-cancel-profile-header,
@@ -19253,20 +19264,20 @@ body.dark-mode,
 }
 
 .dark-mode .account-field-row {
-  background: rgba(11, 16, 27, 0.7) !important;
+  background: rgba(11, 16, 27, 0.75) !important;
   border: 1px solid rgba(255, 255, 255, 0.07) !important;
   backdrop-filter: blur(8px) !important;
 }
 
 .dark-mode .account-field-row:hover {
-  border-color: rgba(255, 255, 255, 0.16) !important;
-  background: rgba(17, 24, 39, 0.8) !important;
+  border-color: rgba(255, 255, 255, 0.18) !important;
+  background: rgba(17, 24, 39, 0.85) !important;
 }
 
 .dark-mode .account-field-row.editing {
-  background: rgba(234, 88, 12, 0.08) !important;
-  border-color: #ea580c !important;
-  box-shadow: 0 0 20px rgba(234, 88, 12, 0.2) !important;
+  background: rgba(249, 115, 22, 0.08) !important;
+  border-color: #f97316 !important;
+  box-shadow: 0 0 22px rgba(249, 115, 22, 0.22) !important;
 }
 
 .dark-mode .field-value {
@@ -19274,24 +19285,24 @@ body.dark-mode,
 }
 
 .dark-mode .account-input {
-  background: #090e18 !important;
+  background: #080d16 !important;
   border: 1.5px solid rgba(255, 255, 255, 0.12) !important;
   color: #f8fafc !important;
 }
 
 .dark-mode .account-input:focus {
-  border-color: #ea580c !important;
-  box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.3), 0 0 16px rgba(234, 88, 12, 0.2) !important;
+  border-color: #f97316 !important;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.3), 0 0 18px rgba(249, 115, 22, 0.25) !important;
 }
 
 .dark-mode .phone-input-inline-wrap {
-  background: #090e18 !important;
+  background: #080d16 !important;
   border: 1.5px solid rgba(255, 255, 255, 0.12) !important;
 }
 
 .dark-mode .phone-input-inline-wrap:focus-within {
-  border-color: #ea580c !important;
-  box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.3), 0 0 16px rgba(234, 88, 12, 0.2) !important;
+  border-color: #f97316 !important;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.3), 0 0 18px rgba(249, 115, 22, 0.25) !important;
 }
 
 .dark-mode .phone-prefix {
@@ -19301,7 +19312,7 @@ body.dark-mode,
 }
 
 .dark-mode .btn-toggle-pwd-visibility {
-  background: rgba(30, 41, 59, 0.8) !important;
+  background: rgba(30, 41, 59, 0.85) !important;
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
   color: #cbd5e1 !important;
 }
@@ -19311,26 +19322,28 @@ body.dark-mode,
 }
 
 .dark-mode .btn-account-logout {
-  background: rgba(220, 38, 38, 0.1) !important;
-  border: 1.5px solid rgba(220, 38, 38, 0.35) !important;
+  background: rgba(220, 38, 38, 0.12) !important;
+  border: 1.5px solid rgba(220, 38, 38, 0.38) !important;
   color: #f87171 !important;
-  box-shadow: 0 4px 16px rgba(220, 38, 38, 0.1) !important;
+  box-shadow: 0 4px 16px rgba(220, 38, 38, 0.12) !important;
 }
 
 .dark-mode .btn-account-logout:hover {
-  background: rgba(220, 38, 38, 0.2) !important;
+  background: rgba(220, 38, 38, 0.24) !important;
   border-color: #ef4444 !important;
-  box-shadow: 0 6px 20px rgba(220, 38, 38, 0.25) !important;
+  box-shadow: 0 6px 22px rgba(220, 38, 38, 0.3) !important;
 }
 
-/* 3. Ordering Page & Food Cards Luxury Dark Theme */
+/* --------------------------------------------------------------------------
+   3. ORDERING PORTAL & FOOD MENU CARDS
+   -------------------------------------------------------------------------- */
 .dark-mode .student-container,
 .dark-mode .menu-page-container {
   background: transparent !important;
 }
 
 .dark-mode .canteen-selector-bar {
-  background: rgba(11, 16, 27, 0.85) !important;
+  background: rgba(10, 15, 26, 0.85) !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
   backdrop-filter: blur(16px) !important;
 }
@@ -19344,16 +19357,16 @@ body.dark-mode,
 }
 
 .dark-mode .canteen-chip:hover {
-  border-color: rgba(234, 88, 12, 0.45) !important;
+  border-color: rgba(249, 115, 22, 0.5) !important;
   color: #ffffff !important;
   transform: translateY(-1px) !important;
 }
 
 .dark-mode .canteen-chip.active {
-  background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%) !important;
-  border-color: #f97316 !important;
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%) !important;
+  border-color: #fb923c !important;
   color: #ffffff !important;
-  box-shadow: 0 4px 18px rgba(234, 88, 12, 0.45), 0 0 10px rgba(234, 88, 12, 0.3) !important;
+  box-shadow: 0 4px 20px rgba(234, 88, 12, 0.5), 0 0 12px rgba(249, 115, 22, 0.35) !important;
 }
 
 .dark-mode .category-pill {
@@ -19365,39 +19378,39 @@ body.dark-mode,
 
 .dark-mode .category-pill:hover {
   color: #ffffff !important;
-  border-color: rgba(255, 255, 255, 0.18) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
 }
 
 .dark-mode .category-pill.active {
-  background: linear-gradient(135deg, #ea580c 0%, #f97316 100%) !important;
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%) !important;
   border-color: #fb923c !important;
   color: #ffffff !important;
-  box-shadow: 0 4px 16px rgba(234, 88, 12, 0.4) !important;
+  box-shadow: 0 4px 18px rgba(234, 88, 12, 0.45) !important;
 }
 
 .dark-mode .menu-search-input {
-  background: rgba(11, 16, 27, 0.88) !important;
+  background: rgba(10, 15, 26, 0.88) !important;
   border: 1.5px solid rgba(255, 255, 255, 0.1) !important;
   color: #ffffff !important;
-  backdrop-filter: blur(12px) !important;
+  backdrop-filter: blur(14px) !important;
 }
 
 .dark-mode .menu-search-input:focus {
-  border-color: #ea580c !important;
-  box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.25), 0 0 20px rgba(234, 88, 12, 0.2) !important;
+  border-color: #f97316 !important;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.3), 0 0 22px rgba(249, 115, 22, 0.25) !important;
 }
 
 .dark-mode .menu-card {
-  background: linear-gradient(180deg, #101726 0%, #0d1320 100%) !important;
+  background: linear-gradient(180deg, #101726 0%, #0c121e 100%) !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
   border-radius: 18px !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45) !important;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5) !important;
   transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 .dark-mode .menu-card:hover {
-  border-color: rgba(234, 88, 12, 0.45) !important;
-  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.65), 0 0 20px rgba(234, 88, 12, 0.15) !important;
+  border-color: rgba(249, 115, 22, 0.5) !important;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.7), 0 0 24px rgba(249, 115, 22, 0.18) !important;
   transform: translateY(-3px) !important;
 }
 
@@ -19411,13 +19424,13 @@ body.dark-mode,
 
 .dark-mode .menu-card-price {
   color: #fb923c !important;
-  text-shadow: 0 0 10px rgba(251, 146, 60, 0.35) !important;
+  text-shadow: 0 0 12px rgba(251, 146, 60, 0.4) !important;
 }
 
 .dark-mode .timeslot-picker-card {
-  background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(17, 24, 39, 0.9) 100%) !important;
-  border: 1.5px solid rgba(234, 88, 12, 0.3) !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4) !important;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(13, 20, 36, 0.9) 100%) !important;
+  border: 1.5px solid rgba(249, 115, 22, 0.32) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45) !important;
 }
 
 .dark-mode .timeslot-main-label {
@@ -19430,36 +19443,38 @@ body.dark-mode,
 }
 
 .dark-mode .timeslot-chip {
-  background: rgba(11, 16, 27, 0.8) !important;
+  background: rgba(10, 15, 26, 0.8) !important;
   border: 1px solid rgba(255, 255, 255, 0.09) !important;
 }
 
 .dark-mode .timeslot-chip:hover:not(:disabled) {
-  border-color: #ea580c !important;
-  background: rgba(234, 88, 12, 0.12) !important;
+  border-color: #f97316 !important;
+  background: rgba(249, 115, 22, 0.14) !important;
 }
 
 .dark-mode .timeslot-time-text {
   color: #cbd5e1 !important;
 }
 
-/* 4. Campus Live Queue Luxury Dark Theme */
+/* --------------------------------------------------------------------------
+   4. CAMPUS LIVE QUEUE (ILLUMINATED TOKENS & KANBAN COLUMNS)
+   -------------------------------------------------------------------------- */
 .dark-mode .queue-page-container {
   background: transparent !important;
 }
 
 .dark-mode .queue-header,
 .dark-mode .queue-top-banner {
-  background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(17, 24, 39, 0.9) 100%) !important;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(13, 20, 36, 0.9) 100%) !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  backdrop-filter: blur(12px) !important;
+  backdrop-filter: blur(14px) !important;
 }
 
 .dark-mode .queue-stat-card {
-  background: linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(17, 24, 39, 0.85) 100%) !important;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(13, 20, 36, 0.85) 100%) !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  backdrop-filter: blur(10px) !important;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35) !important;
+  backdrop-filter: blur(12px) !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4) !important;
 }
 
 .dark-mode .stat-label {
@@ -19471,10 +19486,10 @@ body.dark-mode,
 }
 
 .dark-mode .queue-col {
-  background: linear-gradient(180deg, rgba(15, 23, 42, 0.92) 0%, rgba(11, 16, 27, 0.9) 100%) !important;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.92) 0%, rgba(10, 15, 26, 0.9) 100%) !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
   backdrop-filter: blur(14px) !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4) !important;
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.45) !important;
 }
 
 .dark-mode .col-header {
@@ -19482,35 +19497,37 @@ body.dark-mode,
 }
 
 .dark-mode .token-card {
-  background: linear-gradient(135deg, #151e33 0%, #11192b 100%) !important;
+  background: linear-gradient(135deg, #151e33 0%, #0e1628 100%) !important;
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
   color: #ffffff !important;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4) !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45) !important;
 }
 
 .dark-mode .token-card-highlight {
   border-color: #f97316 !important;
-  box-shadow: 0 0 24px rgba(249, 115, 22, 0.38) !important;
+  box-shadow: 0 0 26px rgba(249, 115, 22, 0.42) !important;
 }
 
 .dark-mode .token-empty-card {
-  background: rgba(11, 16, 27, 0.7) !important;
+  background: rgba(10, 15, 26, 0.7) !important;
   border: 1px dashed rgba(255, 255, 255, 0.12) !important;
   color: #64748b !important;
 }
 
-/* 5. Your Orders Page Luxury Dark Theme */
+/* --------------------------------------------------------------------------
+   5. YOUR ORDERS (LIVE PROGRESS STEPPER & RECEIPTS)
+   -------------------------------------------------------------------------- */
 .dark-mode .orders-page-container {
   background: transparent !important;
 }
 
 .dark-mode .order-tracker-card,
 .dark-mode .order-card {
-  background: linear-gradient(135deg, rgba(17, 24, 39, 0.95) 0%, rgba(15, 23, 42, 0.9) 100%) !important;
+  background: linear-gradient(135deg, rgba(17, 24, 39, 0.95) 0%, rgba(13, 20, 36, 0.92) 100%) !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
   color: #ffffff !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45) !important;
-  backdrop-filter: blur(12px) !important;
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.48) !important;
+  backdrop-filter: blur(14px) !important;
 }
 
 .dark-mode .order-id-chip,
@@ -19525,19 +19542,21 @@ body.dark-mode,
 }
 
 .dark-mode .order-summary-box {
-  background: rgba(11, 16, 27, 0.8) !important;
+  background: rgba(10, 15, 26, 0.8) !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
 }
 
-/* 6. Modals, Cart & Overlays Luxury Dark Theme */
+/* --------------------------------------------------------------------------
+   6. CHECKOUT MODALS & CART SHEET OVERLAYS
+   -------------------------------------------------------------------------- */
 .dark-mode .modal-container,
 .dark-mode .checkout-modal-content,
 .dark-mode .desktop-checkout-modal-card,
 .dark-mode .mobile-cart-sheet {
-  background: linear-gradient(135deg, #0f172a 0%, #111827 100%) !important;
+  background: linear-gradient(135deg, #0e1526 0%, #101828 100%) !important;
   border: 1.5px solid rgba(255, 255, 255, 0.1) !important;
   color: #ffffff !important;
-  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85), 0 0 30px rgba(234, 88, 12, 0.1) !important;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9), 0 0 35px rgba(249, 115, 22, 0.12) !important;
   backdrop-filter: blur(20px) !important;
 }
 
@@ -19554,19 +19573,21 @@ body.dark-mode,
 }
 
 .dark-mode .summary-box {
-  background: rgba(11, 16, 27, 0.8) !important;
+  background: rgba(10, 15, 26, 0.8) !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
 }
 
-/* 7. Mobile Bottom Navigation Glass Dock */
+/* --------------------------------------------------------------------------
+   7. MOBILE FLOATING BOTTOM NAVIGATION PILL DOCK
+   -------------------------------------------------------------------------- */
 .dark-mode .student-mobile-nav,
 .dark-mode .student-mobile-bottom-dock,
 .dark-mode .mobile-dock-inner {
-  background: rgba(11, 16, 27, 0.92) !important;
+  background: rgba(10, 15, 26, 0.92) !important;
   backdrop-filter: blur(20px) saturate(180%) !important;
   -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.75), 0 0 22px rgba(234, 88, 12, 0.18) !important;
+  box-shadow: 0 10px 38px rgba(0, 0, 0, 0.8), 0 0 24px rgba(249, 115, 22, 0.2) !important;
 }
 
 .dark-mode .student-mobile-dock-btn {
@@ -19578,7 +19599,7 @@ body.dark-mode,
 }
 
 .dark-mode .student-dock-cart-badge {
-  border-color: #0f172a !important;
+  border-color: #0d1424 !important;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5) !important;
 }
 
@@ -19595,10 +19616,12 @@ body.dark-mode,
   text-shadow: 0 0 10px rgba(249, 115, 22, 0.45);
 }
 
-/* 8. Global Footer Luxury Dark Theme */
+/* --------------------------------------------------------------------------
+   8. FOOTER COMPONENT
+   -------------------------------------------------------------------------- */
 .dark-mode footer,
 .dark-mode .footer-container {
-  background: #080c14 !important;
+  background: #06090e !important;
   border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
   color: #64748b !important;
 }
@@ -19611,18 +19634,20 @@ body.dark-mode,
   color: #ffffff !important;
 }
 
-/* 9. Auth Page (Login / Signup) Luxury Dark Mode */
+/* --------------------------------------------------------------------------
+   9. AUTH & LOGIN / SIGNUP SCREEN
+   -------------------------------------------------------------------------- */
 .dark-mode .auth-page-wrapper {
-  background: #080c14 !important;
+  background: #06090e !important;
   background-image: 
-    radial-gradient(circle at 50% 15%, rgba(234, 88, 12, 0.1) 0%, transparent 60%),
+    radial-gradient(circle at 50% 15%, rgba(249, 115, 22, 0.12) 0%, transparent 60%),
     radial-gradient(circle at 10% 85%, rgba(2, 132, 199, 0.06) 0%, transparent 50%) !important;
 }
 
 .dark-mode .auth-main-card {
-  background: rgba(15, 23, 42, 0.95) !important;
+  background: rgba(13, 20, 36, 0.95) !important;
   border: 1.5px solid rgba(255, 255, 255, 0.1) !important;
-  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.85), 0 0 35px rgba(234, 88, 12, 0.14) !important;
+  box-shadow: 0 25px 65px -15px rgba(0, 0, 0, 0.9), 0 0 38px rgba(249, 115, 22, 0.16) !important;
   backdrop-filter: blur(20px) !important;
 }
 
@@ -19639,18 +19664,18 @@ body.dark-mode,
 }
 
 .dark-mode .auth-text-input {
-  background: #090e18 !important;
+  background: #080d16 !important;
   border: 1.5px solid rgba(255, 255, 255, 0.12) !important;
   color: #ffffff !important;
 }
 
 .dark-mode .auth-text-input:focus {
-  border-color: #ea580c !important;
-  box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.3), 0 0 20px rgba(234, 88, 12, 0.2) !important;
+  border-color: #f97316 !important;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.32), 0 0 22px rgba(249, 115, 22, 0.25) !important;
 }
 
 .dark-mode .role-toggle-track {
-  background: rgba(11, 16, 27, 0.9) !important;
+  background: rgba(10, 15, 26, 0.9) !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
 }
 
@@ -19659,9 +19684,10 @@ body.dark-mode,
 }
 
 .dark-mode .role-toggle-btn.active {
-  background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%) !important;
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%) !important;
   color: #ffffff !important;
-  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.4) !important;
+  box-shadow: 0 4px 16px rgba(234, 88, 12, 0.45) !important;
 }
+
 
 
