@@ -38,7 +38,7 @@ export default function HomePage({
     try {
       const saved = localStorage.getItem("canteenGo_studentProfile");
       if (saved) return JSON.parse(saved);
-    } catch {}
+    } catch { }
     return null;
   });
 
@@ -74,7 +74,7 @@ export default function HomePage({
         const parsed = JSON.parse(saved);
         if (parsed?.id || parsed?.canteenId) return parsed.id || parsed.canteenId;
       }
-    } catch {}
+    } catch { }
     return canteensList[0]?.id || canteensList[0]?.canteenId || "foodcourt-34";
   });
   const [vendorPin, setVendorPin] = useState("");
@@ -128,7 +128,7 @@ export default function HomePage({
       if (data.token) {
         try {
           localStorage.setItem("canteenGo_studentToken", data.token);
-        } catch {}
+        } catch { }
       }
 
       const profileData = {
@@ -143,7 +143,7 @@ export default function HomePage({
       try {
         localStorage.setItem("canteenGo_studentProfile", JSON.stringify(profileData));
         localStorage.setItem("canteenGo_rememberMe", rememberMe ? "true" : "false");
-      } catch {}
+      } catch { }
 
       setStudentProfile(profileData);
       setSuccessMsg("Logged in successfully! Redirecting...");
@@ -214,7 +214,7 @@ export default function HomePage({
       if (data.token) {
         try {
           localStorage.setItem("canteenGo_studentToken", data.token);
-        } catch {}
+        } catch { }
       }
 
       const profileData = {
@@ -229,7 +229,7 @@ export default function HomePage({
       try {
         localStorage.setItem("canteenGo_studentProfile", JSON.stringify(profileData));
         localStorage.setItem("canteenGo_rememberMe", "true");
-      } catch {}
+      } catch { }
 
       setStudentProfile(profileData);
       setSuccessMsg("Account created! Redirecting...");
@@ -283,7 +283,7 @@ export default function HomePage({
         );
       }
       localStorage.setItem("canteenGo_vendorCanteen", JSON.stringify(currentCanteenObj));
-    } catch {}
+    } catch { }
 
     setSuccessMsg(`Accessing ${currentCanteenObj.name} console...`);
 
@@ -298,10 +298,10 @@ export default function HomePage({
 
   const handleStudentLogout = async () => {
     try {
-      await fetch("/api/auth/student/logout", { method: "POST" }).catch(() => {});
+      await fetch("/api/auth/student/logout", { method: "POST" }).catch(() => { });
       localStorage.removeItem("canteenGo_studentProfile");
       localStorage.removeItem("canteenGo_studentToken");
-    } catch {}
+    } catch { }
     setStudentProfile(null);
     if (onLogout) onLogout();
   };

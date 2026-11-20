@@ -61,6 +61,46 @@ export function AppProvider({ children }) {
   const [studentProfile, setStudentProfile] = useState(null);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
+  // Dark Mode Theme State (Persisted in localStorage & synced across entire app)
+  const [darkMode, setDarkMode] = useState(false);
+
+  useEffect(() => {
+    try {
+      const savedTheme = localStorage.getItem("canteenGo_theme");
+      const prefersDark = typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+      const isDark = savedTheme ? savedTheme === "dark" : prefersDark;
+      setDarkMode(Boolean(isDark));
+      if (isDark) {
+        document.documentElement.classList.add("dark-mode");
+        document.body.classList.add("dark-mode");
+        document.documentElement.setAttribute("data-theme", "dark");
+      } else {
+        document.documentElement.classList.remove("dark-mode");
+        document.body.classList.remove("dark-mode");
+        document.documentElement.setAttribute("data-theme", "light");
+      }
+    } catch {}
+  }, []);
+
+  const toggleDarkMode = () => {
+    setDarkMode((prev) => {
+      const nextVal = !prev;
+      try {
+        localStorage.setItem("canteenGo_theme", nextVal ? "dark" : "light");
+        if (nextVal) {
+          document.documentElement.classList.add("dark-mode");
+          document.body.classList.add("dark-mode");
+          document.documentElement.setAttribute("data-theme", "dark");
+        } else {
+          document.documentElement.classList.remove("dark-mode");
+          document.body.classList.remove("dark-mode");
+          document.documentElement.setAttribute("data-theme", "light");
+        }
+      } catch {}
+      return nextVal;
+    });
+  };
+
   // Cart State (Persisted in localStorage)
   const [cart, setCart] = useState([]);
   const [isMounted, setIsMounted] = useState(false);
@@ -353,7 +393,9 @@ export function AppProvider({ children }) {
         handleSetUserRole,
         isMounted,
         isMobileCartOpen,
-        setIsMobileCartOpen
+        setIsMobileCartOpen,
+        darkMode,
+        toggleDarkMode
       }}
     >
       <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
