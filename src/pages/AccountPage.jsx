@@ -21,7 +21,7 @@ export default function AccountPage({
   onLogout
 }) {
   const router = useRouter();
-  const { cart, handleLogout, handleSaveStudentProfile, isMobileCartOpen, setIsMobileCartOpen, darkMode, toggleDarkMode } = useAppContext();
+  const { cart, handleLogout, handleSaveStudentProfile, isMobileCartOpen, setIsMobileCartOpen } = useAppContext();
 
   // Single edit mode toggle (clean, without individual buttons on each row)
   const [isEditing, setIsEditing] = useState(false);
@@ -276,43 +276,7 @@ export default function AccountPage({
           );
         })()}
 
-        {/* 2. Theme & Appearance (Dark Mode Toggle) */}
-        <div className="account-theme-card">
-          <div className="theme-card-left">
-            <div className={`theme-icon-box ${darkMode ? "dark" : "light"}`}>
-              {darkMode ? "🌙" : "☀️"}
-            </div>
-            <div className="theme-info-text">
-              <div className="theme-title-row">
-                <h4 className="theme-title">Dark Mode</h4>
-                <span className={`theme-state-pill ${darkMode ? "pill-dark" : "pill-light"}`}>
-                  {darkMode ? "🌙 ON" : "☀️ OFF"}
-                </span>
-              </div>
-              <span className="theme-subtitle">
-                {darkMode
-                  ? "Night mode is active across all campus ordering pages"
-                  : "Tap to switch the entire application to eye-friendly dark mode"}
-              </span>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            className={`theme-toggle-switch ${darkMode ? "active" : ""}`}
-            onClick={toggleDarkMode}
-            role="switch"
-            aria-checked={darkMode}
-            aria-label="Toggle dark mode"
-            title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
-          >
-            <span className="theme-toggle-knob">
-              <span className="knob-icon">{darkMode ? "🌙" : "☀️"}</span>
-            </span>
-          </button>
-        </div>
-
-        {/* 3. Account Details Card (Clean & Focused, NO specific mini-buttons) */}
+        {/* 2. Account Details Card (Clean & Focused, NO specific mini-buttons) */}
         <form onSubmit={handleSave} className="account-section-card">
           <div className="account-section-header">
             <div className="account-section-titles">
