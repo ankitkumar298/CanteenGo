@@ -1435,7 +1435,14 @@ export default function QueuePage({ setActiveTab, isVendorView = false, onVendor
   const selectedBoardCanteen = useMemo(() => {
     const list = myOrderCanteens.length > 0 ? myOrderCanteens : canteensList.filter((c) => c.id !== "all");
     const match = list.find((c) => (c.id || c.canteenId) === selectedBoardCanteenId);
-    return match || list[0] || CAMPUS_CANTEENS[0];
+    return match || list[0] || {
+      id: "all",
+      canteenId: "all",
+      name: "Campus Canteen",
+      shortName: "Campus Canteen",
+      icon: "🏢",
+      counter: "Counter 1"
+    };
   }, [myOrderCanteens, canteensList, selectedBoardCanteenId]);
 
   // Canteen-specific active student orders

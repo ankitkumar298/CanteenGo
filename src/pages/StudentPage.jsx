@@ -85,7 +85,13 @@ export default function StudentPage({
 
   const { canteens: ctxCanteens, isMobileCartOpen, setIsMobileCartOpen } = useAppContext();
   const canteensList = ctxCanteens && ctxCanteens.length > 0 ? ctxCanteens : CAMPUS_CANTEENS;
-  const defaultCanteenObj = canteensList[0] || DEFAULT_CANTEEN;
+  const defaultCanteenObj = canteensList[0] || {
+    id: "all",
+    canteenId: "all",
+    name: "All Canteens",
+    shortName: "All Canteens",
+    isOpen: true
+  };
 
   // Selected Canteen State (Defaults to primary canteen from Atlas collection)
   const [selectedCanteen, setSelectedCanteen] = useState(() => {
@@ -357,7 +363,7 @@ export default function StudentPage({
       return;
     }
 
-    const itemCanteen = selectedCanteen?.name ? selectedCanteen : DEFAULT_CANTEEN;
+    const itemCanteen = selectedCanteen?.name ? selectedCanteen : defaultCanteenObj;
     if (!isItemAvailableAtCanteen(item, itemCanteen)) {
       setErrorMessage(`Sorry, "${item.name}" is currently sold out at ${itemCanteen.shortName || itemCanteen.name}.`);
       return;
@@ -456,7 +462,7 @@ export default function StudentPage({
       return;
     }
 
-    const itemCanteen = selectedCanteen?.name ? selectedCanteen : DEFAULT_CANTEEN;
+    const itemCanteen = selectedCanteen?.name ? selectedCanteen : defaultCanteenObj;
 
     setCart((prevCart) => {
       let updatedCart = [...prevCart];
@@ -1108,9 +1114,9 @@ export default function StudentPage({
                     <span className="canteen-trigger-text">
                       <LocationPinIcon size={16} className="canteen-trigger-location-icon" />
                       <span>
-                        {currentCanteen.id === "all"
+                        {currentCanteen?.id === "all"
                           ? "All Canteens"
-                          : currentCanteen.shortName || currentCanteen.name}
+                          : currentCanteen?.shortName || currentCanteen?.name || "All Canteens"}
                       </span>
                     </span>
                     <span className={`canteen-trigger-arrow ${isCanteenDropdownOpen ? "open" : ""}`}>
@@ -1122,7 +1128,7 @@ export default function StudentPage({
                     <div className="custom-canteen-menu">
                       <button
                         type="button"
-                        className={`custom-canteen-option ${currentCanteen.id === "all" ? "selected" : ""}`}
+                        className={`custom-canteen-option ${currentCanteen?.id === "all" ? "selected" : ""}`}
                         onClick={() => {
                           handleSelectCanteen({
                             id: "all",

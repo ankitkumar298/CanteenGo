@@ -8,7 +8,6 @@ import UpiModal from "@/components/UpiModal";
 import ChooseCanteenModal from "@/components/ChooseCanteenModal";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { CAMPUS_CANTEENS } from "@/data/canteens";
 
 const AppContext = createContext(null);
 
@@ -22,7 +21,7 @@ export function AppProvider({ children }) {
   const pathname = usePathname();
 
   // Dynamic Canteens State (Loaded from MongoDB Atlas collection)
-  const [canteens, setCanteens] = useState(CAMPUS_CANTEENS);
+  const [canteens, setCanteens] = useState([]);
   const [loadingCanteens, setLoadingCanteens] = useState(true);
 
   const refreshCanteens = async () => {
