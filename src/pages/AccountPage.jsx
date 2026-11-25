@@ -242,29 +242,52 @@ export default function AccountPage({
           const chancesLeft = Math.max(0, 3 - noShows);
           const codStatus = profileData?.codStatus || studentProfile?.codStatus || "active";
           const isBlocked = codStatus === "temporarily_blocked" || codStatus === "prepaid_only" || chancesLeft === 0;
+          const stateClass = isBlocked
+            ? "trust-state-blocked"
+            : chancesLeft === 3
+              ? "trust-state-safe"
+              : chancesLeft === 2
+                ? "trust-state-warning"
+                : "trust-state-final";
 
           return (
-            <div className="account-trust-score-card">
+            <div className={`account-trust-score-card ${stateClass}`}>
               <div className="trust-score-header">
                 <div className="trust-score-left">
                   <span className="trust-score-icon">🛡️</span>
                   <div>
                     <h4 className="trust-score-title">Order Trust Score</h4>
-                    <span className="trust-score-subtitle">Campus Pickup & Cash Reliability</span>
+                    <span className="trust-score-subtitle">Campus Pickup &amp; Cash Reliability</span>
                   </div>
                 </div>
                 <span className={`trust-score-status-badge ${isBlocked ? "badge-blocked" : chancesLeft === 3 ? "badge-safe" : chancesLeft === 2 ? "badge-warning" : "badge-final-warning"}`}>
+                  <span className="trust-badge-dot" />
                   {isBlocked ? "Temporarily Blocked" : chancesLeft === 3 ? "Active (Safe)" : chancesLeft === 2 ? "Warning (Strike 1/3)" : "Final Warning (Strike 2/3)"}
                 </span>
               </div>
 
               <div className="trust-score-chances-row">
-                <strong className={`trust-score-chances-val ${isBlocked ? "text-danger" : ""}`}>
-                  {isBlocked ? "Temporarily Blocked" : `${chancesLeft} chances left`}
-                </strong>
-                {isBlocked && (
-                  <span className="trust-prepaid-only-tag">Prepaid (UPI) Only</span>
-                )}
+                <div className="trust-score-chances-main">
+                  <strong className={`trust-score-chances-val ${isBlocked ? "text-danger" : ""}`}>
+                    {isBlocked ? "Temporarily Blocked" : `${chancesLeft} chances left`}
+                  </strong>
+                  {isBlocked && (
+                    <span className="trust-prepaid-only-tag">Prepaid (UPI) Only</span>
+                  )}
+                </div>
+                <span className="trust-score-fraction">
+                  {chancesLeft}/3
+                </span>
+              </div>
+
+              {/* 3-Segment Visual Reliability Meter */}
+              <div className="trust-meter-segments" aria-hidden="true">
+                {[1, 2, 3].map((step) => (
+                  <span
+                    key={step}
+                    className={`trust-meter-segment ${step <= chancesLeft ? "filled" : "empty"}`}
+                  />
+                ))}
               </div>
 
               <p className="trust-score-notice">
