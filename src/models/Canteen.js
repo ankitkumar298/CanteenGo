@@ -106,6 +106,38 @@ const canteenSchema = new mongoose.Schema(
     pickupGuide: {
       type: String,
       default: ""
+    },
+    ownerName: {
+      type: String,
+      default: "",
+      trim: true
+    },
+    ownerPhone: {
+      type: String,
+      default: "",
+      trim: true
+    },
+    staffPin: {
+      type: String,
+      default: "1234",
+      trim: true
+    },
+    approvalStatus: {
+      type: String,
+      enum: ["Pending", "Approved", "Rejected"],
+      default: "Approved"
+    },
+    isApproved: {
+      type: Boolean,
+      default: true
+    },
+    rejectionReason: {
+      type: String,
+      default: ""
+    },
+    approvedAt: {
+      type: Date,
+      default: null
     }
   },
   {

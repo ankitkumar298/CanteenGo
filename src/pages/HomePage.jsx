@@ -67,6 +67,7 @@ export default function HomePage({
   const canteensList = ctxCanteens && ctxCanteens.length > 0 ? ctxCanteens : CAMPUS_CANTEENS;
 
   // Vendor Fields
+  const [vendorAuthMode, setVendorAuthMode] = useState("login"); // "login" | "register"
   const [selectedCanteenId, setSelectedCanteenId] = useState(() => {
     try {
       const saved = localStorage.getItem("canteenGo_vendorCanteen");
@@ -77,9 +78,19 @@ export default function HomePage({
     } catch { }
     return canteensList[0]?.id || canteensList[0]?.canteenId || "foodcourt-34";
   });
+  const [vendorOwnerLoginPhone, setVendorOwnerLoginPhone] = useState("");
   const [vendorPin, setVendorPin] = useState("");
   const [showVendorPin, setShowVendorPin] = useState(false);
   const [vendorRemember, setVendorRemember] = useState(true);
+
+  // Vendor Application (New Canteen Registration) Fields
+  const [applyCanteenName, setApplyCanteenName] = useState("");
+  const [applyLocation, setApplyLocation] = useState("");
+  const [applyCounter, setApplyCounter] = useState("");
+  const [applyOwnerName, setApplyOwnerName] = useState("");
+  const [applyOwnerPhone, setApplyOwnerPhone] = useState("");
+  const [applyStaffPin, setApplyStaffPin] = useState("");
+  const [applyOpeningHours, setApplyOpeningHours] = useState("9:00 AM - 9:00 PM");
 
   // Feedback states
   const [loading, setLoading] = useState(false);
@@ -253,7 +264,7 @@ export default function HomePage({
   // ==========================================
   // HANDLERS: VENDOR AUTH
   // ==========================================
-  const handleVendorSubmit = (e) => {
+  const handleVendorSubmit = async (e) => {
     e.preventDefault();
     if (loading) return;
 
@@ -265,35 +276,118 @@ export default function HomePage({
       return;
     }
 
-    const validPins = ["1234", "9999", "0000", currentCanteenObj?.staffPin || "1234"];
-    if (!validPins.includes(vendorPin.trim())) {
-      setError("Incorrect staff PIN. Default demo PIN: 1234");
+    setLoading(true);
+    try {
+      const res = await fetch("/api/auth/vendor/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          canteenId: selectedCanteenId,
+          ownerPhone: vendorOwnerLoginPhone.trim() || undefined,
+          staffPin: vendorPin.trim()
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setError(data.message || "Unable to access vendor terminal.");
+        setLoading(false);
+        return;
+      }
+
+      const approvedCanteen = data.canteen || currentCanteenObj;
+      try {
+        if (vendorRemember && approvedCanteen) {
+          localStorage.setItem(
+            "canteenGo_vendorSession",
+            JSON.stringify({
+              canteenId: approvedCanteen.id || approvedCanteen.canteenId,
+              canteenName: approvedCanteen.name,
+              loggedInAt: Date.now()
+            })
+          );
+        }
+        if (approvedCanteen) {
+          localStorage.setItem("canteenGo_vendorCanteen", JSON.stringify(approvedCanteen));
+        }
+      } catch { }
+
+      setSuccessMsg(data.message || `Accessing ${approvedCanteen?.name} console...`);
+
+      setTimeout(() => {
+        if (onSelectRole) {
+          onSelectRole("vendor", "orders", approvedCanteen);
+        } else if (setActiveTab) {
+          setActiveTab("vendor");
+        }
+      }, 250);
+    } catch {
+      setError("Network error while verifying vendor account.");
+      setLoading(false);
+    }
+  };
+
+  const handleVendorRegister = async (e) => {
+    e.preventDefault();
+    if (loading) return;
+
+    setError("");
+    setSuccessMsg("");
+
+    const cleanPhone = applyOwnerPhone.replace(/\D/g, "");
+    if (!applyCanteenName.trim()) {
+      setError("Please enter your canteen name.");
+      return;
+    }
+    if (!applyOwnerName.trim()) {
+      setError("Please enter owner / manager full name.");
+      return;
+    }
+    if (cleanPhone.length !== 10) {
+      setError("Please enter a valid 10-digit mobile number.");
+      return;
+    }
+    if (applyStaffPin.trim().length < 4) {
+      setError("Staff PIN must be at least 4 characters.");
       return;
     }
 
+    setLoading(true);
     try {
-      if (vendorRemember) {
-        localStorage.setItem(
-          "canteenGo_vendorSession",
-          JSON.stringify({
-            canteenId: selectedCanteenId,
-            canteenName: currentCanteenObj.name,
-            loggedInAt: Date.now()
-          })
-        );
-      }
-      localStorage.setItem("canteenGo_vendorCanteen", JSON.stringify(currentCanteenObj));
-    } catch { }
+      const res = await fetch("/api/canteens", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: applyCanteenName.trim(),
+          location: applyLocation.trim() || "Campus Block",
+          counter: applyCounter.trim() || "Counter 1 (Main Pickup)",
+          ownerName: applyOwnerName.trim(),
+          ownerPhone: cleanPhone,
+          staffPin: applyStaffPin.trim(),
+          openingHours: applyOpeningHours.trim() || "9:00 AM - 9:00 PM"
+        })
+      });
 
-    setSuccessMsg(`Accessing ${currentCanteenObj.name} console...`);
-
-    setTimeout(() => {
-      if (onSelectRole) {
-        onSelectRole("vendor", "orders", currentCanteenObj);
-      } else if (setActiveTab) {
-        setActiveTab("vendor");
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setError(data.message || "Failed to submit vendor application.");
+        setLoading(false);
+        return;
       }
-    }, 250);
+
+      setSuccessMsg("Application submitted! Your canteen will go live once approved by College Admin.");
+      setApplyCanteenName("");
+      setApplyLocation("");
+      setApplyCounter("");
+      setApplyOwnerName("");
+      setApplyOwnerPhone("");
+      setApplyStaffPin("");
+      setVendorAuthMode("login");
+    } catch {
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleStudentLogout = async () => {
@@ -761,9 +855,9 @@ export default function HomePage({
           )}
 
           {/* =====================================================================
-              VIEW 2: CANTEEN VENDOR AUTHENTICATION
+              VIEW 2: CANTEEN VENDOR AUTHENTICATION & NEW CANTEEN ONBOARDING
               ===================================================================== */}
-          {selectedRole === "vendor" && (
+          {selectedRole === "vendor" && vendorAuthMode === "login" && (
             <form onSubmit={handleVendorSubmit} className="auth-clean-form">
               {/* Canteen Selector Dropdown */}
               <div className="auth-input-field">
@@ -782,6 +876,25 @@ export default function HomePage({
                     </option>
                   ))}
                 </select>
+              </div>
+
+              {/* Optional Owner Phone for Pending/New Vendors */}
+              <div className="auth-input-field">
+                <span className="auth-field-icon">
+                  <PhoneIcon size={17} />
+                </span>
+                <input
+                  type="tel"
+                  className="auth-text-input"
+                  placeholder="Registered Owner Mobile (Optional for new canteen)"
+                  value={vendorOwnerLoginPhone}
+                  onChange={(e) => {
+                    setError("");
+                    setVendorOwnerLoginPhone(e.target.value.replace(/\D/g, "").slice(0, 10));
+                  }}
+                  disabled={loading}
+                  maxLength={10}
+                />
               </div>
 
               {/* Staff PIN */}
@@ -839,26 +952,166 @@ export default function HomePage({
                 {loading ? (
                   <>
                     <span className="btn-spinner"></span>
-                    <span>Accessing Console...</span>
+                    <span>Verifying Console Access...</span>
                   </>
                 ) : (
                   <span>Log in to Canteen Terminal</span>
                 )}
               </button>
 
-              {/* Prompt to switch back to Student */}
+              {/* Apply as New Vendor / Admin Portal */}
+              <div className="auth-bottom-switch" style={{ display: "flex", flexDirection: "column", gap: "8px", alignItems: "center" }}>
+                <div>
+                  <span>New canteen on campus? </span>
+                  <button
+                    type="button"
+                    className="auth-bottom-link"
+                    onClick={() => {
+                      setVendorAuthMode("register");
+                      setError("");
+                      setSuccessMsg("");
+                    }}
+                  >
+                    Apply as Vendor
+                  </button>
+                </div>
+                <a
+                  href="/admin"
+                  className="auth-bottom-link"
+                  style={{ fontSize: "0.78rem", opacity: 0.85 }}
+                >
+                  🛡️ College Admin Approval Portal →
+                </a>
+              </div>
+            </form>
+          )}
+
+          {selectedRole === "vendor" && vendorAuthMode === "register" && (
+            <form onSubmit={handleVendorRegister} className="auth-clean-form">
+              <div className="auth-input-field">
+                <span className="auth-field-icon">
+                  <StoreIcon size={17} />
+                </span>
+                <input
+                  type="text"
+                  className="auth-text-input"
+                  placeholder="Canteen Name (e.g. Hostel Block C Cafe)"
+                  value={applyCanteenName}
+                  onChange={(e) => {
+                    setError("");
+                    setApplyCanteenName(e.target.value);
+                  }}
+                  disabled={loading}
+                  required
+                />
+              </div>
+
+              <div className="auth-input-field">
+                <span className="auth-field-icon">
+                  <UserIcon size={17} />
+                </span>
+                <input
+                  type="text"
+                  className="auth-text-input"
+                  placeholder="Owner / Manager Full Name"
+                  value={applyOwnerName}
+                  onChange={(e) => {
+                    setError("");
+                    setApplyOwnerName(e.target.value);
+                  }}
+                  disabled={loading}
+                  required
+                />
+              </div>
+
+              <div className="auth-input-field">
+                <span className="auth-field-icon">
+                  <PhoneIcon size={17} />
+                </span>
+                <input
+                  type="tel"
+                  className="auth-text-input"
+                  placeholder="10-digit Mobile Number"
+                  value={applyOwnerPhone}
+                  onChange={(e) => {
+                    setError("");
+                    setApplyOwnerPhone(e.target.value.replace(/\D/g, "").slice(0, 10));
+                  }}
+                  disabled={loading}
+                  maxLength={10}
+                  required
+                />
+              </div>
+
+              <div className="auth-two-col">
+                <div className="auth-input-field">
+                  <input
+                    type="text"
+                    className="auth-text-input auth-text-input-noicon"
+                    placeholder="Location (e.g. Block C)"
+                    value={applyLocation}
+                    onChange={(e) => setApplyLocation(e.target.value)}
+                    disabled={loading}
+                  />
+                </div>
+                <div className="auth-input-field">
+                  <input
+                    type="text"
+                    className="auth-text-input auth-text-input-noicon"
+                    placeholder="Counter (e.g. Counter 1)"
+                    value={applyCounter}
+                    onChange={(e) => setApplyCounter(e.target.value)}
+                    disabled={loading}
+                  />
+                </div>
+              </div>
+
+              <div className="auth-two-col">
+                <div className="auth-input-field">
+                  <input
+                    type="text"
+                    className="auth-text-input auth-text-input-noicon"
+                    placeholder="Hours (9 AM - 9 PM)"
+                    value={applyOpeningHours}
+                    onChange={(e) => setApplyOpeningHours(e.target.value)}
+                    disabled={loading}
+                  />
+                </div>
+                <div className="auth-input-field">
+                  <input
+                    type="password"
+                    className="auth-text-input auth-text-input-noicon"
+                    placeholder="Set Staff PIN (min 4)"
+                    value={applyStaffPin}
+                    onChange={(e) => setApplyStaffPin(e.target.value)}
+                    disabled={loading}
+                    minLength={4}
+                    required
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className={`btn-auth-submit-primary ${loading ? "is-loading" : ""}`}
+                disabled={loading}
+              >
+                {loading ? "Submitting Application..." : "Submit for Admin Approval"}
+              </button>
+
               <div className="auth-bottom-switch">
-                <span>Ordering meals as a student? </span>
+                <span>Already approved? </span>
                 <button
                   type="button"
                   className="auth-bottom-link"
                   onClick={() => {
-                    setSelectedRole("student");
+                    setVendorAuthMode("login");
                     setError("");
                     setSuccessMsg("");
                   }}
+                  disabled={loading}
                 >
-                  Student Login
+                  Back to Vendor Login
                 </button>
               </div>
             </form>
