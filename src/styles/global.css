@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* ==========================================================================
    canteenGo - College Canteen & Token Queue Management System
    Clean, practical developer styling with restrained orange-white theme
