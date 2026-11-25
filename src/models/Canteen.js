@@ -1,7 +1,44 @@
 import mongoose from "mongoose";
 
+// Field order here defines column order in MongoDB Compass Table View:
+// name -> location -> isApprove -> slot -> managerNumber -> ...
 const canteenSchema = new mongoose.Schema(
   {
+    name: {
+      type: String,
+      required: true,
+      trim: true
+    },
+    location: {
+      type: String,
+      default: "",
+      trim: true
+    },
+    isApprove: {
+      type: Number,
+      enum: [0, 1],
+      default: 0
+    },
+    slot: {
+      type: String,
+      default: "9:00 AM - 9:00 PM",
+      trim: true
+    },
+    managerNumber: {
+      type: String,
+      default: "",
+      trim: true
+    },
+    ownerName: {
+      type: String,
+      default: "",
+      trim: true
+    },
+    ownerPhone: {
+      type: String,
+      default: "",
+      trim: true
+    },
     canteenId: {
       type: String,
       required: true,
@@ -13,17 +50,7 @@ const canteenSchema = new mongoose.Schema(
       required: true,
       trim: true
     },
-    name: {
-      type: String,
-      required: true,
-      trim: true
-    },
     shortName: {
-      type: String,
-      default: "",
-      trim: true
-    },
-    location: {
       type: String,
       default: "",
       trim: true
@@ -107,25 +134,10 @@ const canteenSchema = new mongoose.Schema(
       type: String,
       default: ""
     },
-    ownerName: {
-      type: String,
-      default: "",
-      trim: true
-    },
-    ownerPhone: {
-      type: String,
-      default: "",
-      trim: true
-    },
     staffPin: {
       type: String,
       default: "1234",
       trim: true
-    },
-    isApprove: {
-      type: Number,
-      enum: [0, 1],
-      default: 0
     }
   },
   {
@@ -133,9 +145,4 @@ const canteenSchema = new mongoose.Schema(
   }
 );
 
-if (mongoose.models && mongoose.models.Canteen) {
-  delete mongoose.models.Canteen;
-}
-
-export default mongoose.model("Canteen", canteenSchema);
-
+export default mongoose.models.Canteen || mongoose.model("Canteen", canteenSchema);

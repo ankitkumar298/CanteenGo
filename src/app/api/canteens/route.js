@@ -30,8 +30,10 @@ export async function POST(request) {
       counter,
       ownerName,
       ownerPhone,
+      managerNumber,
       staffPin,
       openingHours,
+      slot,
       description
     } = requestBody;
 
@@ -49,10 +51,10 @@ export async function POST(request) {
       );
     }
 
-    const cleanPhone = String(ownerPhone || "").replace(/\D/g, "");
+    const cleanPhone = String(managerNumber || ownerPhone || "").replace(/\D/g, "");
     if (cleanPhone.length !== 10) {
       return NextResponse.json(
-        { success: false, message: "Please enter a valid 10-digit owner mobile number." },
+        { success: false, message: "Please enter a valid 10-digit manager mobile number." },
         { status: 400 }
       );
     }
@@ -65,7 +67,9 @@ export async function POST(request) {
       );
     }
 
-    const existingByPhone = await Canteen.findOne({ ownerPhone: cleanPhone });
+    const existingByPhone = await Canteen.findOne({
+      $or: [{ managerNumber: cleanPhone }, { ownerPhone: cleanPhone }]
+    });
     if (existingByPhone) {
       const statusLabel = existingByPhone.isApprove === 1 ? "Approved" : "Pending Admin Approval";
       return NextResponse.json(
@@ -78,27 +82,30 @@ export async function POST(request) {
     }
 
     const cleanName = String(name).trim();
+    const cleanSlot = String(slot || openingHours || "9:00 AM - 9:00 PM").trim();
     const slugBase = cleanName
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-|-$/g, "");
     const generatedCanteenId = requestBody.canteenId || `${slugBase}-${Date.now().toString().slice(-4)}`;
 
-    // New vendor starts with isApprove: 0; becomes live when Admin sets isApprove: 1 in MongoDB
+    // Keep exact column order: name -> location -> isApprove -> slot -> managerNumber
     const newCanteen = await Canteen.create({
-      canteenId: generatedCanteenId,
-      id: generatedCanteenId,
       name: cleanName,
-      shortName: cleanName,
       location: String(location || "Campus Block").trim(),
-      counter: String(counter || "Counter 1 (Main Pickup)").trim(),
-      counterDetails: String(counter || "Counter 1 • Express Pickup").trim(),
-      openingHours: String(openingHours || "9:00 AM - 9:00 PM").trim(),
-      description: String(description || "Newly registered campus canteen").trim(),
+      isApprove: 0,
+      slot: cleanSlot,
+      managerNumber: cleanPhone,
       ownerName: String(ownerName).trim(),
       ownerPhone: cleanPhone,
+      canteenId: generatedCanteenId,
+      id: generatedCanteenId,
+      shortName: cleanName,
+      counter: String(counter || "Counter 1 (Main Pickup)").trim(),
+      counterDetails: String(counter || "Counter 1 • Express Pickup").trim(),
+      openingHours: cleanSlot,
+      description: String(description || "Newly registered campus canteen").trim(),
       staffPin: cleanPin,
-      isApprove: 0,
       isOpen: true,
       isAvailable: true,
       icon: "🏪"
@@ -107,7 +114,7 @@ export async function POST(request) {
     return NextResponse.json(
       {
         success: true,
-        message: "Application submitted! Once Admin approves your account in MongoDB (isApprove = 1), your canteen will be added to the vendor list.",
+        message: "Application submitted! Once Admin sets isApprove = 1 in MongoDB, your canteen will be added to the vendor list.",
         canteen: newCanteen
       },
       { status: 201 }

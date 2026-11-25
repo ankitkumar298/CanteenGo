@@ -18,7 +18,9 @@ export async function POST(request) {
     let canteen = null;
     if (ownerPhone) {
       const cleanPhone = String(ownerPhone).replace(/\D/g, "");
-      canteen = await Canteen.findOne({ ownerPhone: cleanPhone });
+      canteen = await Canteen.findOne({
+        $or: [{ managerNumber: cleanPhone }, { ownerPhone: cleanPhone }]
+      });
     }
 
     if (!canteen && canteenId) {
