@@ -2188,4 +2188,88 @@
 .btn-confirm-decline:hover {
   background: #b91c1c;
 }
-
+
+
+
+/* KDS Pending Approval & Accepted Status Themes */
+.kds-card.status-pending-approval,
+.kds-card.status-pending {
+  border-color: #f97316;
+  box-shadow: 0 4px 18px rgba(249, 115, 22, 0.15);
+}
+
+.kds-card.status-pending-approval::before,
+.kds-card.status-pending::before {
+  content: "⚡ INCOMING ORDER REQUEST (REQUIRES APPROVAL)";
+  display: block;
+  background: #ea580c;
+  color: #ffffff;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-align: center;
+  padding: 4px 8px;
+}
+
+.kds-card.status-accepted {
+  border-color: #3b82f6;
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.15);
+}
+
+.kds-card.status-accepted::before {
+  content: "✓ ORDER ACCEPTED (READY TO PREPARE)";
+  display: block;
+  background: #2563eb;
+  color: #ffffff;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-align: center;
+  padding: 4px 8px;
+}
+
+.kds-token-badge.pending-approval {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #ea580c;
+  background: #fff7ed;
+  border: 1.5px dashed #fdba74;
+  padding: 4px 10px;
+  border-radius: 8px;
+  display: inline-block;
+  letter-spacing: 0.02em;
+}
+
+.kds-slot-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 10px;
+  padding: 8px 12px;
+}
+
+.kds-slot-icon {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.kds-slot-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.kds-slot-label {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: #9a3412;
+  letter-spacing: 0.05em;
+}
+
+.kds-slot-value {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: #c2410c;
+}

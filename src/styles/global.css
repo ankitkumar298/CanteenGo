@@ -2147,3 +2147,177 @@ h1, h2, h3, h4, .brand-title, .token-huge-num, .token-display-ready, .token-disp
   transition: all 0.18s ease;
   color: #0f172a;
 }
+
+.nav-student-profile-chip:hover {
+  background: #ffedd5;
+  border-color: #ea580c;
+  transform: translateY(-1px);
+}
+
+.profile-chip-avatar {
+  font-size: 1rem;
+}
+
+.profile-chip-text {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.profile-chip-name {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.2;
+}
+
+.profile-chip-phone {
+  font-size: 0.68rem;
+  color: #64748b;
+}
+
+.nav-logout-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #fff1f2;
+  border: 1.5px solid #fecdd3;
+  color: #e11d48;
+  font-weight: 700;
+  font-size: 0.8rem;
+  padding: 6px 13px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.nav-logout-btn:hover {
+  background: #e11d48;
+  border-color: #e11d48;
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(225, 29, 72, 0.22);
+}
+
+.user-profile-identity-banner {
+  background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%);
+  border: 1.5px solid #bbf7d0;
+  border-radius: 18px;
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.08);
+}
+
+.identity-banner-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.identity-avatar {
+  font-size: 1.8rem;
+}
+
+.identity-name {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+}
+
+.identity-sub {
+  font-size: 0.82rem;
+  color: #475569;
+  margin: 3px 0 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.personal-only-tag {
+  color: #16a34a;
+  font-weight: 700;
+}
+
+.checkout-verified-student-card {
+  background: #f8fafc;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 14px;
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.verified-student-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.verified-student-avatar {
+  font-size: 1.4rem;
+}
+
+.verified-student-label {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #64748b;
+  letter-spacing: 0.5px;
+  display: block;
+}
+
+.verified-student-name {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #0f172a;
+  display: block;
+}
+
+.verified-student-meta {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.btn-change-profile {
+  background: transparent;
+  border: 1px solid #cbd5e1;
+  border-radius: var(--radius-sm);
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #0284c7;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-change-profile:hover {
+  background: #f1f5f9;
+  border-color: #0284c7;
+}
+
+/* Badge styles for approval & rejection statuses */
+.badge-pending-approval {
+  background: #fff7ed !important;
+  color: #c2410c !important;
+  border: 1px solid #fdba74 !important;
+}
+
+.badge-accepted {
+  background: #eff6ff !important;
+  color: #1d4ed8 !important;
+  border: 1px solid #93c5fd !important;
+}
+
+.badge-rejected {
+  background: #fef2f2 !important;
+  color: #dc2626 !important;
+  border: 1px solid #fca5a5 !important;
+}
+
