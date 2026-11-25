@@ -81,7 +81,7 @@ export default function StudentMobileBottomNav({
   // Current slot being hovered or active
   const currentSlot =
     isDragging && dragX !== null
-      ? Math.max(0, Math.min(4, Math.round((dragX - 6) / 54)))
+      ? Math.max(0, Math.min(4, Math.round((dragX - 10) / 64)))
       : optimisticIndex !== null
       ? optimisticIndex
       : activeIndex;
@@ -170,7 +170,7 @@ export default function StudentMobileBottomNav({
     if (isDraggingRef.current) {
       const rect = dockRef.current.getBoundingClientRect();
       const touchX = touch.clientX - rect.left;
-      const targetX = Math.max(6, Math.min(222, touchX - 24));
+      const targetX = Math.max(10, Math.min(266, touchX - 28));
       setDragX(targetX);
     }
   };
@@ -179,7 +179,7 @@ export default function StudentMobileBottomNav({
     if (isDraggingRef.current && dragX !== null) {
       // User slid across options!
       if (e.cancelable) e.preventDefault();
-      const finalSlot = Math.max(0, Math.min(4, Math.round((dragX - 6) / 54)));
+      const finalSlot = Math.max(0, Math.min(4, Math.round((dragX - 10) / 64)));
       isDraggingRef.current = false;
       setIsDragging(false);
       setDragX(null);
@@ -203,11 +203,11 @@ export default function StudentMobileBottomNav({
   };
 
   // When dragging: follow finger directly at dragX with zero delay
-  // When resting: snap smoothly to 6 + targetSlot * 54
+  // When resting: snap smoothly to 10 + targetSlot * 64
   const sliderTranslateX =
     isDragging && dragX !== null
       ? dragX
-      : 6 + (optimisticIndex !== null ? optimisticIndex : activeIndex) * 54;
+      : 10 + (optimisticIndex !== null ? optimisticIndex : activeIndex) * 64;
 
   return (
     <nav
