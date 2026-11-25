@@ -1209,15 +1209,14 @@
     bottom: max(16px, env(safe-area-inset-bottom, 16px)) !important;
     left: 50% !important;
     transform: translateX(-50%) translateZ(0) !important;
-    background: rgba(255, 255, 255, 0.72) !important;
-    backdrop-filter: blur(24px) saturate(190%) !important;
-    -webkit-backdrop-filter: blur(24px) saturate(190%) !important;
-    border: 1px solid rgba(255, 255, 255, 0.85) !important;
-    border-radius: 999px !important;
-    padding: 5px 6px !important;
-    box-shadow: 0 14px 36px -6px rgba(15, 23, 42, 0.14),
-      0 2px 8px rgba(15, 23, 42, 0.05),
-      inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+    background: rgba(255, 255, 255, 0.96) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    border: 1px solid rgba(203, 213, 225, 0.85) !important;
+    border-radius: 22px !important;
+    padding: 8px 6px !important;
+    box-shadow: 0 12px 32px -4px rgba(15, 23, 42, 0.14),
+      0 2px 8px rgba(0, 0, 0, 0.05) !important;
     z-index: 999999 !important;
     align-items: center !important;
     gap: 6px !important;
@@ -1226,18 +1225,19 @@
     touch-action: pan-y !important;
   }
 
-  /* Subtle Low-Opacity Black Frosted Pill Indicator */
+  /* Smooth slide indicator pill (Clean Solid Orange Capsule, No glassmorphism) */
   .student-dock-slider-pill {
     display: block !important;
     position: absolute !important;
-    top: 5px !important;
+    top: 8px !important;
     left: 0 !important;
     width: 48px !important;
-    height: 38px !important;
-    border-radius: 999px !important;
-    background: rgba(15, 23, 42, 0.06) !important;
-    border: 1px solid rgba(15, 23, 42, 0.05) !important;
-    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04) !important;
+    height: 44px !important;
+    border-radius: 16px !important;
+    /* Capsule shape */
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%) !important;
+    border: none !important;
+    box-shadow: 0 4px 14px rgba(234, 88, 12, 0.38) !important;
     transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1) !important;
     z-index: 1 !important;
     pointer-events: none !important;
@@ -1253,8 +1253,8 @@
     position: relative !important;
     z-index: 2 !important;
     width: 48px !important;
-    height: 38px !important;
-    border-radius: 999px !important;
+    height: 44px !important;
+    border-radius: 16px !important;
     /* Capsule shape */
     display: flex !important;
     align-items: center !important;
@@ -1273,7 +1273,7 @@
 
   .student-mobile-dock-btn.active {
     background: transparent !important;
-    color: #ea580c !important;
+    color: #ffffff !important;
     box-shadow: none !important;
   }
 
@@ -1282,8 +1282,8 @@
   }
 
   .student-mobile-dock-btn.active svg {
-    transform: scale(1.1) !important;
-    stroke: #ea580c !important;
+    transform: scale(1.08) !important;
+    stroke: #ffffff !important;
   }
 
   .student-dock-cart-badge {
