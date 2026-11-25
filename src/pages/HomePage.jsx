@@ -959,29 +959,20 @@ export default function HomePage({
                 )}
               </button>
 
-              {/* Apply as New Vendor / Admin Portal */}
-              <div className="auth-bottom-switch" style={{ display: "flex", flexDirection: "column", gap: "8px", alignItems: "center" }}>
-                <div>
-                  <span>New canteen on campus? </span>
-                  <button
-                    type="button"
-                    className="auth-bottom-link"
-                    onClick={() => {
-                      setVendorAuthMode("register");
-                      setError("");
-                      setSuccessMsg("");
-                    }}
-                  >
-                    Apply as Vendor
-                  </button>
-                </div>
-                <a
-                  href="/admin"
+              {/* Apply as New Vendor */}
+              <div className="auth-bottom-switch">
+                <span>New canteen on campus? </span>
+                <button
+                  type="button"
                   className="auth-bottom-link"
-                  style={{ fontSize: "0.78rem", opacity: 0.85 }}
+                  onClick={() => {
+                    setVendorAuthMode("register");
+                    setError("");
+                    setSuccessMsg("");
+                  }}
                 >
-                  🛡️ College Admin Approval Portal →
-                </a>
+                  Apply as Vendor
+                </button>
               </div>
             </form>
           )}
