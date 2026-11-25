@@ -1,3 +1,4 @@
+import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/mongodb";
 import Menu from "@/models/Menu";
 import mongoose from "mongoose";
@@ -5,115 +6,130 @@ import mongoose from "mongoose";
 export async function PUT(request, context) {
   try {
     await connectToDatabase();
-    const params = await context.params;
-    const { id } = params;
+    const { id: menuItemId } = await context.params;
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return Response.json({ message: "Invalid menu item ID" }, { status: 400 });
+    if (!mongoose.Types.ObjectId.isValid(menuItemId)) {
+      return NextResponse.json({ message: "Invalid menu item ID" }, { status: 400 });
     }
 
-    const data = await request.json();
-    const updateData = {};
+    const requestBody = await request.json();
+    const updatePayload = {};
 
-    const existing = await Menu.findById(id);
-    if (!existing) {
-      return Response.json({ message: "Menu item not found" }, { status: 404 });
+    const existingMenuItem = await Menu.findById(menuItemId);
+    if (!existingMenuItem) {
+      return NextResponse.json({ message: "Menu item not found" }, { status: 404 });
     }
 
-    // Per-canteen price update: ONLY updates this specific canteen's price in canteenPrices!
-    if (data.canteenId && (data.canteenPrice !== undefined || data.price !== undefined)) {
-      const p = Number(data.canteenPrice !== undefined ? data.canteenPrice : data.price);
-      if (!isNaN(p) && p >= 0) {
-        const cp = { ...(existing.canteenPrices || {}) };
-        const defaultPrice = existing.basePrice || existing.price || p;
-        const allCanteenIds = ["foodcourt-34", "nk-foodcourt", "main-canteen", "library-cafe"];
-        allCanteenIds.forEach((cid) => {
-          if (cp[cid] === undefined) {
-            cp[cid] = defaultPrice;
+    // Update only the requesting canteen's price so other canteens keep their own pricing
+    if (
+      requestBody.canteenId &&
+      (requestBody.canteenPrice !== undefined || requestBody.price !== undefined)
+    ) {
+      const parsedCanteenPrice = Number(
+        requestBody.canteenPrice !== undefined ? requestBody.canteenPrice : requestBody.price
+      );
+      if (!isNaN(parsedCanteenPrice) && parsedCanteenPrice >= 0) {
+        const updatedCanteenPrices = { ...(existingMenuItem.canteenPrices || {}) };
+        const fallbackPrice =
+          existingMenuItem.basePrice || existingMenuItem.price || parsedCanteenPrice;
+        const campusCanteenIds = ["foodcourt-34", "nk-foodcourt", "main-canteen", "library-cafe"];
+
+        campusCanteenIds.forEach((campusCanteenId) => {
+          if (updatedCanteenPrices[campusCanteenId] === undefined) {
+            updatedCanteenPrices[campusCanteenId] = fallbackPrice;
           }
         });
-        cp[data.canteenId] = p;
-        updateData.canteenPrices = cp;
-        // Do NOT overwrite updateData.price so other canteens retain their own prices!
+
+        updatedCanteenPrices[requestBody.canteenId] = parsedCanteenPrice;
+        updatePayload.canteenPrices = updatedCanteenPrices;
       }
-    } else if (data.price !== undefined) {
-      const numericPrice = Number(data.price);
+    } else if (requestBody.price !== undefined) {
+      const numericPrice = Number(requestBody.price);
       if (isNaN(numericPrice) || numericPrice < 0) {
-        return Response.json({ message: "Price must be a valid positive number" }, { status: 400 });
+        return NextResponse.json(
+          { message: "Price must be a valid positive number" },
+          { status: 400 }
+        );
       }
-      updateData.price = numericPrice;
-      updateData.basePrice = numericPrice;
+      updatePayload.price = numericPrice;
+      updatePayload.basePrice = numericPrice;
     }
 
-    // Per-canteen availability toggle (e.g. NK Canteen marking sold out)
-    if (data.canteenId && data.canteenAvailable !== undefined) {
-      let soldOut = Array.isArray(existing.soldOutCanteens) ? [...existing.soldOutCanteens] : [];
-      if (data.canteenAvailable === false) {
-        if (!soldOut.includes(data.canteenId)) {
-          soldOut.push(data.canteenId);
+    // Toggle stock availability per canteen without disabling the item globally
+    if (requestBody.canteenId && requestBody.canteenAvailable !== undefined) {
+      let soldOutCanteensList = Array.isArray(existingMenuItem.soldOutCanteens)
+        ? [...existingMenuItem.soldOutCanteens]
+        : [];
+
+      if (requestBody.canteenAvailable === false) {
+        if (!soldOutCanteensList.includes(requestBody.canteenId)) {
+          soldOutCanteensList.push(requestBody.canteenId);
         }
       } else {
-        soldOut = soldOut.filter((c) => c !== data.canteenId);
+        soldOutCanteensList = soldOutCanteensList.filter(
+          (soldOutCanteenId) => soldOutCanteenId !== requestBody.canteenId
+        );
       }
-      updateData.soldOutCanteens = soldOut;
-      updateData.available = true; // Keep global document active for other canteens
-    } else if (data.available !== undefined) {
-      updateData.available = Boolean(data.available);
+
+      updatePayload.soldOutCanteens = soldOutCanteensList;
+      updatePayload.available = true;
+    } else if (requestBody.available !== undefined) {
+      updatePayload.available = Boolean(requestBody.available);
     }
 
-    if (data.canteenPrices !== undefined && typeof data.canteenPrices === "object") {
-      updateData.canteenPrices = data.canteenPrices;
+    if (requestBody.canteenPrices !== undefined && typeof requestBody.canteenPrices === "object") {
+      updatePayload.canteenPrices = requestBody.canteenPrices;
     }
 
-    if (data.soldOutCanteens !== undefined && Array.isArray(data.soldOutCanteens)) {
-      updateData.soldOutCanteens = data.soldOutCanteens;
+    if (requestBody.soldOutCanteens !== undefined && Array.isArray(requestBody.soldOutCanteens)) {
+      updatePayload.soldOutCanteens = requestBody.soldOutCanteens;
     }
 
-    if (data.name !== undefined) {
-      updateData.name = String(data.name).trim();
+    if (requestBody.name !== undefined) {
+      updatePayload.name = String(requestBody.name).trim();
     }
 
-    if (data.foodType !== undefined) {
-      updateData.foodType = String(data.foodType).toLowerCase();
-      updateData.isVeg = updateData.foodType === "veg";
-    } else if (data.isVeg !== undefined) {
-      updateData.isVeg = Boolean(data.isVeg);
-      updateData.foodType = data.isVeg ? "veg" : "non-veg";
+    if (requestBody.foodType !== undefined) {
+      updatePayload.foodType = String(requestBody.foodType).toLowerCase();
+      updatePayload.isVeg = updatePayload.foodType === "veg";
+    } else if (requestBody.isVeg !== undefined) {
+      updatePayload.isVeg = Boolean(requestBody.isVeg);
+      updatePayload.foodType = updatePayload.isVeg ? "veg" : "non-veg";
     }
 
-    if (data.category !== undefined) {
-      updateData.category = String(data.category).trim() || "Snacks";
+    if (requestBody.category !== undefined) {
+      updatePayload.category = String(requestBody.category).trim() || "Snacks";
     }
 
-    if (data.image !== undefined) {
-      updateData.image = String(data.image).trim();
+    if (requestBody.image !== undefined) {
+      updatePayload.image = String(requestBody.image).trim();
     }
 
-    if (data.description !== undefined) {
-      updateData.description = String(data.description).trim();
+    if (requestBody.description !== undefined) {
+      updatePayload.description = String(requestBody.description).trim();
     }
 
-    if (data.canteenId !== undefined) {
-      updateData.canteenId = String(data.canteenId).trim();
+    if (requestBody.canteenId !== undefined) {
+      updatePayload.canteenId = String(requestBody.canteenId).trim();
     }
 
-    if (data.canteenName !== undefined) {
-      updateData.canteenName = String(data.canteenName).trim();
+    if (requestBody.canteenName !== undefined) {
+      updatePayload.canteenName = String(requestBody.canteenName).trim();
     }
 
-    if (data.availableCanteens !== undefined && Array.isArray(data.availableCanteens)) {
-      updateData.availableCanteens = data.availableCanteens;
+    if (requestBody.availableCanteens !== undefined && Array.isArray(requestBody.availableCanteens)) {
+      updatePayload.availableCanteens = requestBody.availableCanteens;
     }
 
-    const updatedItem = await Menu.findByIdAndUpdate(id, updateData, { new: true });
+    const updatedMenuItem = await Menu.findByIdAndUpdate(menuItemId, updatePayload, { new: true });
 
-    if (!updatedItem) {
-      return Response.json({ message: "Menu item not found" }, { status: 404 });
+    if (!updatedMenuItem) {
+      return NextResponse.json({ message: "Menu item not found" }, { status: 404 });
     }
 
-    return Response.json(updatedItem, { status: 200 });
+    return NextResponse.json(updatedMenuItem, { status: 200 });
   } catch (error) {
-    return Response.json(
+    return NextResponse.json(
       { message: "Failed to update menu item", error: error.message },
       { status: 500 }
     );
@@ -123,22 +139,21 @@ export async function PUT(request, context) {
 export async function DELETE(request, context) {
   try {
     await connectToDatabase();
-    const params = await context.params;
-    const { id } = params;
+    const { id: menuItemId } = await context.params;
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return Response.json({ message: "Invalid menu item ID" }, { status: 400 });
+    if (!mongoose.Types.ObjectId.isValid(menuItemId)) {
+      return NextResponse.json({ message: "Invalid menu item ID" }, { status: 400 });
     }
 
-    const deletedItem = await Menu.findByIdAndDelete(id);
+    const deletedMenuItem = await Menu.findByIdAndDelete(menuItemId);
 
-    if (!deletedItem) {
-      return Response.json({ message: "Menu item not found" }, { status: 404 });
+    if (!deletedMenuItem) {
+      return NextResponse.json({ message: "Menu item not found" }, { status: 404 });
     }
 
-    return Response.json({ message: "Menu item deleted successfully" }, { status: 200 });
+    return NextResponse.json({ message: "Menu item deleted successfully" }, { status: 200 });
   } catch (error) {
-    return Response.json(
+    return NextResponse.json(
       { message: "Failed to delete menu item", error: error.message },
       { status: 500 }
     );
@@ -146,5 +161,5 @@ export async function DELETE(request, context) {
 }
 
 export async function OPTIONS() {
-  return new Response(null, { status: 204 });
+  return new NextResponse(null, { status: 204 });
 }

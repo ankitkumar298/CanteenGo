@@ -1,3 +1,4 @@
+import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/mongodb";
 import Order from "@/models/Order";
 import Canteen from "@/models/Canteen";
@@ -8,12 +9,10 @@ export async function GET() {
   try {
     await connectToDatabase();
 
-    // Dynamically retrieve all registered canteens from MongoDB collection
     const canteenDocs = await Canteen.find().sort({ createdAt: 1 });
-    const canteens = canteenDocs.map((c) => c.name);
+    const canteenNames = canteenDocs.map((canteenDoc) => canteenDoc.name);
 
-    // Aggregate active orders grouped by canteen
-    const activeOrders = await Order.aggregate([
+    const activeOrderGroups = await Order.aggregate([
       {
         $match: {
           orderStatus: { $in: ["Pending", "Preparing"] }
@@ -30,23 +29,24 @@ export async function GET() {
       }
     ]);
 
-    const statsMap = {};
-    activeOrders.forEach((group) => {
-      if (group._id) {
-        statsMap[group._id] = {
-          ordersAhead: group.ordersAhead,
-          preparingCount: group.preparingCount
+    const statsByCanteenName = {};
+    activeOrderGroups.forEach((orderGroup) => {
+      if (orderGroup._id) {
+        statsByCanteenName[orderGroup._id] = {
+          ordersAhead: orderGroup.ordersAhead,
+          preparingCount: orderGroup.preparingCount
         };
       }
     });
 
-    const result = canteens.map((name) => {
-      const stats = statsMap[name] || { ordersAhead: 0, preparingCount: 0 };
-      const ordersAhead = stats.ordersAhead;
-      const preparingCount = stats.preparingCount;
+    const canteenStatsList = canteenNames.map((canteenName) => {
+      const currentStats = statsByCanteenName[canteenName] || {
+        ordersAhead: 0,
+        preparingCount: 0
+      };
+      const { ordersAhead, preparingCount } = currentStats;
 
-      // Realistic kitchen wait time calculation:
-      // base cooking (3 min) + 2.5 min per order ahead
+      // Base cooking time (3 min) + ~2.5 min per order ahead in queue
       const waitMinutes = Math.max(3, Math.round(ordersAhead * 2.5 + 3));
 
       let rushStatus = "Less busy";
@@ -54,7 +54,7 @@ export async function GET() {
       else if (ordersAhead >= 3) rushStatus = "Moderate";
 
       return {
-        canteenName: name,
+        canteenName,
         ordersAhead,
         preparingCount,
         waitMinutes,
@@ -62,9 +62,9 @@ export async function GET() {
       };
     });
 
-    return Response.json(result, { status: 200 });
+    return NextResponse.json(canteenStatsList, { status: 200 });
   } catch (error) {
-    return Response.json(
+    return NextResponse.json(
       { message: "Failed to fetch canteen stats", error: error.message },
       { status: 500 }
     );

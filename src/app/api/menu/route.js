@@ -1,3 +1,4 @@
+import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/mongodb";
 import Menu from "@/models/Menu";
 
@@ -80,60 +81,66 @@ export async function GET(request) {
       };
     }
 
-    let items = await Menu.find(filter).sort({ createdAt: -1 });
+    let menuItems = await Menu.find(filter).sort({ createdAt: -1 });
 
-    // Seed default canteen menu items if collection is empty
-    if (items.length === 0 && (!canteenId || canteenId === "all")) {
+    // Seed default canteen menu items on first run when the collection is empty
+    if (menuItems.length === 0 && (!canteenId || canteenId === "all")) {
       await Menu.insertMany(initialMenuItems);
-      items = await Menu.find().sort({ createdAt: -1 });
+      menuItems = await Menu.find().sort({ createdAt: -1 });
     } else {
-    // Backfill image, category, and description if any existing items lack them
-    for (const item of items) {
-      const match = initialMenuItems.find(
-        (i) => i.name.toLowerCase() === item.name.toLowerCase()
-      );
-      const updates = {};
-      if (!item.image) {
-        updates.image = match ? match.image : "/images/samosa.jpg";
-      }
-      if (!item.category) {
-        updates.category = match ? match.category : "Hot Snacks";
-      }
-      if (!item.description && match && match.description) {
-        updates.description = match.description;
-      }
-      if (!item.canteenId) {
-        updates.canteenId = "all";
-        updates.canteenName = "All Canteens";
-        updates.availableCanteens = ["foodcourt-34", "nk-foodcourt", "main-canteen", "library-cafe"];
-      }
-      if (typeof item.rating !== "number") {
-        updates.rating = 4.5;
-        updates.ratingCount = 12;
-      }
-      if (!item.canteenPrices || Object.keys(item.canteenPrices).length === 0) {
-        const base = item.basePrice || (match ? match.price : item.price) || 20;
-        updates.canteenPrices = {
-          "foodcourt-34": base,
-          "nk-foodcourt": base,
-          "main-canteen": base,
-          "library-cafe": base
-        };
-        updates.basePrice = base;
+      // Backfill missing metadata fields on legacy menu documents
+      for (const menuItem of menuItems) {
+        const defaultItemMatch = initialMenuItems.find(
+          (seedItem) => seedItem.name.toLowerCase() === menuItem.name.toLowerCase()
+        );
+        const backfillFields = {};
+
+        if (!menuItem.image) {
+          backfillFields.image = defaultItemMatch ? defaultItemMatch.image : "/images/samosa.jpg";
+        }
+        if (!menuItem.category) {
+          backfillFields.category = defaultItemMatch ? defaultItemMatch.category : "Hot Snacks";
+        }
+        if (!menuItem.description && defaultItemMatch && defaultItemMatch.description) {
+          backfillFields.description = defaultItemMatch.description;
+        }
+        if (!menuItem.canteenId) {
+          backfillFields.canteenId = "all";
+          backfillFields.canteenName = "All Canteens";
+          backfillFields.availableCanteens = [
+            "foodcourt-34",
+            "nk-foodcourt",
+            "main-canteen",
+            "library-cafe"
+          ];
+        }
+        if (typeof menuItem.rating !== "number") {
+          backfillFields.rating = 4.5;
+          backfillFields.ratingCount = 12;
+        }
+        if (!menuItem.canteenPrices || Object.keys(menuItem.canteenPrices).length === 0) {
+          const basePrice =
+            menuItem.basePrice || (defaultItemMatch ? defaultItemMatch.price : menuItem.price) || 20;
+          backfillFields.canteenPrices = {
+            "foodcourt-34": basePrice,
+            "nk-foodcourt": basePrice,
+            "main-canteen": basePrice,
+            "library-cafe": basePrice
+          };
+          backfillFields.basePrice = basePrice;
+        }
+
+        if (Object.keys(backfillFields).length > 0) {
+          await Menu.findByIdAndUpdate(menuItem._id, backfillFields);
+        }
       }
 
-      if (Object.keys(updates).length > 0) {
-        await Menu.findByIdAndUpdate(item._id, updates);
-      }
+      menuItems = await Menu.find(filter).sort({ createdAt: -1 });
     }
 
-      // Return fresh list after updates
-      items = await Menu.find(filter).sort({ createdAt: -1 });
-    }
-
-    return Response.json(items, { status: 200 });
+    return NextResponse.json(menuItems, { status: 200 });
   } catch (error) {
-    return Response.json(
+    return NextResponse.json(
       { message: "Failed to fetch menu items", error: error.message },
       { status: 500 }
     );
@@ -143,30 +150,49 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     await connectToDatabase();
-    const data = await request.json();
+    const requestBody = await request.json();
 
-    const { name, price, available, image, category, description, canteenId, canteenName, availableCanteens, foodType, isVeg } = data;
+    const {
+      name,
+      price,
+      available,
+      image,
+      category,
+      description,
+      canteenId,
+      canteenName,
+      availableCanteens,
+      foodType,
+      isVeg
+    } = requestBody;
 
-    // Validation
     if (!name || name.trim() === "") {
-      return Response.json({ message: "Food item name is required" }, { status: 400 });
+      return NextResponse.json({ message: "Food item name is required" }, { status: 400 });
     }
 
     const numericPrice = Number(price);
     if (isNaN(numericPrice) || numericPrice < 0) {
-      return Response.json({ message: "Please provide a valid positive price" }, { status: 400 });
+      return NextResponse.json(
+        { message: "Please provide a valid positive price" },
+        { status: 400 }
+      );
     }
 
-    const resolvedFoodType = foodType ? String(foodType).toLowerCase() : (isVeg === false ? "non-veg" : "veg");
+    const resolvedFoodType = foodType
+      ? String(foodType).toLowerCase()
+      : isVeg === false
+        ? "non-veg"
+        : "veg";
     const resolvedIsVeg = resolvedFoodType === "veg";
 
     const resolvedCanteenId = canteenId || "foodcourt-34";
     const resolvedCanteenName = canteenName || "Sports Complex Canteen";
-    const resolvedAvailableCanteens = Array.isArray(availableCanteens) && availableCanteens.length > 0
-      ? availableCanteens
-      : [resolvedCanteenId];
+    const resolvedAvailableCanteens =
+      Array.isArray(availableCanteens) && availableCanteens.length > 0
+        ? availableCanteens
+        : [resolvedCanteenId];
 
-    const newItem = await Menu.create({
+    const createdMenuItem = await Menu.create({
       name: name.trim(),
       price: numericPrice,
       available: available !== undefined ? Boolean(available) : true,
@@ -182,9 +208,9 @@ export async function POST(request) {
       soldOutCanteens: available === false ? [resolvedCanteenId] : []
     });
 
-    return Response.json(newItem, { status: 201 });
+    return NextResponse.json(createdMenuItem, { status: 201 });
   } catch (error) {
-    return Response.json(
+    return NextResponse.json(
       { message: "Failed to create menu item", error: error.message },
       { status: 500 }
     );
@@ -192,5 +218,5 @@ export async function POST(request) {
 }
 
 export async function OPTIONS() {
-  return new Response(null, { status: 204 });
+  return new NextResponse(null, { status: 204 });
 }

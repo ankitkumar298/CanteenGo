@@ -1,3 +1,4 @@
+import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/mongodb";
 import Order from "@/models/Order";
 import mongoose from "mongoose";
@@ -5,34 +6,34 @@ import mongoose from "mongoose";
 export async function POST(request, context) {
   try {
     await connectToDatabase();
-    const params = await context.params;
-    const { id } = params;
+    const { id: orderId } = await context.params;
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return Response.json({ message: "Invalid order ID" }, { status: 400 });
+    if (!mongoose.Types.ObjectId.isValid(orderId)) {
+      return NextResponse.json({ message: "Invalid order ID" }, { status: 400 });
     }
 
-    const existingOrder = await Order.findById(id);
+    const existingOrder = await Order.findById(orderId);
     if (!existingOrder) {
-      return Response.json({ message: "Order not found" }, { status: 404 });
+      return NextResponse.json({ message: "Order not found" }, { status: 404 });
     }
 
-    const body = await request.json().catch(() => ({}));
+    const requestBody = await request.json().catch(() => ({}));
 
-    // Vendor authorization check
-    if (body.canteenId && body.canteenId !== "all") {
-      const orderCanteenId = existingOrder.canteenId || (existingOrder.items && existingOrder.items[0]?.canteenId);
-      if (orderCanteenId && orderCanteenId !== body.canteenId) {
-        return Response.json(
+    // Ensure a vendor can only reject orders belonging to their own canteen
+    if (requestBody.canteenId && requestBody.canteenId !== "all") {
+      const orderCanteenId =
+        existingOrder.canteenId || (existingOrder.items && existingOrder.items[0]?.canteenId);
+
+      if (orderCanteenId && orderCanteenId !== requestBody.canteenId) {
+        return NextResponse.json(
           { message: "Unauthorized. This order belongs to a different canteen vendor." },
           { status: 403 }
         );
       }
     }
 
-    // Prevent rejecting an already accepted order
-    if (existingOrder.vendorApprovalStatus === "Accepted" && !body.adminOverride) {
-      return Response.json(
+    if (existingOrder.vendorApprovalStatus === "Accepted" && !requestBody.adminOverride) {
+      return NextResponse.json(
         {
           success: false,
           message: "Cannot reject an order that has already been accepted and assigned a token."
@@ -41,26 +42,32 @@ export async function POST(request, context) {
       );
     }
 
-    // Prevent duplicate rejection
     if (existingOrder.vendorApprovalStatus === "Rejected" || existingOrder.orderStatus === "Rejected") {
-      return Response.json(
+      return NextResponse.json(
         { success: false, message: "Order has already been rejected.", order: existingOrder },
         { status: 400 }
       );
     }
 
-    const reason = (body.reason || body.rejectionReason || body.cancellationReason || "Declined by kitchen").toString().trim();
+    const declineReason = (
+      requestBody.reason ||
+      requestBody.rejectionReason ||
+      requestBody.cancellationReason ||
+      "Declined by kitchen"
+    )
+      .toString()
+      .trim();
 
     existingOrder.vendorApprovalStatus = "Rejected";
     existingOrder.orderStatus = "Rejected";
     existingOrder.rejectedAt = new Date();
-    existingOrder.rejectionReason = reason;
-    existingOrder.cancellationReason = reason;
-    // tokenNumber remains null!
+    existingOrder.rejectionReason = declineReason;
+    existingOrder.cancellationReason = declineReason;
+    // Keep tokenNumber null on rejection so the partial unique index ignores it
 
     await existingOrder.save();
 
-    return Response.json(
+    return NextResponse.json(
       {
         success: true,
         message: "Order has been rejected. Student notified.",
@@ -69,7 +76,7 @@ export async function POST(request, context) {
       { status: 200 }
     );
   } catch (error) {
-    return Response.json(
+    return NextResponse.json(
       { success: false, message: "Failed to reject order", error: error.message },
       { status: 500 }
     );
@@ -77,6 +84,6 @@ export async function POST(request, context) {
 }
 
 export async function OPTIONS() {
-  return new Response(null, { status: 204 });
+  return new NextResponse(null, { status: 204 });
 }
 

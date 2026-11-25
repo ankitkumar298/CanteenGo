@@ -1,3 +1,4 @@
+import { NextResponse } from "next/server";
 import { generateTimeSlots } from "@/lib/timeslots";
 
 export async function GET(request) {
@@ -5,18 +6,18 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const canteenId = searchParams.get("canteenId") || "foodcourt-34";
 
-    const slots = generateTimeSlots(canteenId, new Date(), 12);
+    const availableSlots = generateTimeSlots(canteenId, new Date(), 12);
 
-    return Response.json(
+    return NextResponse.json(
       {
         success: true,
         canteenId,
-        slots
+        slots: availableSlots
       },
       { status: 200 }
     );
   } catch (error) {
-    return Response.json(
+    return NextResponse.json(
       { success: false, message: "Failed to generate time slots", error: error.message },
       { status: 500 }
     );
@@ -24,6 +25,6 @@ export async function GET(request) {
 }
 
 export async function OPTIONS() {
-  return new Response(null, { status: 204 });
+  return new NextResponse(null, { status: 204 });
 }
 
