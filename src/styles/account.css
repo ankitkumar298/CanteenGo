@@ -37,15 +37,15 @@
 
 
 /* ==========================================================================
-   DEDICATED ACCOUNT PAGE (RESPONSIVE TWO-COLUMN DASHBOARD & MOBILE-FIRST)
+   DEDICATED ACCOUNT PAGE (CLEAN SINGLE-COLUMN MODERN CARD LAYOUT)
    ========================================================================== */
 
 .account-page-container {
-  @apply min-h-screen pb-[110px] max-w-[1040px] mx-auto relative;
+  @apply min-h-screen pb-[110px] max-w-[700px] mx-auto relative;
 }
 
 .account-top-bar {
-  @apply sticky top-0 z-50 bg-white/90 backdrop-blur-md border border-slate-200/80 rounded-2xl mx-4 mt-3 mb-2 flex items-center justify-between py-3 px-4 sm:px-5 shadow-sm;
+  @apply sticky top-0 z-50 bg-white/95 backdrop-blur-md border border-slate-200/80 rounded-2xl mx-4 mt-3 mb-1 flex items-center justify-between py-3 px-4 sm:px-5 shadow-sm;
 }
 
 .btn-account-back {
@@ -69,28 +69,6 @@
   @apply p-4 flex flex-col gap-4;
 }
 
-.account-dashboard-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 18px;
-  align-items: start;
-}
-
-@media (min-width: 860px) {
-  .account-dashboard-grid {
-    grid-template-columns: 380px 1fr;
-    gap: 22px;
-  }
-}
-
-.account-left-col,
-.account-right-col {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  min-width: 0;
-}
-
 /* Alerts */
 .account-alert {
   @apply flex items-center gap-2.5 py-3 px-4 rounded-[14px] text-[0.88rem] font-semibold;
@@ -105,29 +83,16 @@
   @apply bg-red-50 border border-red-200 text-red-700;
 }
 
-/* 1. Hero Card with Top Accent Banner */
+/* 1. Clean Horizontal Hero Card */
 .account-hero-card {
-  background: #ffffff;
+  background: linear-gradient(135deg, #ffffff 0%, #fffaf5 100%);
   border: 1.5px solid #fed7aa;
   border-radius: 22px;
-  overflow: hidden;
+  padding: 20px;
   box-shadow: 0 8px 24px rgba(234, 88, 12, 0.08);
-  position: relative;
-}
-
-.account-hero-banner {
-  height: 54px;
-  background: linear-gradient(135deg, #f97316 0%, #ea580c 60%, #c2410c 100%);
-  position: relative;
-}
-
-.account-hero-body {
-  padding: 0 20px 20px 20px;
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 12px;
-  margin-top: -32px;
+  align-items: center;
+  gap: 16px;
   position: relative;
 }
 
@@ -136,37 +101,36 @@
 }
 
 .account-avatar-circle {
-  width: 68px;
-  height: 68px;
+  width: 64px;
+  height: 64px;
   border-radius: 50%;
   background: linear-gradient(135deg, #ea580c, #f97316);
-  border: 3px solid #ffffff;
   color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
+  font-size: 1.45rem;
   font-weight: 900;
   letter-spacing: 0.5px;
   box-shadow: 0 6px 16px rgba(234, 88, 12, 0.3);
 }
 
 .account-avatar-check {
-  @apply absolute bottom-0 right-0 w-5 h-5 rounded-full bg-emerald-600 border-2 border-white text-white text-[11px] font-black flex items-center justify-center;
+  @apply absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-emerald-600 border-2 border-white text-white text-[11px] font-black flex items-center justify-center;
 }
 
 .account-hero-info {
-  width: 100%;
+  flex: 1;
   min-width: 0;
 }
 
 .account-hero-name {
-  @apply m-0 mb-0.5 text-[1.3rem] font-extrabold text-slate-900 truncate;
+  @apply m-0 mb-0.5 text-[1.25rem] font-extrabold text-slate-900 truncate;
 }
 
 .account-hero-email {
-  margin: 0 0 10px 0;
-  font-size: 0.8rem;
+  margin: 0 0 8px 0;
+  font-size: 0.78rem;
   color: #64748b;
   font-weight: 500;
   white-space: nowrap;
@@ -180,7 +144,7 @@
 
 .hero-id-chip,
 .hero-phone-chip {
-  @apply inline-flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-full py-1 px-2.5 text-[0.74rem] font-bold text-slate-700;
+  @apply inline-flex items-center gap-1.5 bg-white border border-slate-200 rounded-full py-[3px] px-2.5 text-[0.72rem] font-bold text-slate-600;
 }
 
 .btn-edit-all-hero {

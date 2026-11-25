@@ -212,150 +212,96 @@ export default function AccountPage({
           </div>
         )}
 
-        <div className="account-dashboard-grid">
-          {/* Left Column: Hero Identity, Order Trust Score & Quick Shortcuts */}
-          <div className="account-left-col">
-            {/* 1. Profile Avatar & Hero Card */}
-            <div className="account-hero-card">
-              <div className="account-hero-banner" />
-              <div className="account-hero-body">
-                <div className="account-avatar-wrapper">
-                  <div className="account-avatar-circle">
-                    <span>{initials}</span>
-                  </div>
-                  <span className="account-avatar-check" title="Verified Campus Student">✓</span>
-                </div>
-
-                <div className="account-hero-info">
-                  <h3 className="account-hero-name">{name || "Student"}</h3>
-                  {email && <p className="account-hero-email">{email}</p>}
-                  <div className="account-hero-badges">
-                    <span className="hero-id-chip">
-                      <IdCardIcon size={13} />
-                      <span>{studentId ? studentId : "Set student ID"}</span>
-                    </span>
-                    <span className="hero-phone-chip">
-                      <PhoneIcon size={13} />
-                      <span>{phone ? `+91 ${phone.slice(0, 5)} ${phone.slice(5)}` : "Set mobile number"}</span>
-                    </span>
-                  </div>
-                </div>
-              </div>
+        {/* 1. Clean Horizontal Profile Hero Card */}
+        <div className="account-hero-card">
+          <div className="account-avatar-wrapper">
+            <div className="account-avatar-circle">
+              <span>{initials}</span>
             </div>
-
-            {/* 2. Order Trust Score Section */}
-            {(() => {
-              const noShows = profileData?.noShowCount ?? studentProfile?.noShowCount ?? 0;
-              const chancesLeft = Math.max(0, 3 - noShows);
-              const codStatus = profileData?.codStatus || studentProfile?.codStatus || "active";
-              const isBlocked = codStatus === "temporarily_blocked" || codStatus === "prepaid_only" || chancesLeft === 0;
-              const stateClass = isBlocked
-                ? "trust-state-blocked"
-                : chancesLeft === 3
-                  ? "trust-state-safe"
-                  : chancesLeft === 2
-                    ? "trust-state-warning"
-                    : "trust-state-final";
-
-              return (
-                <div className={`account-trust-score-card ${stateClass}`}>
-                  <div className="trust-score-header">
-                    <div className="trust-score-left">
-                      <span className="trust-score-icon">🛡️</span>
-                      <div>
-                        <h4 className="trust-score-title">Order Trust Score</h4>
-                        <span className="trust-score-subtitle">Campus Pickup &amp; Cash Reliability</span>
-                      </div>
-                    </div>
-                    <span className={`trust-score-status-badge ${isBlocked ? "badge-blocked" : chancesLeft === 3 ? "badge-safe" : chancesLeft === 2 ? "badge-warning" : "badge-final-warning"}`}>
-                      <span className="trust-badge-dot" />
-                      {isBlocked ? "Temporarily Blocked" : chancesLeft === 3 ? "Active (Safe)" : chancesLeft === 2 ? "Warning (Strike 1/3)" : "Final Warning (Strike 2/3)"}
-                    </span>
-                  </div>
-
-                  <div className="trust-score-chances-row">
-                    <div className="trust-score-chances-main">
-                      <strong className={`trust-score-chances-val ${isBlocked ? "text-danger" : ""}`}>
-                        {isBlocked ? "Temporarily Blocked" : `${chancesLeft} chances left`}
-                      </strong>
-                      {isBlocked && (
-                        <span className="trust-prepaid-only-tag">Prepaid (UPI) Only</span>
-                      )}
-                    </div>
-                    <span className="trust-score-fraction">
-                      {chancesLeft}/3
-                    </span>
-                  </div>
-
-                  {/* 3-Segment Visual Reliability Meter */}
-                  <div className="trust-meter-segments" aria-hidden="true">
-                    {[1, 2, 3].map((step) => (
-                      <span
-                        key={step}
-                        className={`trust-meter-segment ${step <= chancesLeft ? "filled" : "empty"}`}
-                      />
-                    ))}
-                  </div>
-
-                  <p className="trust-score-notice">
-                    {isBlocked
-                      ? "Cash on Pickup is temporarily restricted due to repeated no-shows. You can continue placing orders using UPI prepaid payment."
-                      : `${chancesLeft} more verified no-show may temporarily restrict Cash on Pickup.`}
-                  </p>
-                </div>
-              );
-            })()}
-
-            {/* 3. Quick Campus Shortcuts */}
-            <div className="account-section-card shortcuts-card">
-              <h4 className="shortcuts-title">Quick Navigation</h4>
-              <div className="shortcuts-grid">
-                <button
-                  type="button"
-                  className="account-shortcut-btn"
-                  onClick={() => router.push("/orders")}
-                >
-                  <span className="shortcut-icon-box orders">🧾</span>
-                  <span className="shortcut-texts">
-                    <strong>My Orders</strong>
-                    <span>Track active &amp; past pickups</span>
-                  </span>
-                  <span className="shortcut-arrow">→</span>
-                </button>
-
-                <button
-                  type="button"
-                  className="account-shortcut-btn"
-                  onClick={() => router.push("/queue")}
-                >
-                  <span className="shortcut-icon-box queue">⚡</span>
-                  <span className="shortcut-texts">
-                    <strong>Live Campus Queue</strong>
-                    <span>Check preparing &amp; ready tokens</span>
-                  </span>
-                  <span className="shortcut-arrow">→</span>
-                </button>
-
-                <button
-                  type="button"
-                  className="account-shortcut-btn"
-                  onClick={() => router.push("/order")}
-                >
-                  <span className="shortcut-icon-box menu">🍽️</span>
-                  <span className="shortcut-texts">
-                    <strong>Browse Canteens</strong>
-                    <span>Order snacks, meals &amp; beverages</span>
-                  </span>
-                  <span className="shortcut-arrow">→</span>
-                </button>
-              </div>
-            </div>
+            <span className="account-avatar-check" title="Verified Campus Student">✓</span>
           </div>
 
-          {/* Right Column: Editable Profile Information & Logout */}
-          <div className="account-right-col">
-            {/* 4. Account Details Card */}
-            <form onSubmit={handleSave} className="account-section-card">
+          <div className="account-hero-info">
+            <h3 className="account-hero-name">{name || "Student"}</h3>
+            {email && <p className="account-hero-email">{email}</p>}
+            <div className="account-hero-badges">
+              <span className="hero-id-chip">
+                <IdCardIcon size={13} />
+                <span>{studentId ? studentId : "Set student ID"}</span>
+              </span>
+              <span className="hero-phone-chip">
+                <PhoneIcon size={13} />
+                <span>{phone ? `+91 ${phone.slice(0, 5)} ${phone.slice(5)}` : "Set mobile number"}</span>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* 2. Order Trust Score Section */}
+        {(() => {
+          const noShows = profileData?.noShowCount ?? studentProfile?.noShowCount ?? 0;
+          const chancesLeft = Math.max(0, 3 - noShows);
+          const codStatus = profileData?.codStatus || studentProfile?.codStatus || "active";
+          const isBlocked = codStatus === "temporarily_blocked" || codStatus === "prepaid_only" || chancesLeft === 0;
+          const stateClass = isBlocked
+            ? "trust-state-blocked"
+            : chancesLeft === 3
+              ? "trust-state-safe"
+              : chancesLeft === 2
+                ? "trust-state-warning"
+                : "trust-state-final";
+
+          return (
+            <div className={`account-trust-score-card ${stateClass}`}>
+              <div className="trust-score-header">
+                <div className="trust-score-left">
+                  <span className="trust-score-icon">🛡️</span>
+                  <div>
+                    <h4 className="trust-score-title">Order Trust Score</h4>
+                    <span className="trust-score-subtitle">Campus Pickup &amp; Cash Reliability</span>
+                  </div>
+                </div>
+                <span className={`trust-score-status-badge ${isBlocked ? "badge-blocked" : chancesLeft === 3 ? "badge-safe" : chancesLeft === 2 ? "badge-warning" : "badge-final-warning"}`}>
+                  <span className="trust-badge-dot" />
+                  {isBlocked ? "Temporarily Blocked" : chancesLeft === 3 ? "Active (Safe)" : chancesLeft === 2 ? "Warning (Strike 1/3)" : "Final Warning (Strike 2/3)"}
+                </span>
+              </div>
+
+              <div className="trust-score-chances-row">
+                <div className="trust-score-chances-main">
+                  <strong className={`trust-score-chances-val ${isBlocked ? "text-danger" : ""}`}>
+                    {isBlocked ? "Temporarily Blocked" : `${chancesLeft} chances left`}
+                  </strong>
+                  {isBlocked && (
+                    <span className="trust-prepaid-only-tag">Prepaid (UPI) Only</span>
+                  )}
+                </div>
+                <span className="trust-score-fraction">
+                  {chancesLeft}/3
+                </span>
+              </div>
+
+              {/* 3-Segment Visual Reliability Meter */}
+              <div className="trust-meter-segments" aria-hidden="true">
+                {[1, 2, 3].map((step) => (
+                  <span
+                    key={step}
+                    className={`trust-meter-segment ${step <= chancesLeft ? "filled" : "empty"}`}
+                  />
+                ))}
+              </div>
+
+              <p className="trust-score-notice">
+                {isBlocked
+                  ? "Cash on Pickup is temporarily restricted due to repeated no-shows. You can continue placing orders using UPI prepaid payment."
+                  : `${chancesLeft} more verified no-show may temporarily restrict Cash on Pickup.`}
+              </p>
+            </div>
+          );
+        })()}
+
+        {/* 3. Account Details Card */}
+        <form onSubmit={handleSave} className="account-section-card">
           <div className="account-section-header">
             <div className="account-section-titles">
               <h4>Profile Information</h4>
@@ -619,7 +565,7 @@ export default function AccountPage({
           )}
         </form>
 
-        {/* 5. Logout Button */}
+        {/* 4. Logout Button */}
         <div className="account-logout-wrap">
           <button
             type="button"
@@ -629,8 +575,6 @@ export default function AccountPage({
             <LogOutIcon size={18} />
             <span>Log Out of Account</span>
           </button>
-        </div>
-          </div>
         </div>
       </div>
 
