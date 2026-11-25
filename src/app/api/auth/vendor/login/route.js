@@ -34,24 +34,12 @@ export async function POST(request) {
       );
     }
 
-    // Check Admin Approval Gate before allowing terminal access
-    if (canteen.approvalStatus === "Pending" || canteen.isApproved === false) {
-      if (canteen.approvalStatus === "Rejected") {
-        return NextResponse.json(
-          {
-            success: false,
-            approvalStatus: "Rejected",
-            message: `Your canteen application was declined by College Admin${canteen.rejectionReason ? `: ${canteen.rejectionReason}` : "."}`
-          },
-          { status: 403 }
-        );
-      }
-
+    // Only allow login when Admin has approved (isApprove !== 0)
+    if (canteen.isApprove === 0) {
       return NextResponse.json(
         {
           success: false,
-          approvalStatus: "Pending",
-          message: "Your canteen application is currently pending College Admin approval."
+          message: "Your canteen application is pending Admin approval."
         },
         { status: 403 }
       );

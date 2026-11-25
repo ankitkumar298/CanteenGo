@@ -4,21 +4,12 @@ import Canteen from "@/models/Canteen";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(request) {
+export async function GET() {
   try {
     await connectToDatabase();
-    const { searchParams } = new URL(request.url);
-    const includeAll = searchParams.get("includeAll") === "true";
 
-    // Only expose approved canteens to students and vendor login by default
-    const filter = includeAll
-      ? {}
-      : {
-          approvalStatus: { $nin: ["Pending", "Rejected"] },
-          isApproved: { $ne: false }
-        };
-
-    const canteens = await Canteen.find(filter).sort({ createdAt: -1 });
+    // Show canteens where Admin has approved (isApprove: 1, or legacy docs without isApprove: 0)
+    const canteens = await Canteen.find({ isApprove: { $ne: 0 } }).sort({ createdAt: -1 });
     return NextResponse.json(canteens, { status: 200 });
   } catch (error) {
     return NextResponse.json(
@@ -74,13 +65,13 @@ export async function POST(request) {
       );
     }
 
-    // Prevent duplicate pending/approved registration for the same owner phone
     const existingByPhone = await Canteen.findOne({ ownerPhone: cleanPhone });
     if (existingByPhone) {
+      const statusLabel = existingByPhone.isApprove === 1 ? "Approved" : "Pending Admin Approval";
       return NextResponse.json(
         {
           success: false,
-          message: `A canteen application (${existingByPhone.name}) is already registered with this mobile number (Status: ${existingByPhone.approvalStatus}).`
+          message: `A canteen application (${existingByPhone.name}) is already registered with this mobile number (${statusLabel}).`
         },
         { status: 409 }
       );
@@ -93,6 +84,7 @@ export async function POST(request) {
       .replace(/^-|-$/g, "");
     const generatedCanteenId = requestBody.canteenId || `${slugBase}-${Date.now().toString().slice(-4)}`;
 
+    // New vendor starts with isApprove: 0; becomes live when Admin sets isApprove: 1 in MongoDB
     const newCanteen = await Canteen.create({
       canteenId: generatedCanteenId,
       id: generatedCanteenId,
@@ -106,17 +98,16 @@ export async function POST(request) {
       ownerName: String(ownerName).trim(),
       ownerPhone: cleanPhone,
       staffPin: cleanPin,
-      approvalStatus: "Pending",
-      isApproved: false,
-      isOpen: false,
-      isAvailable: false,
+      isApprove: 0,
+      isOpen: true,
+      isAvailable: true,
       icon: "🏪"
     });
 
     return NextResponse.json(
       {
         success: true,
-        message: "Vendor application submitted! Waiting for College Admin approval.",
+        message: "Application submitted! Once Admin approves your account in MongoDB (isApprove = 1), your canteen will be added to the vendor list.",
         canteen: newCanteen
       },
       { status: 201 }

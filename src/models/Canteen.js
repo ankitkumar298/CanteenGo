@@ -122,22 +122,10 @@ const canteenSchema = new mongoose.Schema(
       default: "1234",
       trim: true
     },
-    approvalStatus: {
-      type: String,
-      enum: ["Pending", "Approved", "Rejected"],
-      default: "Approved"
-    },
-    isApproved: {
-      type: Boolean,
-      default: true
-    },
-    rejectionReason: {
-      type: String,
-      default: ""
-    },
-    approvedAt: {
-      type: Date,
-      default: null
+    isApprove: {
+      type: Number,
+      enum: [0, 1],
+      default: 0
     }
   },
   {
