@@ -14,15 +14,26 @@ export default function TimeSlotPicker({
   const canteenId = typeof canteen === "string" ? canteen : canteen?.id || canteen?.canteenId || "foodcourt-34";
   const canteenName = typeof canteen === "object" ? canteen?.name || "Campus Canteen" : "Campus Canteen";
 
+  const getClientTimeZone = () => {
+    try {
+      return Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Kolkata";
+    } catch {
+      return "Asia/Kolkata";
+    }
+  };
+
   // Initialize immediately with local generator for zero latency
-  const [slots, setSlots] = useState(() => generateTimeSlots(canteenId, new Date(), 12));
+  const [slots, setSlots] = useState(() => generateTimeSlots(canteenId, new Date(), 12, getClientTimeZone()));
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef(null);
 
   useEffect(() => {
     let isSubscribed = true;
+    const tz = getClientTimeZone();
     // Refresh slots dynamically from API
-    fetch(`/api/timeslots?canteenId=${encodeURIComponent(canteenId)}`)
+    fetch(`/api/timeslots?canteenId=${encodeURIComponent(canteenId)}&tz=${encodeURIComponent(tz)}`, {
+      cache: "no-store"
+    })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (isSubscribed && data?.success && Array.isArray(data.slots) && data.slots.length > 0) {
@@ -32,7 +43,7 @@ export default function TimeSlotPicker({
       .catch(() => {
         // Fallback to local generation if network drops
         if (isSubscribed) {
-          setSlots(generateTimeSlots(canteenId, new Date(), 12));
+          setSlots(generateTimeSlots(canteenId, new Date(), 12, tz));
         }
       })
       .finally(() => {
