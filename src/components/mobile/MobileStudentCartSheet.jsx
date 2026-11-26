@@ -135,23 +135,49 @@ export default function MobileStudentCartSheet({
   const [dragOffset, setDragOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [cancellingStage, setCancellingStage] = useState(0);
   const dragStartYRef = useRef(0);
   const currentDragYRef = useRef(0);
   const isClosingRef = useRef(false);
 
-  // Close sheet with smooth slide-down animation
-  const handleCloseWithAnimation = useCallback(() => {
-    if (step === "ordering" || isClosingRef.current) return;
+  const performCloseWithAnimation = useCallback(() => {
+    if (isClosingRef.current) return;
     isClosingRef.current = true;
     setIsClosing(true);
     setDragOffset(0);
 
     setTimeout(() => {
       setIsClosing(false);
+      setShowCancelConfirm(false);
+      setCancellingStage(0);
       isClosingRef.current = false;
       if (onClose) onClose();
     }, 280);
-  }, [step, onClose]);
+  }, [onClose]);
+
+  // Close sheet with smooth slide-down animation (or alert first on step 2/3)
+  const handleCloseWithAnimation = useCallback(() => {
+    if (step === "ordering" || step === "cancelling" || isClosingRef.current) return;
+    if (step === 2 || step === 3) {
+      setDragOffset(0);
+      setShowCancelConfirm(true);
+      return;
+    }
+    performCloseWithAnimation();
+  }, [step, performCloseWithAnimation]);
+
+  const handleConfirmCancelOrder = useCallback(() => {
+    setShowCancelConfirm(false);
+    setCancellingStage(0);
+    setStep("cancelling");
+    setTimeout(() => {
+      setCancellingStage(1);
+    }, 750);
+    setTimeout(() => {
+      performCloseWithAnimation();
+    }, 1450);
+  }, [performCloseWithAnimation]);
 
   // Pointer drag handling for handle zone
   const handlePointerDown = (e) => {
@@ -1007,7 +1033,7 @@ export default function MobileStudentCartSheet({
                     id="checkoutCookingNote"
                     type="text"
                     className="form-input"
-                    placeholder="e.g. Extra spicy, bina pyaz, pack separately..."
+                    placeholder="e.g. Extra spicy, less sugar, pack separately..."
                     value={remarks}
                     onChange={(e) => setRemarks && setRemarks(e.target.value)}
                     maxLength={140}
@@ -1370,6 +1396,45 @@ export default function MobileStudentCartSheet({
           )}
 
           {/* =========================================================================
+              VIEW B2: CANCELLING ANIMATION
+              ========================================================================= */}
+          {step === "cancelling" && (
+            <div className="mobile-ordering-anim-view">
+              <div className={`cancel-anim-stage ${cancellingStage === 1 ? "cancelled" : ""}`} aria-hidden="true">
+                <div className="cancel-orbit-ring"></div>
+                <div className="cancel-pulse-ring"></div>
+                <div className="cancel-badge-circle">
+                  {cancellingStage === 0 ? (
+                    <span className="cancel-ring-spinner"></span>
+                  ) : (
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <line className="cancel-cross-line l1" x1="18" y1="6" x2="6" y2="18" />
+                      <line className="cancel-cross-line l2" x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                  )}
+                </div>
+              </div>
+              <div className="cancel-kicker">
+                {cancellingStage === 0 ? "CANCELLING ORDER" : "ORDER CANCELLED"}
+              </div>
+              <h3 className="ordering-anim-title" style={{ marginBottom: "6px" }}>
+                {cancellingStage === 0 ? "Cancelling your checkout..." : "Order Cancelled"}
+              </h3>
+              <p className="ordering-stage-subtitle-text" style={{ marginBottom: "18px" }}>
+                {cancellingStage === 0
+                  ? "Discarding selected slot and payment session safely"
+                  : "No charges were applied. Your cart items are still saved."}
+              </p>
+              <div className="cancel-progress-track">
+                <div
+                  className="cancel-progress-fill"
+                  style={{ width: cancellingStage === 0 ? "55%" : "100%" }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* =========================================================================
               VIEW C: ORDER PLACED CARD
               ========================================================================= */}
           {step === "placed" && placedOrder && (
@@ -1538,6 +1603,40 @@ export default function MobileStudentCartSheet({
                 <span>Proceed to Cash Order (₹{cartTotal}) →</span>
               )}
             </button>
+          </div>
+        )}
+        {/* Cancel Order Confirmation Alert */}
+        {showCancelConfirm && (
+          <div className="cancel-confirm-overlay" role="alertdialog" aria-modal="true" aria-labelledby="mobile-cancel-alert-title">
+            <div className="cancel-confirm-dialog">
+              <div className="cancel-confirm-icon">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+              </div>
+              <h4 id="mobile-cancel-alert-title" className="cancel-confirm-title">Cancel this order?</h4>
+              <p className="cancel-confirm-desc">
+                You are on Step {step} of checkout. Cancelling will discard your selected slot and payment progress.
+              </p>
+              <div className="cancel-confirm-actions">
+                <button
+                  type="button"
+                  className="cancel-keep-btn"
+                  onClick={() => setShowCancelConfirm(false)}
+                >
+                  Keep Ordering
+                </button>
+                <button
+                  type="button"
+                  className="cancel-yes-btn"
+                  onClick={handleConfirmCancelOrder}
+                >
+                  Yes, Cancel Order
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>

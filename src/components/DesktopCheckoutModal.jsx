@@ -62,6 +62,8 @@ export default function DesktopCheckoutModal({
   const [loadingStep, setLoadingStep] = useState(0);
   const [placedOrder, setPlacedOrder] = useState(null);
   const [canteenNotes, setCanteenNotes] = useState({});
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [cancellingStage, setCancellingStage] = useState(0);
   const isCodBlocked =
     studentProfile?.codStatus === "temporarily_blocked" ||
     studentProfile?.codStatus === "prepaid_only" ||
@@ -112,6 +114,8 @@ export default function DesktopCheckoutModal({
       setUpiPaymentState("idle");
       setPlacedOrder(null);
       setLoadingStep(0);
+      setShowCancelConfirm(false);
+      setCancellingStage(0);
     }
   }, [isOpen]);
 
@@ -133,26 +137,49 @@ export default function DesktopCheckoutModal({
     return () => clearInterval(timer);
   }, [isOpen, step, paymentMethod]);
 
-  // Escape key to close unless ordering
+  // Escape key to close unless ordering or cancelling
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === "Escape" && isOpen && step !== "ordering") {
+      if (e.key === "Escape" && isOpen && step !== "ordering" && step !== "cancelling") {
         handleCloseModal();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, step]);
+  }, [isOpen, step, showCancelConfirm]);
 
   const [isClosing, setIsClosing] = useState(false);
 
-  const handleCloseModal = () => {
-    if (step === "ordering" || isClosing) return;
+  const performCloseModal = () => {
+    if (isClosing) return;
     setIsClosing(true);
     setTimeout(() => {
       setIsClosing(false);
+      setShowCancelConfirm(false);
+      setCancellingStage(0);
       onClose();
     }, 220);
+  };
+
+  const handleCloseModal = () => {
+    if (step === "ordering" || step === "cancelling" || isClosing) return;
+    if (step === 2 || step === 3) {
+      setShowCancelConfirm(true);
+      return;
+    }
+    performCloseModal();
+  };
+
+  const handleConfirmCancelOrder = () => {
+    setShowCancelConfirm(false);
+    setCancellingStage(0);
+    setStep("cancelling");
+    setTimeout(() => {
+      setCancellingStage(1);
+    }, 750);
+    setTimeout(() => {
+      performCloseModal();
+    }, 1450);
   };
 
   if (!isOpen) return null;
@@ -307,7 +334,7 @@ export default function DesktopCheckoutModal({
   return (
     <div
       className={`desktop-checkout-backdrop ${isClosing ? "closing" : ""}`}
-      onClick={step === "ordering" ? undefined : handleCloseModal}
+      onClick={step === "ordering" || step === "cancelling" ? undefined : handleCloseModal}
       role="dialog"
       aria-modal="true"
       aria-label="Desktop Checkout Overlay"
@@ -322,12 +349,12 @@ export default function DesktopCheckoutModal({
             <span className="brand-dot"></span>
             <strong>canteen<span>Go</span> Express Checkout</strong>
           </div>
-          {step !== "ordering" && (
+          {step !== "ordering" && step !== "cancelling" && (
             <button
               type="button"
               className="desktop-checkout-close-btn"
               onClick={handleCloseModal}
-              title="Close checkout"
+              title={step === 2 || step === 3 ? "Cancel order" : "Close checkout"}
               aria-label="Close"
             >
               ✕
@@ -672,7 +699,7 @@ export default function DesktopCheckoutModal({
                       id="desktopCookingNote"
                       type="text"
                       className="form-input desktop-input"
-                      placeholder="e.g. Extra spicy, bina pyaz, less sugar, pack separately..."
+                      placeholder="e.g. Extra spicy, less sugar, pack separately..."
                       value={remarks}
                       onChange={(e) => setRemarks && setRemarks(e.target.value)}
                       maxLength={140}
@@ -924,38 +951,84 @@ export default function DesktopCheckoutModal({
           )}
 
           {/* =========================================================================
-              STEP "ordering": 4-SECOND ANIMATED REAL ORDERING EXPERIENCE
+              STEP "ordering": PROFESSIONAL FOOD APP ORDERING EXPERIENCE
               ========================================================================= */}
           {step === "ordering" && (
             <div className="desktop-ordering-animation-panel">
               <div className="desktop-ordering-card">
-                {/* Large animated stage icon */}
-                <div className="ordering-stage-icon-circle pulse-scale" key={`icon-${loadingStep}`}>
-                  <span className="ordering-large-icon">{ORDERING_STAGES[loadingStep]?.icon}</span>
+                <div className="food-loader-stage" aria-hidden="true">
+                  <div className="food-orbit-ring"></div>
+                  <div className="food-pulse-ring ring-1"></div>
+                  <div className="food-pulse-ring ring-2"></div>
+
+                  <div className="food-cloche-badge">
+                    <div className="food-steam-group">
+                      <span className="steam-wisp w1"></span>
+                      <span className="steam-wisp w2"></span>
+                      <span className="steam-wisp w3"></span>
+                    </div>
+                    <svg
+                      className="food-cloche-svg"
+                      width="40"
+                      height="40"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#ffffff"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M3 17h18" />
+                      <path d="M5 17a7 7 0 0 1 14 0" fill="rgba(255,255,255,0.16)" />
+                      <path d="M12 7V5" />
+                      <circle cx="12" cy="4" r="1" fill="#ffffff" />
+                      <path d="M2 19.5h20" strokeOpacity="0.85" />
+                    </svg>
+                  </div>
                 </div>
 
-                {/* Dynamic animated title & subtitle */}
-                <div className="ordering-text-container" key={`text-${loadingStep}`}>
-                  <h3 className="ordering-stage-title-text slide-up-fade">
-                    {ORDERING_STAGES[loadingStep]?.title}
-                  </h3>
-                  <p className="ordering-stage-subtitle-text fade-in-slow">
-                    {ORDERING_STAGES[loadingStep]?.subtitle}
-                  </p>
+                <div className="placing-kicker">LIVE KITCHEN SYNC</div>
+                <h3 className="placing-title">
+                  {ORDERING_STAGES[Math.min(loadingStep, ORDERING_STAGES.length - 1)]?.title}
+                </h3>
+
+                <div className="placing-steps-wrap" style={{ width: "100%" }}>
+                  {[
+                    `Sending order to ${activeCanteenName}`,
+                    `Locking pickup (${selectedPickupSlot || "Immediate Pickup"})`,
+                    "Allocating your live queue pass"
+                  ].map((label, idx) => {
+                    const isDone = loadingStep > idx;
+                    const isActive = loadingStep === idx;
+                    return (
+                      <div
+                        key={label}
+                        className={`step-item ${isDone ? "done" : ""} ${isActive ? "active" : ""}`}
+                      >
+                        <span className="step-status-icon">
+                          {isDone ? (
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                          ) : isActive ? (
+                            <span className="step-spinner"></span>
+                          ) : (
+                            <span className="step-dot"></span>
+                          )}
+                        </span>
+                        <span className="step-text">{label}</span>
+                      </div>
+                    );
+                  })}
                 </div>
 
-                {/* Progress Bar with Percentage */}
-                <div className="ordering-progress-wrap">
-                  <div className="ordering-progress-track">
-                    <div
-                      className="ordering-progress-bar-fill"
-                      style={{ width: ORDERING_STAGES[loadingStep]?.progress }}
-                    />
-                  </div>
-                  <div className="ordering-progress-meta">
-                    <span className="ordering-step-counter">Stage {loadingStep + 1} of 4</span>
-                    <span className="ordering-percent-text">{ORDERING_STAGES[loadingStep]?.progress}</span>
-                  </div>
+                <div className="order-progress-track">
+                  <div
+                    className="order-progress-fill"
+                    style={{
+                      width: ORDERING_STAGES[Math.min(loadingStep, ORDERING_STAGES.length - 1)]?.progress || "100%"
+                    }}
+                  />
                 </div>
 
                 <div className="ordering-canteen-callout">
@@ -963,6 +1036,58 @@ export default function DesktopCheckoutModal({
                   <span>
                     Communicating with <strong>{activeCanteenName}</strong> • {activeCanteenCounter}
                   </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* =========================================================================
+              STEP "cancelling": PROFESSIONAL ORDER CANCELLING ANIMATION
+              ========================================================================= */}
+          {step === "cancelling" && (
+            <div className="desktop-ordering-animation-panel">
+              <div className="desktop-ordering-card">
+                <div className={`cancel-anim-stage ${cancellingStage === 1 ? "cancelled" : ""}`} aria-hidden="true">
+                  <div className="cancel-orbit-ring"></div>
+                  <div className="cancel-pulse-ring"></div>
+                  <div className="cancel-badge-circle">
+                    {cancellingStage === 0 ? (
+                      <span className="cancel-ring-spinner"></span>
+                    ) : (
+                      <svg
+                        width="32"
+                        height="32"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="#ffffff"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <line className="cancel-cross-line l1" x1="18" y1="6" x2="6" y2="18" />
+                        <line className="cancel-cross-line l2" x1="6" y1="6" x2="18" y2="18" />
+                      </svg>
+                    )}
+                  </div>
+                </div>
+
+                <div className="cancel-kicker">
+                  {cancellingStage === 0 ? "CANCELLING ORDER" : "ORDER CANCELLED"}
+                </div>
+                <h3 className="placing-title" style={{ marginBottom: "6px" }}>
+                  {cancellingStage === 0 ? "Cancelling your checkout..." : "Order Cancelled"}
+                </h3>
+                <p className="ordering-stage-subtitle-text" style={{ marginBottom: "18px" }}>
+                  {cancellingStage === 0
+                    ? "Discarding selected slot and payment session safely"
+                    : "No charges were applied. Your cart items are still saved."}
+                </p>
+
+                <div className="cancel-progress-track">
+                  <div
+                    className="cancel-progress-fill"
+                    style={{ width: cancellingStage === 0 ? "55%" : "100%" }}
+                  />
                 </div>
               </div>
             </div>
@@ -1068,6 +1193,41 @@ export default function DesktopCheckoutModal({
             </div>
           )}
         </div>
+
+        {/* Cancel Order Confirmation Alert */}
+        {showCancelConfirm && (
+          <div className="cancel-confirm-overlay" role="alertdialog" aria-modal="true" aria-labelledby="cancel-alert-title">
+            <div className="cancel-confirm-dialog">
+              <div className="cancel-confirm-icon">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+              </div>
+              <h4 id="cancel-alert-title" className="cancel-confirm-title">Cancel this order?</h4>
+              <p className="cancel-confirm-desc">
+                You are on Step {step} of checkout. Cancelling will discard your selected slot and payment progress.
+              </p>
+              <div className="cancel-confirm-actions">
+                <button
+                  type="button"
+                  className="cancel-keep-btn"
+                  onClick={() => setShowCancelConfirm(false)}
+                >
+                  Keep Ordering
+                </button>
+                <button
+                  type="button"
+                  className="cancel-yes-btn"
+                  onClick={handleConfirmCancelOrder}
+                >
+                  Yes, Cancel Order
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

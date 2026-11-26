@@ -60,50 +60,84 @@ export default function OrderSuccessOverlay({
       }}
     >
       <div className="order-overlay-card confirm-modal-card">
-        {/* PHASE 1: SUBMITTING / PLACING ORDER RADAR ANIMATION */}
+        {/* PHASE 1: PROFESSIONAL FOOD APP PLACING ORDER ANIMATION */}
         {isSubmitting && (
           <div className="placing-order-box">
-            <div className="radar-spinner-container">
-              <div className="radar-wave wave-1"></div>
-              <div className="radar-wave wave-2"></div>
-              <div className="radar-wave wave-3"></div>
-              <div className="radar-center-icon">
-                <img
-                  src="/images/canteengo-logo.png"
-                  alt="canteenGo"
-                  className="radar-food-img"
-                />
+            <div className="food-loader-stage" aria-hidden="true">
+              <div className="food-orbit-ring"></div>
+              <div className="food-pulse-ring ring-1"></div>
+              <div className="food-pulse-ring ring-2"></div>
+
+              <div className="food-cloche-badge">
+                <div className="food-steam-group">
+                  <span className="steam-wisp w1"></span>
+                  <span className="steam-wisp w2"></span>
+                  <span className="steam-wisp w3"></span>
+                </div>
+                <svg
+                  className="food-cloche-svg"
+                  width="40"
+                  height="40"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#ffffff"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M3 17h18" />
+                  <path d="M5 17a7 7 0 0 1 14 0" fill="rgba(255,255,255,0.16)" />
+                  <path d="M12 7V5" />
+                  <circle cx="12" cy="4" r="1" fill="#ffffff" />
+                  <path d="M2 19.5h20" strokeOpacity="0.85" />
+                </svg>
               </div>
             </div>
 
-            <h3 className="placing-title">Placing Your Canteen Order</h3>
+            <div className="placing-kicker">LIVE KITCHEN SYNC</div>
+            <h3 className="placing-title">Placing Your Order</h3>
 
             <div className="placing-steps-wrap">
-              <div className={`step-item ${loadingStep >= 0 ? "active" : ""}`}>
-                <span className="step-dot"></span>
-                <span>Connecting to canteen kitchen...</span>
-              </div>
-              <div className={`step-item ${loadingStep >= 1 ? "active" : ""}`}>
-                <span className="step-dot"></span>
-                <span>Verifying kitchen availability & pricing...</span>
-              </div>
-              <div className={`step-item ${loadingStep >= 2 ? "active" : ""}`}>
-                <span className="step-dot"></span>
-                <span>Allocating your safe pickup token...</span>
-              </div>
+              {[
+                "Sending order to canteen kitchen",
+                "Verifying items & counter slot",
+                "Generating your live pickup pass"
+              ].map((label, idx) => {
+                const isDone = loadingStep > idx;
+                const isActive = loadingStep === idx;
+                return (
+                  <div
+                    key={label}
+                    className={`step-item ${isDone ? "done" : ""} ${isActive ? "active" : ""}`}
+                  >
+                    <span className="step-status-icon">
+                      {isDone ? (
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      ) : isActive ? (
+                        <span className="step-spinner"></span>
+                      ) : (
+                        <span className="step-dot"></span>
+                      )}
+                    </span>
+                    <span className="step-text">{label}</span>
+                  </div>
+                );
+              })}
             </div>
 
             <div className="order-progress-track">
               <div
                 className="order-progress-fill"
                 style={{
-                  width: loadingStep === 0 ? "35%" : loadingStep === 1 ? "75%" : "98%"
+                  width: loadingStep === 0 ? "34%" : loadingStep === 1 ? "72%" : "96%"
                 }}
               ></div>
             </div>
 
             <span className="placing-subhint">
-              Generating your live queue pass • Please hold on
+              Please wait while the kitchen confirms your token
             </span>
           </div>
         )}
@@ -161,8 +195,9 @@ export default function OrderSuccessOverlay({
 
               <div className="confirm-green-circle">
                 <svg
-                  width="26"
-                  height="26"
+                  className="confirm-check-svg"
+                  width="28"
+                  height="28"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="#ffffff"
@@ -170,7 +205,7 @@ export default function OrderSuccessOverlay({
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 >
-                  <polyline points="20 6 9 17 4 12"></polyline>
+                  <polyline className="confirm-check-path" points="20 6 9 17 4 12"></polyline>
                 </svg>
               </div>
             </div>
